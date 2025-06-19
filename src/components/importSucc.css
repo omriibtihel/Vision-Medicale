@@ -1,136 +1,157 @@
 .menu-bar {
-    width: 250px; /* Largeur du menu bar */
-    height: 100%; /* Hauteur maximale du menu bar */
-    background-color: #0056b3; /* Couleur de fond */
-    color: #ecf0f1; /* Couleur du texte */
-    position: fixed; /* Fixe le menu à gauche */
-    top: 0;
-    left: 0;
-    display: flex;
-    flex-direction: column;
-    padding-top: 20px;
-    transition: width 0.3s ease; /* Transition pour l'animation */
-    z-index: 1000; /* S'assure que le menu est au-dessus du contenu */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Ombre légère */
-  }
-  
-  .menu-item {
-    padding: 25px 25px; /* Espacement intérieur */
-    cursor: pointer;
-    transition: background-color 0.3s ease; /* Transition pour l'animation */
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid #2c3e50; /* Bordure basse */
-  }
-  
-  .menu-item:last-child {
-    border-bottom: none; /* Supprimer la bordure basse du dernier élément */
-  }
-  
-  .menu-item:hover {
-    background-color: #c7dce7; /* Couleur de fond au survol */
-  }
-  
-  .menu-icon {
-    margin-right: 12px; /* Espacement entre l'icône et le texte */
-  }
-  
-  .app-name2 {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    padding: 55px 25px; /* Espacement intérieur ajusté */
-    transition: background-color 0.3s ease; /* Transition pour l'animation */
-    border-bottom: 1px solid #2c3e50; /* Ajout de la bordure inférieure */
-  }
-  
-  .app-icon {
-    width: 24px; /* Taille de l'icône */
-    height: 24px; /* Taille de l'icône */
-    margin-right: 10px; /* Espacement entre l'icône et le texte */
-  }
-  
-  .app-name2 span {
-    font-size: 18px; /* Taille du texte */
-  }
-  .content1 {
-    margin-left: 250px;
-    padding: 20px;
-  }
-  .content1 {
-    padding: 20px;
-    background-color: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-  
-  .content1 h2 {
-    margin-bottom: 20px;
-    font-size: 24px;
-    color: #2c3e50;
-    text-align: center;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
-    border-bottom: 2px solid #bdc3c7;
-    padding-bottom: 10px;
-  }
- /* Style global pour la table */
+  width: 240px;
+  height: 100vh;
+  background: linear-gradient(180deg, #004a99, #0074d9);
+  color: #fdfdfd;
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 30px;
+  transition: all 0.3s ease;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
+  border-top-right-radius: 20px;
+  border-bottom-right-radius: 20px;
+}
+
+.app-name2 {
+  display: flex;
+  align-items: center;
+  padding: 30px 20px;
+  margin-bottom: 10px;
+  font-size: 20px;
+  font-weight: bold;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 0 20px 20px 0;
+}
+
+.app-icon {
+  width: 26px;
+  height: 26px;
+  margin-right: 12px;
+}
+
+.menu-item {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  transition: all 0.25s ease;
+  border-left: 4px solid transparent;
+  font-size: 15px;
+  color: #ecf0f1;
+}
+
+.menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-left: 4px solid #ffffff;
+  color: #ffffff;
+}
+
+.menu-icon {
+  margin-right: 12px;
+  font-size: 16px;
+}
+
+/* Contenu principal */
+.content1 {
+  margin-left: 260px;
+  padding: 30px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.content1 h2 {
+  font-size: 28px;
+  margin-bottom: 20px;
+  color: #1e3c72;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 2px solid #d1d1d1;
+  padding-bottom: 10px;
+}
+
+/* Table modernisée */
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Police moderne et élégante */
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
 }
 
-/* Style des cellules */
 th, td {
-  border: 1px solid #e0e0e0; /* Bordure très fine et subtile */
-  padding: 10px 15px; /* Padding léger pour un effet épuré */
+  padding: 15px 20px;
   text-align: left;
+  font-size: 14px;
+  border-bottom: 1px solid #eee;
 }
 
-/* Style des en-têtes de colonnes */
 th {
-  background-color: #f9f9f9; /* Couleur de fond très claire */
-  color: #333; /* Couleur du texte foncée pour le contraste */
-  font-weight: 500; /* Poids de police moyen pour un aspect propre */
-  border-bottom: 2px solid #e0e0e0; /* Bordure inférieure plus marquée pour les en-têtes */
+  background: #f4f6f9;
+  font-weight: 600;
+  color: #333;
 }
-
-
 
 tbody tr:hover {
-  background-color: #f1f1f1; 
+  background-color: #f1f1f1;
+  cursor: pointer;
 }
 
-/* Style pour la section description */
+/* Description */
 .description {
-  padding: 10px;
-  background-color: #ffffff; /* Couleur de fond blanche pour la clarté */
-  border-radius: 4px; /* Coins légèrement arrondis */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Ombre légère pour effet moderne */
-  border: 1px solid #e0e0e0; /* Bordure fine et subtile */
+  padding: 15px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  margin-top: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #0074d9;
+  font-size: 0.95rem;
 }
 
 .description p {
-  margin: 0; /* Suppression des marges pour une intégration plus fluide */
-  color: #666; /* Couleur du texte pour un meilleur contraste */
+  color: #555;
 }
 
-/* Style pour les colonnes spécifiques */
- .col {
-  font-size: 0.8rem; /* Taille de police légèrement augmentée */
-  color: #555; /* Couleur du texte pour la lisibilité */
+/* Colonnes spécifiques */
+.col {
+  font-size: 0.9rem;
+  color: #444;
 }
+
+.column-type {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.targ {
+  padding: 5px 10px;
+  font-size: 0.85rem;
+  background-color: #e6f2ff;
+  color: #0074d9;
+  border-radius: 5px;
+  display: inline-block;
+}
+
 .table-container {
-  overflow-x: auto; /* Permettre le défilement horizontal si nécessaire */
+  overflow-x: auto;
 }
-.column-type{
-  font-size: 0.5rem; 
 
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.targ{
-  padding:5px;
-  font-size: 0.9em;
-  color: #666;
-  width: 150px;
+
+.content1 > * {
+  animation: fadeIn 0.6s ease both;
 }
+
+

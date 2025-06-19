@@ -29,6 +29,8 @@ const Processing = () => {
   const [selectedColumnsImp, setSelectedColumnsImp] = useState([]);
 
   
+
+  
   const handleColumnCheckboxChangeImp = (column) => {
     setSelectedColumnsImp(prevSelectedColumns => {
       if (prevSelectedColumns.includes(column)) {
@@ -56,6 +58,8 @@ const Processing = () => {
   const toggleDropdown4 = () => {
     setShowDropdown3(prevState => !prevState);
   };
+
+  
   const cleanData = (data) => {
     if (typeof data === 'string') {
       return data.replace(/NaN/g, 'null');
@@ -608,134 +612,131 @@ const Processing = () => {
           <FontAwesomeIcon icon={faRocket} className="menu-icon" /> Deployment
         </div>
       </div>
-      <div className="content1">
+<div className="content1">
         <h2>Pre-processing Data</h2>
         <p className="header-subtitle">Clean, Transform, and Organize Your Dataset</p>
 
         {loading && <p>Loading...</p>}
         {error && <p className="error">{error}</p>}
-        <div className='content3'> 
-        <button onClick={handleDataCleaning}><FontAwesomeIcon icon={faTrash} /> Remove rows with Nulls</button>
-        <div className="column-selection">
-      <button onClick={handleRemoveSelectedColumns} className="btnn">
-        <FontAwesomeIcon icon={faTrash} /> Remove Columns with Nulls
-      </button>
-      <div className="column-selection">
-      <button className="dropdown-toggle" onClick={toggleDropdown1}>
-      Select Columns
-      </button>
-      {isOpen1 && (
-        <div className="dropdown-menu1">
-          {columnsWithHighNulls.map(column => (
-            <div key={column} className="checkbox-container">
-              <input
-                type="checkbox"
-                id={`checkbox-${column}`}
-                value={column}
-                checked={selectedColumns.includes(column)}
-                onChange={() => handleColumnCheckboxChange(column)}
-              />
-              <label htmlFor={`checkbox-${column}`}>{column}</label>
-            </div>
-          ))}
-       
+
+        <div className="actions-grid" style={{ position: 'relative', zIndex: 2 }}>
+          <div className="action-card">
+            <h4><FontAwesomeIcon icon={faTrash} /> Nettoyage</h4>
+            <button onClick={handleDataCleaning}>Remove rows with Nulls</button>
+            <button onClick={handleRemoveSelectedColumns}>Remove Columns with Nulls</button>
+            <button className="dropdown-toggle" onClick={toggleDropdown1}>Select Columns</button>
+            {isOpen1 && (
+              <div className="dropdown-wrapper" style={{ zIndex: 10, position: 'relative' }}>
+                <div className="dropdown-menu1">
+                  {columnsWithHighNulls.map(column => (
+                    <div key={column} className="checkbox-container">
+                      <input
+                        type="checkbox"
+                        id={`checkbox-${column}`}
+                        checked={selectedColumns.includes(column)}
+                        onChange={() => handleColumnCheckboxChange(column)}
+                      />
+                      <label htmlFor={`checkbox-${column}`}>{column}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="action-card">
+            <h4><FontAwesomeIcon icon={faBroom} /> Imputation</h4>
+            <button onClick={toggleDropdown4}>Choose Imputation</button>
+            {showDropdown3 && (
+              <div className="dropdown-wrapper" style={{ zIndex: 10, position: 'relative' }}>
+                <ul className="dropdown-menu1">
+                  {['Mean', 'Median', 'Mode', 'KNN', 'Interpolation', 'Zero'].map(method => (
+                    <li key={method}>
+                      <button className="dropdown-btn" onClick={() => handleImputation(`${method} Imputation`)}>
+                        {method} Imputation
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <button className="dropdown-toggle" onClick={toggleDropdown3}>Select Columns</button>
+            {isOpen3 && (
+              <div className="dropdown-wrapper" style={{ zIndex: 10, position: 'relative' }}>
+                <ul className="dropdown-menu1">
+                  {availableColumns.map(header => (
+                    <li key={header} className="checkbox-container">
+                      <input
+                        type="checkbox"
+                        id={`checkbox-${header}`}
+                        checked={selectedColumnsImp.includes(header)}
+                        onChange={() => handleColumnCheckboxChangeImp(header)}
+                      />
+                      <label htmlFor={`checkbox-${header}`}>{header}</label>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <div className="action-card">
+            <h4><FontAwesomeIcon icon={faArrowsRotate} /> Normalization</h4>
+            <button onClick={toggleDropdown}>Choose Normalization</button>
+            {showDropdown && (
+              <div className="dropdown-wrapper" style={{ zIndex: 10, position: 'relative' }}>
+                <ul className="dropdown-menu1">
+                  {['Min-Max', 'Z-Score', 'Decimal Scaling', 'Mean', 'Logarithmic'].map(type => (
+                    <li key={type}>
+                      <button className="dropdown-btn" onClick={() => handleDataTransformation(`${type} Normalization`)}>
+                        {type} Normalization
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <button className="dropdown-toggle" onClick={toggleDropdown2}>Select Columns</button>
+            {isOpen2 && (
+              <div className="dropdown-wrapper" style={{ zIndex: 10, position: 'relative' }}>
+                <ul className="dropdown-menu1">
+                  {availableColumns.map(header => (
+                    <li key={header} className="checkbox-container">
+                      <input
+                        type="checkbox"
+                        id={`checkbox-${header}`}
+                        checked={selectedColumnsNr.includes(header)}
+                        onChange={() => handleColumnCheckboxChangeNr(header)}
+                      />
+                      <label htmlFor={`checkbox-${header}`}>{header}</label>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <div className="action-card">
+            <h4><FontAwesomeIcon icon={faClone} /> Autres</h4>
+            <button onClick={handleDatadouble}>Remove Duplicates</button>
+            <button onClick={handleDownload}><FontAwesomeIcon icon={faDownload} /> Download Data</button>
+            <button onClick={handleSave}><FontAwesomeIcon icon={faDownload} /> Save Changes</button>
+          </div>
         </div>
-      )}
 
-    </div>  
-     </div>
-     <div className="action-row">
-  <div className="normalization-container">
-    <button onClick={toggleDropdown4}>
-      <FontAwesomeIcon icon={faArrowsRotate} /> Imputation
-    </button>
-    {showDropdown3 && (
-      <ul className="dropdown-menu1">
-        <li><button className="dropdown-btn" onClick={() => handleImputation('Mean Imputation')}>Mean Imputation</button></li>
-        <li><button className="dropdown-btn" onClick={() => handleImputation('Median Imputation')}>Median Imputation</button></li>
-        <li><button className="dropdown-btn" onClick={() => handleImputation('Mode Imputation')}>Mode Imputation</button></li>
-        <li><button className="dropdown-btn" onClick={() => handleImputation('KNN Imputation')}>KNN Imputation</button></li>
-        <li><button className="dropdown-btn" onClick={() => handleImputation('Interpolation Imputation')}>Interpolation Imputation</button></li>
-        <li><button className="dropdown-btn" onClick={() => handleImputation('Zero Imputation')}>Zero Imputation</button></li> {/* Nouvelle option ajoutée */}
-
-      </ul>
-    )}
-  </div>
-  <div className="column-selection">
-    <button className="dropdown-toggle" onClick={toggleDropdown3}>
-    Select Columns
-    </button>
-    {isOpen3 && (
-      <ul className="dropdown-menu1">
-        {availableColumns.map(header => (
-          <li key={header} className="checkbox-container">
-            <input
-              type="checkbox"
-              id={`checkbox-${header}`}
-              value={header}
-              checked={selectedColumnsImp.includes(header)}
-              onChange={() => handleColumnCheckboxChangeImp(header)}
-            />
-            <label htmlFor={`checkbox-${header}`}>{header}</label>
-          </li>
-        ))}
-      </ul>
-    )}
-  </div>
-</div>
-        <button onClick={handleDatadouble}><FontAwesomeIcon icon={faClone} /> Remove Duplicates</button>
-        <div className="action-row">
-            <div className="normalization-container">
-              <button onClick={toggleDropdown}>
-                <FontAwesomeIcon icon={faArrowsRotate} /> Data Normalization
-              </button>
-              {showDropdown &&(
-              <ul className="dropdown-menu1">
-                <li><button className="dropdown-btn"  onClick={() => handleDataTransformation('Min-Max Normalization')}>Min-Max Normalization</button></li>
-                <li><button className="dropdown-btn" onClick={() => handleDataTransformation('Z-Score Normalization')}>Z-Score Normalization</button></li>
-                <li><button className="dropdown-btn" onClick={() => handleDataTransformation('Decimal Scaling')}>Decimal Scaling</button></li>
-                <li><button className="dropdown-btn" onClick={() => handleDataTransformation('Mean Normalization')}>Mean Normalization</button></li>
-                <li><button className="dropdown-btn" onClick={() => handleDataTransformation('Logarithmic Scaling')}>Logarithmic Scaling</button></li>
-              </ul>)}
-            </div>
-          <div className="column-selection">
-      <button className="dropdown-toggle" onClick={toggleDropdown2}>
-      Select Columns
-      </button>
-      {isOpen2 && (
-        <ul className="dropdown-menu1">
-          {availableColumns.map(header => (
-            <li key={header} className="checkbox-container">
-              <input
-                type="checkbox"
-                id={`checkbox-${header}`}
-                value={header}
-                checked={selectedColumnsNr.includes(header)}
-                onChange={() => handleColumnCheckboxChangeNr(header)}
-              />
-              <label htmlFor={`checkbox-${header}`}>{header}</label>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-
-</div>
-        
-        </div>
-        <div className="data-preview">
+        <div className="data-preview" style={{ position: 'relative', zIndex: 1 }}>
           <h3>Data Preview</h3>
           <div className="table-container">
-          {rows.length > 0 && (
-            <table>
-              <thead>
-                <tr>
-                  {headers.map(header => (
-                    <th key={header} className={getCellClassName(header)}>{header }</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
+            {rows.length > 0 && (
+              <table>
+                <thead>
+                  <tr>
+                    {headers.map(header => (
+                      <th key={header} className={getCellClassName(header)}>{header}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
                   {rows.map((row, rowIndex) => (
                     <tr key={rowIndex} className={getRowClassName(row)}>
                       {headers.map(column => (
@@ -745,21 +746,14 @@ const Processing = () => {
                       ))}
                     </tr>
                   ))}
-              </tbody>
-            </table>
-          )}
+                </tbody>
+              </table>
+            )}
           </div>
-          <button onClick={handleDownload}>
-          <FontAwesomeIcon icon={faDownload} /> Download Data
-        </button>
-        <button onClick={handleSave}>
-          <FontAwesomeIcon icon={faDownload} /> save change
-        </button>
         </div>
       </div>
     </>
   );
 };
+
 export default Processing;
-
-

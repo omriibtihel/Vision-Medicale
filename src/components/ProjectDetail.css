@@ -1,72 +1,92 @@
-/* ProjectDetail.css */
 .project-detail {
-    padding: 20px;
-    font-family: Arial, sans-serif;
-  }
-  
-  .header {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-  }
-  
-  .back-button {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    border-radius: 5px;
-  }
-  
-  .project-info {
-    display: flex;
-    align-items: center;
-    margin-top: 70px;
-    background-color: #f9f9f9;
-    height: 250px;
-  }
-  
-  .project-image {
-    width: 250px;
-    height: 250px;
-    margin-right: 20px;
-  }
-  
-  .project-details {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start; /* Point-virgule ajouté */
-    font-family: "Courier New", Courier, monospace; /* Polices monospace */
-  }
-  
-  .project-details h1 {
-    margin: 0;
-  }
-  
+  padding: 2rem;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+}
 
-  .app-name1{
-    position: relative;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    justify-content: flex-end; /* Ajoutez cette ligne */
-    flex-grow: 1; /* Ajoutez cette ligne */
-  }
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-  .import-button {
-    margin-top: 70px;
-    background-color: #0056b3;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    border-radius: 5px;
-  }
-  
-  .import-button:hover {
-    background-color: #007bff;
-  }
-  .back-button i {
-    margin-right: 8px; /* Espacement entre l'icône et le texte */
-  }
+.back-button, .import-button, .replace-button, .cancel-button {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  background-color: #0056b3;
+  margin: 0.5rem 0.5rem 1rem 0;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.replace-button {
+  background-color: #28a745;
+}
+
+.cancel-button {
+  background-color: #dc3545;
+}
+
+.back-button:hover, .import-button:hover, .replace-button:hover, .cancel-button:hover {
+  opacity: 0.9;
+}
+
+.project-info {
+  display: flex;
+  align-items: center;
+  margin-top: 2rem;
+  background: white;
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+.project-image {
+  width: 250px;
+  height: 180px;
+  object-fit:fill;
+  border-radius: 10px;
+  margin-right: 1.5rem;
+}
+
+.project-details h1 {
+  margin-bottom: 1rem;
+}
+
+.progress-bar {
+  height: 8px;
+  width: 100%;
+  background-color: #dcdcdc;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+.progress {
+  height: 100%;
+  background-color: #007bff;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.file-preview {
+  background-color: white;
+  margin-top: 2rem;
+  padding: 1rem;
+  border-radius: 10px;
+  overflow-x: auto;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.file-preview table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.file-preview td {
+  border: 1px solid #ccc;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}

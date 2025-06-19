@@ -317,3 +317,48 @@ normalization-container {
   background-color: #0056b3; /* Couleur de fond au survol */
   border-color: #0056b3; /* Couleur de bordure au survol */
 }
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin: 30px 0;
+}
+
+.action-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform 0.3s ease;
+}
+
+.action-card:hover {
+  transform: translateY(-3px);
+}
+
+.action-card h4 {
+  margin-bottom: 10px;
+  color: #2c3e50;
+  font-size: 1.2em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.action-card button,
+.action-card .dropdown-toggle {
+  width: 100%;
+}
+
+button {
+  font-weight: 500;
+  border-radius: 8px;
+}
+
+button svg {
+  margin-right: 6px;
+}

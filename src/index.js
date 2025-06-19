@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import 'country-flag-icons/react/3x2'; // 🇫🇷, 🇹🇳 etc.
+
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';

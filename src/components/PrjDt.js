@@ -5,131 +5,154 @@ import * as XLSX from 'xlsx';
 import axios from 'axios';
 import './ProjectDetail.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-
-import { faChevronLeft,faBars ,faUpload} from '@fortawesome/free-solid-svg-icons'; // Importer l'icône souhaitée
+import { faChevronLeft, faBars, faUpload, faRedoAlt, faTrash } from '@fortawesome/free-solid-svg-icons';
 
 const ProjectDetail = () => {
   const navigate = useNavigate();
   const { id, name } = useParams();
   const fileInputRef = useRef(null);
-  const [fileName, setFileName] = useState(() => {
-    return localStorage.getItem(`importedFileName_${id}`) || 'No file selected';
-  });
+
+  const [fileName, setFileName] = useState('');
+  const [fileDetails, setFileDetails] = useState(null);
+  const [filePreview, setFilePreview] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
-    // Check if a file has been imported for this project ID
-    const importedFileName = localStorage.getItem(`importedFileName_${id}`);
-    if (importedFileName) {
-      setFileName(importedFileName);
+    const savedName = localStorage.getItem(`importedFileName_${id}`);
+    const savedDate = localStorage.getItem(`importedFileDate_${id}`);
+    if (savedName && savedDate) {
+      setFileName(savedName);
+      setFileDetails(prev => ({ ...prev, importDate: savedDate }));
     }
   }, [id]);
 
-  const handleBackClick = () => {
-    navigate('/profile');
-  };
+  const handleBackClick = () => navigate('/profile');
 
-  const handleImportClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
+  const handleImportClick = () => fileInputRef.current && fileInputRef.current.click();
 
-  const handleFileChange = (event) => {
-    const selectedFile = event.target.files[0];
-    if (selectedFile) {
-      const fileType = selectedFile.type;
-      const reader = new FileReader();
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-      reader.onload = (e) => {
-        const fileContent = e.target.result;
-        let data = [];
-        let totalRows = 0;
-        let totalColumns = 0;
+    const reader = new FileReader();
+    const importDate = new Date().toLocaleString();
+    const isCSV = file.type === 'text/csv' || file.name.endsWith('.csv');
+    const isExcel = file.name.endsWith('.xls') || file.name.endsWith('.xlsx');
 
-        if (fileType === 'text/csv' || fileType === 'application/vnd.ms-excel') {
-          Papa.parse(fileContent, {
-            header: true,
-            complete: (results) => {
-              data = results.data.slice(0, 15);
-              totalRows = results.data.length;
-              totalColumns = results.meta.fields.length;
-              saveDatabase(selectedFile, selectedFile.name);
-            },
-          });
-        } else if (fileType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-          const workbook = XLSX.read(fileContent, { type: 'binary' });
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { header: 1 });
-          data = worksheet.slice(1, 16);
-          totalRows = worksheet.length - 1;
-          totalColumns = worksheet[0].length;
-          saveDatabase(selectedFile, selectedFile.name);
-        }
-      };
-
-      if (fileType === 'text/csv' || fileType === 'application/vnd.ms-excel') {
-        reader.readAsText(selectedFile);
-      } else if (fileType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-        reader.readAsBinaryString(selectedFile);
+    reader.onload = async (event) => {
+      let previewData = [];
+      if (isCSV) {
+        Papa.parse(event.target.result, {
+          header: true,
+          complete: ({ data }) => {
+            previewData = data.slice(0, 15);
+            saveDatabase(file, file.name, importDate);
+            setFilePreview(previewData);
+          }
+        });
+      } else if (isExcel) {
+        const workbook = XLSX.read(event.target.result, { type: 'binary' });
+        const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+        previewData = sheet.slice(0, 15);
+        saveDatabase(file, file.name, importDate);
+        setFilePreview(previewData);
       }
 
-      setFileName(selectedFile.name);
-      localStorage.setItem(`importedFileName_${id}`, selectedFile.name);
-    } else {
-      alert('Please select a valid CSV or Excel file.');
+      setFileName(file.name);
+      setFileDetails({
+        type: file.type || 'Unknown',
+        size: (file.size / 1024).toFixed(1) + ' KB',
+        importDate
+      });
+      localStorage.setItem(`importedFileName_${id}`, file.name);
+      localStorage.setItem(`importedFileDate_${id}`, importDate);
+    };
+
+    if (isCSV) reader.readAsText(file);
+    else if (isExcel) reader.readAsBinaryString(file);
+    else alert("Seuls les fichiers CSV ou Excel sont autorisés.");
+  };
+
+  const saveDatabase = async (file, fileName, date) => {
+    const formData = new FormData();
+    formData.append('database', file);
+    const token = localStorage.getItem('token');
+
+    try {
+      await axios.post(`http://localhost:5000/import-database/${id}`, formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percent);
+        }
+      });
+      console.log('Fichier importé avec succès.');
+    } catch (err) {
+      console.error("Erreur lors de l'import :", err);
     }
   };
 
-  const saveDatabase = async (file, fileName) => {
-    const formData = new FormData();
-    formData.append('database', file);
+  const handleGoToMenuClick = () => navigate(`/importSucc/${id}`);
 
-    const token = localStorage.getItem('token'); // Récupérez le token depuis localStorage
-
-    try {
-        await axios.post(`http://localhost:5000/import-database/${id}`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-                'Authorization': `Bearer ${token}` // Ajoutez le token ici
-            },
-            withCredentials: true,
-        });
-        console.log('Base de données enregistrée avec succès');
-        // Vous pouvez déclencher une action après l'importation réussie si nécessaire
-    } catch (error) {
-        console.error('Erreur lors de l\'enregistrement de la base de données :', error);
-    }
-};
-
-  const handleGoToMenuClick = () => {
-    console.log("file :",id);
-    navigate(`/importSucc/${id}`);
+  const resetImport = () => {
+    setFileName('');
+    setFileDetails(null);
+    setFilePreview([]);
+    localStorage.removeItem(`importedFileName_${id}`);
+    localStorage.removeItem(`importedFileDate_${id}`);
   };
 
   return (
     <div className="project-detail">
       <header className="header">
-      <button className="back-button" onClick={handleBackClick}>
-      <FontAwesomeIcon icon={faChevronLeft} /> Back
-</button>
+        <button className="back-button" onClick={handleBackClick}>
+          <FontAwesomeIcon icon={faChevronLeft} /> Back
+        </button>
         <div className="app-name1">
           <img src="/lg.png" alt="App Icon" className="app-icon" />
           <span>MedicalVision</span>
         </div>
       </header>
+
       <div className="project-info">
-        <img src="/image/a.jpg" alt="Project" className="project-image" />
+        <img src="/image/undraw_filing-system_e3yo.svg" alt="Project" className="project-image" />
         <div className="project-details">
-          <h1>Project Name: {decodeURIComponent(name)}</h1>
-          <p>Selected File: {fileName}</p>
+          <h1>{decodeURIComponent(name)}</h1>
+          {fileName && fileDetails ? (
+            <>
+              <p><strong>Nom du fichier :</strong> {fileName}</p>
+              <p><strong>Type :</strong> {fileDetails.type}</p>
+              <p><strong>Taille :</strong> {fileDetails.size}</p>
+              <p><strong>Date d'import :</strong> {fileDetails.importDate}</p>
+            </>
+          ) : (
+            <p>Aucun fichier importé.</p>
+          )}
         </div>
       </div>
-      {fileName !== 'No file selected' && (
-          <button className="import-button" onClick={handleGoToMenuClick}>
-          <FontAwesomeIcon icon={faBars} /> Go to Menu
-        </button>
+
+      {uploadProgress > 0 && uploadProgress < 100 && (
+        <div className="progress-bar">
+          <div style={{ width: `${uploadProgress}%` }} className="progress" />
+        </div>
       )}
-      {fileName === 'No file selected' && (
+
+      {fileName ? (
+        <>
+          <button className="import-button" onClick={handleGoToMenuClick}>
+            <FontAwesomeIcon icon={faBars} /> Go to Menu
+          </button>
+          <button className="replace-button" onClick={handleImportClick}>
+            <FontAwesomeIcon icon={faRedoAlt} /> Remplacer le fichier
+          </button>
+          <button className="cancel-button" onClick={resetImport}>
+            <FontAwesomeIcon icon={faTrash} /> Réinitialiser
+          </button>
+        </>
+      ) : (
         <>
           <input
             type="file"
@@ -139,9 +162,26 @@ const ProjectDetail = () => {
             style={{ display: 'none' }}
           />
           <button className="import-button" onClick={handleImportClick}>
-      <FontAwesomeIcon icon={faUpload} /> Import Your Database
-    </button>
+            <FontAwesomeIcon icon={faUpload} /> Importer votre fichier
+          </button>
         </>
+      )}
+
+      {filePreview.length > 0 && (
+        <div className="file-preview">
+          <h3>Prévisualisation des premières lignes :</h3>
+          <table>
+            <tbody>
+              {filePreview.map((row, idx) => (
+                <tr key={idx}>
+                  {(Array.isArray(row) ? row : Object.values(row)).map((cell, i) => (
+                    <td key={i}>{cell || '-'}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

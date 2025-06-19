@@ -1,100 +1,238 @@
+/* Conteneur principal */
 .cnt {
-    padding: 20px 20px 20px 260px; /* Padding harmonisé */
-  }
-  
-  .cnt div {
-    margin-bottom: 3px; /* Espacement augmenté */
-  }
-  
-  label {
-    font-weight: 600; /* Poids de police légèrement moins fort */
-    display: block;
-    margin-bottom: 8px; /* Espacement augmenté */
-    color: #333; /* Couleur de texte plus douce */
-  }
-  
-  select {
-    width: 100%;
-    padding: 10px; /* Padding augmenté pour plus de confort */
-    border: 1px solid #ddd; /* Bordure plus claire */
-    border-radius: 8px; /* Coins arrondis plus prononcés */
-    background-color: #f9f9f9; /* Fond légèrement gris pour une meilleure lisibilité */
-    margin-bottom: 5px;
-  }
-  
-  .show {
-    margin-top: 20px;
-    background-color: #007bff; /* Couleur bleue principale */
-    color: white;
-    border: none;
-    padding: 12px 24px; /* Padding ajusté pour un meilleur rendu */
-    cursor: pointer;
-    border-radius: 8px; /* Coins arrondis plus doux */
-    width: auto; /* Ajuster la largeur automatiquement */
-    display: inline-block; /* Pour éviter les problèmes de largeur */
-  }
-  
-  .show:hover {
-    background-color: #0056b3; /* Couleur de survol ajustée */
-  }
-  
-  .cnt h2 {
-    margin-top: 0;
-    color: #333; /* Couleur de texte douce */
-  }
-  
-  .cnt p {
-    margin: 0;
-    padding: 0;
-    color: #666; /* Couleur de texte pour un contraste doux */
-  }
-  
-  .graph {
-    display: flex;
-    flex-direction: column; /* Alignement vertical */
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    margin-top: 4px; /* Espacement au-dessus du graphique */
-    width: 100%;
-  }
-  
-  .chart-container {
-    width: 90%;
-    max-width: 900px;
-    height: 400px;
-    margin: 0 auto;
-    border: 1px solid #ddd; /* Bordure plus douce */
-    border-radius: 12px; /* Coins arrondis plus prononcés */
-    background-color: #fff; /* Fond blanc */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); /* Ombre plus douce */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .download-button {
-    margin-top: 1px; /* Espacement au-dessus du bouton */
-    padding: 12px 24px; /* Padding ajusté pour un meilleur confort */
-    background-color: #0056b3; /* Couleur verte pour le bouton */
-    color: white;
-    border: none;
-    border-radius: 8px; /* Coins arrondis */
-    cursor: pointer;
-    font-size: 16px; /* Taille de police plus grande */
-  }
-  
-  .download-button:hover {
-    background-color: #61dafb; /* Couleur de survol plus sombre */
-  }
-  .chart-container {
-    position: relative;
-    width: 100%; /* Ajuste la largeur du conteneur */
-    height: 500px; /* Ajuste la hauteur du conteneur */
-  }
-  
-  .chart-container canvas {
-    width: 100% ; /* Assure que le canvas prend toute la largeur du conteneur */
-    height: 100% ; /* Assure que le canvas prend toute la hauteur du conteneur */
-  }
-  
+  padding: 2rem 2rem 2rem 260px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f7f9fc;
+  color: #333;
+}
+
+/* Espacement des éléments internes */
+.cnt div {
+  margin-bottom: 1rem;
+}
+
+/* Titre */
+.cnt h2 {
+  margin-top: 0;
+  font-size: 2rem;
+  color: #222;
+  margin-bottom: 0.5rem;
+}
+
+/* Paragraphe */
+.cnt p {
+  margin: 0;
+  padding: 0;
+  color: #666;
+}
+
+/* Label */
+label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #444;
+}
+
+/* Sélecteur */
+select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #fefefe;
+  font-size: 1rem;
+  transition: border 0.3s ease;
+}
+
+select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+/* Bouton principal */
+.show,
+.download-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 10px 22px;
+  background: linear-gradient(135deg, #4a90e2, #357ab8);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2);
+  transition: all 0.3s ease;
+}
+
+.show:hover,
+.download-button:hover {
+  background: linear-gradient(135deg, #357ab8, #2c5fa0);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(53, 122, 184, 0.25);
+}
+
+.show:active,
+.download-button:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 6px rgba(53, 122, 184, 0.3);
+}
+
+/* Zone graphique */
+.graph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  width: 100%;
+}
+
+/* Conteneur du graphique */
+.chart-container {
+  position: relative;
+  width: 100%;
+  max-width: 1000px;
+  height: 500px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  border: 1px solid #e3e3e3;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.chart-container canvas {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+}
+
+
+/* Conteneur principal centré */
+.cnt {
+  padding: 2rem 2rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f7f9fc;
+  color: #333;
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Formulaire en grid */
+.form-section {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  align-items: center;
+  gap: 1rem 2rem;
+  background-color: #fff;
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* Labels alignés à droite */
+.form-section label {
+  font-weight: 600;
+  color: #444;
+  justify-self: end;
+}
+
+/* Inputs et selects */
+.form-section select,
+.form-section input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #fefefe;
+  font-size: 1rem;
+  transition: border 0.3s ease;
+}
+
+.form-section select:focus,
+.form-section input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+.form-section select {
+  appearance: none; /* enlever la flèche par défaut */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #fefefe;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 12px 40px 12px 14px; /* espace à droite pour la flèche */
+  font-size: 1rem;
+  color: #333;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="gray" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px 16px;
+}
+
+.form-section select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%23007bff" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+}
+
+/* Conteneur des boutons */
+.buttons-container {
+  display: flex;
+  justify-content: flex-start;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Boutons raffinés */
+.show,
+.download-button {
+  padding: 12px 28px;
+  background: linear-gradient(90deg, #007bff, #0056b3);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.show:hover,
+.download-button:hover {
+  background: linear-gradient(90deg, #0056b3, #003f8c);
+  transform: translateY(-2px);
+}
+
+/* Zone graphique */
+.graph {
+  padding: 1rem;
+  width: 100%;
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(52, 2, 133, 0.05);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 500px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+

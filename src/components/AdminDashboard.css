@@ -1,0 +1,78 @@
+/* AdminDashboard.css */
+
+.admin-dashboard {
+  font-family: 'Poppins', sans-serif;
+  padding: 2rem;
+  background: #f4f7fb;
+  min-height: 100vh;
+}
+
+.dashboard-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1a7bd3;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.table-container {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  overflow-x: auto;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.user-table thead {
+  background: #eaf3fb;
+  color: #1a7bd3;
+}
+
+.user-table th,
+.user-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-approve,
+.btn-reject {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-approve {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.btn-reject {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.btn-approve:hover {
+  background-color: #27ae60;
+  transform: translateY(-1px);
+}
+
+.btn-reject:hover {
+  background-color: #c0392b;
+  transform: translateY(-1px);
+}

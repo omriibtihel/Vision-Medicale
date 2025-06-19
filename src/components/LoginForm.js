@@ -2,24 +2,41 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaEnvelope, FaLock, FaExclamationCircle } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaExclamationCircle, FaUserShield } from 'react-icons/fa';
 
 const FormContainer = styled.div`
-  padding: 2rem;
-  max-width: 400px;
-  width: 100%;
-  margin: auto;
-  background-color: #f0f2f5;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem 1.5rem; /* Padding plus serré sur les côtés */
+`;
+
+const Header = styled.div`
   text-align: center;
+  margin-bottom: 2rem;
+`;
+
+const LogoIcon = styled.div`
+  background: #1a7bd3;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  color: white;
+  font-size: 1.8rem;
 `;
 
 const Title = styled.h1`
-  font-size: 2.5rem;
-  margin-bottom: 2rem;
-  color: #0056b3;
-  font-family: 'Arial', sans-serif;
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  color: #1a7bd3;
+  font-family: 'Poppins', sans-serif;
+`;
+
+const Subtitle = styled.p`
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 0;
 `;
 
 const Form = styled.form`
@@ -29,79 +46,91 @@ const Form = styled.form`
 
 const InputContainer = styled.div`
   position: relative;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 `;
 
 const Input = styled.input`
-  padding: 0.75rem 1rem;
-  padding-left: 2rem;
-  font-size: 1rem;
-  border: 1px solid #ddd;
+  padding: 0.85rem 1rem 0.85rem 3rem; /* Hauteur légèrement réduite */
+  font-size: 0.95rem; /* Taille de police légèrement réduite */
+
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
-  width: 90%;
-  transition: border-color 0.3s ease;
+  width: 100%;
+  transition: all 0.3s ease;
+  font-family: 'Poppins', sans-serif;
 
   &:focus {
-    border-color: #0056b3;
+    border-color: #1a7bd3;
     outline: none;
+    box-shadow: 0 0 0 3px rgba(26, 123, 211, 0.1);
   }
 `;
 
 const Icon = styled.div`
   position: absolute;
   top: 50%;
-  left: 0.75rem;
+  left: 1rem;
   transform: translateY(-50%);
-  color: #0056b3;
+  color: #1a7bd3;
 `;
 
 const Button = styled.button`
   margin-top: 1rem;
-  padding: 0.75rem;
+  padding: 0.85rem;
   font-size: 1rem;
   color: white;
-  background-color: #0056b3;
+  background-color: #1a7bd3;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 
   &:hover {
-    background-color: #003d80;
+    background-color: #1560a8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(26, 123, 211, 0.2);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 `;
 
 const ErrorMessage = styled.p`
-  color: red;
+  color: #e74c3c;
   font-size: 0.875rem;
   margin-top: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-`;
-
-const Image = styled.img`
-  max-width: 50%;
-  height: auto;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-  transition: transform 0.3s ease;
-
-  &:hover {
-    transform: scale(1.05);
-  }
+  font-family: 'Poppins', sans-serif;
 `;
 
 const StyledLink = styled(Link)`
-  color: #0056b3;
+  color: #1a7bd3;
   text-decoration: none;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   display: block;
+  text-align: center;
+  font-size: 0.9rem;
+  font-family: 'Poppins', sans-serif;
+  transition: color 0.2s ease;
 
   &:hover {
-    color: #003d80;
+    color: #1560a8;
+    text-decoration: underline;
   }
+`;
+
+const FooterText = styled.p`
+  color: #888;
+  font-size: 0.8rem;
+  text-align: center;
+  margin-top: 2rem;
+  font-family: 'Poppins', sans-serif;
 `;
 
 function LoginForm() {
@@ -110,40 +139,54 @@ function LoginForm() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
   e.preventDefault();
-  console.log('Submitting login with:', { email, password });
   try {
     const response = await axios.post('http://localhost:5000/login', {
       email,
       password,
     });
-    console.log('Login response:', response.data);
+
     const { access_token } = response.data;
-    if (access_token) {
-      localStorage.setItem('token', access_token);
-      console.log('Token stored:', access_token);
-      console.log('localStorage after set:', localStorage.getItem('token')); // Vérifier immédiatement
-      setTimeout(() => {
-        console.log('Navigating to /profile, token:', localStorage.getItem('token'));
-        navigate('/profile');
-      }, 100); // Délai de 100ms pour assurer la synchronisation
+    localStorage.setItem('token', access_token);
+
+    // Appel temporaire pour savoir si c’est un admin
+    const profileResponse = await axios.get('http://localhost:5000/profile', {
+      headers: { Authorization: `Bearer ${access_token}` },
+    });
+
+    const userData = profileResponse.data;
+    localStorage.setItem('userId', userData.id);
+
+    // Rediriger selon le rôle
+    if (userData.isAdmin) {
+      navigate('/admin-dashboard');
     } else {
-      console.log('No token received:', response.data);
-      setError('No token received');
+      navigate('/profile'); // ou '/main' selon l’app
     }
-  } catch (error) {
-    console.error('Login error:', error.response?.data, error.response?.status);
-    setError('Invalid email or password');
+
+  } catch (err) {
+    setError(err.response?.data?.message || 'Login failed');
   }
+
+  
 };
+
+
 
   return (
     <FormContainer>
-      <Image src="/image/logo2.png" alt="Logo Image" />
+      <Header>
+        <LogoIcon>
+          <FaUserShield size={20} /> {/* Icône légèrement réduite */}
+        </LogoIcon>
+        <Title style={{ fontSize: '1.7rem' }}>Se Connecter</Title> {/* Taille réduite */}
+        <Subtitle style={{ fontSize: '0.85rem' }}>Secure access to your health records</Subtitle>
+      </Header>
+      
       <Form onSubmit={handleSubmit}>
-        <Title>Login</Title>
         <InputContainer>
+          <Icon><FaEnvelope /></Icon>
           <Input
             type="email"
             value={email}
@@ -152,9 +195,10 @@ const handleSubmit = async (e) => {
             required
             autoComplete="email"
           />
-          <Icon><FaEnvelope /></Icon>
         </InputContainer>
+        
         <InputContainer>
+          <Icon><FaLock /></Icon>
           <Input
             type="password"
             value={password}
@@ -163,16 +207,22 @@ const handleSubmit = async (e) => {
             required
             autoComplete="current-password"
           />
-          <Icon><FaLock /></Icon>
         </InputContainer>
+        
         {error && (
           <ErrorMessage>
             <FaExclamationCircle style={{ marginRight: '5px' }} />
             {error}
           </ErrorMessage>
         )}
+        
         <Button type="submit">Login</Button>
-        <StyledLink to="/signup">Don't have an account? <b>Sign Up</b></StyledLink>
+        
+        <StyledLink to="/signup">Don't have an account? Sign Up</StyledLink>
+        
+        <FooterText>
+          Forgot password? <Link to="/reset-password" style={{ color: '#1a7bd3' }}>Reset here</Link>
+        </FooterText>
       </Form>
     </FormContainer>
   );

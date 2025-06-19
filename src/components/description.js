@@ -181,8 +181,17 @@ const nullCountpr = (values.length === 0 ? 0 : (nullCount / values.length) * 100
     {Object.keys(description).map(column => {
         const isHighNullPercentage = description[column].nullCountpr > 20;
         return (
-            <tr key={column} className={isHighNullPercentage ? 'high-null-percentage' : ''}>
-                <td>{column}</td>
+                <tr
+                key={column}
+                className={isHighNullPercentage ? 'high-null-percentage' : ''}
+                title={isHighNullPercentage ? 'Plus de 20% de valeurs manquantes dans cette colonne' : ''}
+                >
+                <td>
+                    {column}
+                    {isHighNullPercentage && (
+                        <span className="warning-badge" title="Plus de 20% de valeurs manquantes">⚠️</span>
+                    )}
+                    </td>
                 <td>
                     {description[column].mean === 'N/A' ? 'N/A' : description[column].mean.toFixed(2)}
                 </td>
