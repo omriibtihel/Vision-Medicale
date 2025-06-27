@@ -4,13 +4,9 @@ import {
   faEnvelope,
   faPhone,
   faGraduationCap,
-  faCalendarAlt,
   faHospital,
-  faCity,
-  faGlobe,
-  faRoad,
-  faMailBulk,
-  faStar,
+  faIdBadge,
+  faStethoscope
 } from '@fortawesome/free-solid-svg-icons';
 import './UserCard.css';
 
@@ -18,59 +14,74 @@ const UserCard = ({ user }) => {
   if (!user) return null;
 
   return (
-    <div className="user-card">
-      <div className="user-card-header">
-        <img
-          src={`http://localhost:5000${user.imageUrl}` || "/default-avatar.png"}
-          alt="Profile"
-          className="profile-img"
-        />
-        <div className="user-info">
-          <h2>{user.name}</h2>
-          <span className="badge">{user.qualification || 'Qualification non spécifiée'}</span>
+    <div className="user-card-modern">
+      <div className="user-card-header-modern">
+        <div className="profile-img-container-modern">
+          <img
+            src={`http://localhost:5000${user.imageUrl}` || "/default-avatar.png"}
+            alt={`Dr. ${user.name}`}
+            className="profile-img-modern"
+            onError={(e) => {
+              e.target.src = "/default-avatar.png";
+            }}
+          />
+          <div className="profile-status-modern"></div>
+        </div>
+        <div className="user-info-modern">
+          <h2 className="user-name-modern">Dr. {user.name}</h2>
+          <span className="badge-modern">
+            <FontAwesomeIcon icon={faIdBadge} className="badge-icon-modern" />
+            {user.qualification || 'Médecin'}
+          </span>
         </div>
       </div>
-      <div className="user-card-body">
-        <div className="info-item">
-          <FontAwesomeIcon icon={faEnvelope} />
-          <span>{user.email || 'Email non spécifié'}</span>
+      
+      <div className="user-card-body-modern">
+        <div className="info-grid-modern">
+          <div className="info-item-modern">
+            <div className="info-icon-modern">
+              <FontAwesomeIcon icon={faEnvelope} />
+            </div>
+            <div className="info-content-modern">
+              <span className="info-label-modern">Email</span>
+              <span className="info-value-modern">{user.email || 'non spécifié'}</span>
+            </div>
+          </div>
+          
+          <div className="info-item-modern">
+            <div className="info-icon-modern">
+              <FontAwesomeIcon icon={faPhone} />
+            </div>
+            <div className="info-content-modern">
+              <span className="info-label-modern">Téléphone</span>
+              <span className="info-value-modern">{user.phone || 'non spécifié'}</span>
+            </div>
+          </div>
+          
+          <div className="info-item-modern">
+            <div className="info-icon-modern">
+              <FontAwesomeIcon icon={faStethoscope} />
+            </div>
+            <div className="info-content-modern">
+              <span className="info-label-modern">Spécialité</span>
+              <span className="info-value-modern">{user.speciality || 'non spécifiée'}</span>
+            </div>
+          </div>
+          
+          <div className="info-item-modern">
+            <div className="info-icon-modern">
+              <FontAwesomeIcon icon={faHospital} />
+            </div>
+            <div className="info-content-modern">
+              <span className="info-label-modern">Établissement</span>
+              <span className="info-value-modern">{user.hospital || 'non spécifié'}</span>
+            </div>
+          </div>
         </div>
-        <div className="info-item">
-          <FontAwesomeIcon icon={faPhone} />
-          <span>{user.phone || 'Téléphone non spécifié'}</span>
-        </div>
-        <div className="info-item">
-          <FontAwesomeIcon icon={faCalendarAlt} />
-          <span>{user.age ? `${user.age} ans` : 'Âge non spécifié'}</span>
-        </div>
-        <div className="info-item">
-          <FontAwesomeIcon icon={faGraduationCap} />
-          <span>{user.speciality || 'Spécialité non spécifiée'}</span>
-        </div>
-        <div className="info-item">
-          <FontAwesomeIcon icon={faStar} />
-          <span>{user.experience ? `${user.experience} ans d'expérience` : "Expérience non spécifiée"}</span>
-        </div>
-        <div className="info-item">
-          <FontAwesomeIcon icon={faHospital} />
-          <span>{user.hospital || "Hôpital non spécifié"}</span>
-        </div>
-        <div className="info-item">
-          <FontAwesomeIcon icon={faGlobe} />
-          <span>{user.country || "Pays non spécifié"}</span>
-        </div>
-        <div className="info-item">
-          <FontAwesomeIcon icon={faCity} />
-          <span>{user.region || "Région non spécifiée"}</span>
-        </div>
-        <div className="info-item">
-          <FontAwesomeIcon icon={faRoad} />
-          <span>{user.street || "Rue non spécifiée"}</span>
-        </div>
-        <div className="info-item">
-          <FontAwesomeIcon icon={faMailBulk} />
-          <span>{user.postalCode || "Code postal non spécifié"}</span>
-        </div>
+      </div>
+      
+      <div className="user-card-footer-modern">
+        <span className="member-since-modern">Membre depuis {new Date(user.createdAt).getFullYear()}</span>
       </div>
     </div>
   );

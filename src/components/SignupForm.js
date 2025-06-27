@@ -263,24 +263,6 @@ const RightPanel = styled.div`
   }
 `;
 
-const qualifications = [
-  "Médecin Généraliste",
-  "Spécialiste",
-  "Interne",
-  "Résident",
-  "Chef de Service",
-  "Infirmier(ère)",
-  "Technicien(ne) Médical(e)",
-  "Pharmacien(ne)",
-];
-
-const regionsByCountry = {
-  Tunisie: [ "Tunis", "Ariana", "Ben Arous", "Manouba", "Nabeul", "Zaghouan", "Bizerte", "Béja", "Jendouba", "Le Kef", "Siliana", "Sousse", "Monastir", "Mahdia", "Kairouan", "Kasserine", "Sidi Bouzid", "Sfax", "Gabès", "Medenine", "Tataouine", "Gafsa", "Tozeur", "Kebili" ],
-  France: ["Île-de-France", "Provence-Alpes-Côte d’Azur", "Bretagne", "Nouvelle-Aquitaine", "Occitanie"],
-  Maroc: ["Casablanca-Settat", "Rabat-Salé-Kénitra", "Fès-Meknès", "Marrakech-Safi"],
-  Algérie: ["Alger", "Oran", "Constantine", "Blida", "Annaba"],
-  Autre: []
-};
 
 
 
@@ -294,21 +276,12 @@ function SignupForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const [qualification, setQualification] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-const [profileImage, setProfileImage] = useState(null);
-const [previewUrl, setPreviewUrl] = useState(null);
-const [country, setCountry] = useState('');
-const [region, setRegion] = useState('');
-const [availableRegions, setAvailableRegions] = useState([]);
-const [street, setStreet] = useState('');
-const [postalCode, setPostalCode] = useState('');
-const [rememberMe, setRememberMe] = useState(false);
-
-const [specialty, setSpecialty] = useState('');
-const [experience, setExperience] = useState('');
-const [birthdate, setBirthdate] = useState('');
-const [hospital, setHospital] = useState('');
+  const [profileImage, setProfileImage] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [specialty, setSpecialty] = useState('');
+  const [hospital, setHospital] = useState('');
 
 
 
@@ -316,12 +289,7 @@ const [hospital, setHospital] = useState('');
   const navigate = useNavigate();
 
 
-useEffect(() => {
-  if (country) {
-    setAvailableRegions(regionsByCountry[country] || []);
-    setRegion(""); // reset region when country changes
-  }
-}, [country]);
+
 
 
   
@@ -339,16 +307,9 @@ useEffect(() => {
     formData.append('name', name);
     formData.append('email', email);
     formData.append('password', password);
-    formData.append('qualification', qualification);
     formData.append('phoneNumber', phoneNumber);
-    formData.append('country', country);
-    formData.append('region', region);
-    formData.append('street', street);
-    formData.append('postalCode', postalCode);
     formData.append('rememberMe', rememberMe);
     formData.append('specialty', specialty);
-    formData.append('experience', experience);
-    formData.append('birthdate', birthdate);
     formData.append('hospital', hospital);
     if (profileImage) {
       formData.append('profileImage', profileImage);
@@ -435,16 +396,7 @@ useEffect(() => {
         />
       </InputGroup>
 
-      <InputGroup>
-              <Icon><FaBirthdayCake /></Icon>
-
-        <Input
-            type="date"
-            placeholder="Date de naissance"
-            value={birthdate}
-            onChange={(e) => setBirthdate(e.target.value)}
-          />
-      </InputGroup>
+      
 
       <InputGroup>
               <Icon><FaBriefcaseMedical /></Icon>
@@ -456,25 +408,6 @@ useEffect(() => {
         />
       </InputGroup>
 
-      <InputGroup>
-        <Icon><FaSchool/></Icon>
-        <Select value={qualification} onChange={(e) => setQualification(e.target.value)} required>
-        <option value="" disabled>-- Sélectionnez une qualification --</option>
-        {qualifications.map((q) => (
-        <option key={q} value={q}>{q}</option>
-          ))}
-        </Select>
-      </InputGroup>
-
-      <InputGroup>
-
-        <Input
-          type="number"
-          placeholder="Expérience (en années)"
-          value={experience}
-          onChange={(e) => setExperience(e.target.value)}
-        />
-      </InputGroup>
     </LeftPanel>
 
     {/* Colonne droite */}
@@ -494,35 +427,7 @@ useEffect(() => {
         </InputGroup>
 
 
-          <InputGroup>
-          <Select value={country} onChange={(e) => setCountry(e.target.value)} required>
-            <option value="">-- Sélectionnez un pays --</option>
-            {Object.keys(regionsByCountry).map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </Select>
-        </InputGroup>
-
-        {availableRegions.length > 0 && (
-          <InputGroup>
-            <Select value={region} onChange={(e) => setRegion(e.target.value)} required>
-              <option value="">-- Sélectionnez une région --</option>
-              {availableRegions.map((r) => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </Select>
-      </InputGroup>
-    )}
-
-
-        <InputGroup>
-          <Input placeholder="Rue / Adresse" value={street} onChange={(e) => setStreet(e.target.value)} />
-        </InputGroup>
-
-        <InputGroup>
-          <Input type="number" placeholder="Code Postal" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
-        </InputGroup>
-
+          
 
       <InputGroup>
         <Input

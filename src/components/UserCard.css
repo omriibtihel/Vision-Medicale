@@ -1,93 +1,161 @@
-.user-card {
-  max-width: 400px;
-  background: #fff;
-  border-radius: 15px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    background: linear-gradient(to bottom right, #f1f9ff, #ffffff);
-  padding: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #333;
-  margin: 0;
+/* Structure principale */
+.user-card-modern {
+  background: #ffffff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+}
+
+.user-card-modern:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+}
+
+/* En-tête */
+.user-card-header-modern {
+  padding: 2rem 2rem 1.5rem;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
   display: flex;
-  flex-direction: column;
   align-items: center;
-
-   border-left: 6px solid #007BFF;
-  padding-left: 16px;
+  position: relative;
 }
 
-.cards-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center; /* ou space-between selon le besoin */
+.profile-img-container-modern {
+  position: relative;
+  margin-right: 1.5rem;
 }
 
-
-.user-card-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  margin-bottom: 20px;
-  width: 100%;
-}
-
-.profile-img {
-  width: 120px;
-  height: 120px;
+.profile-img-modern {
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid #007BFF;
-  margin-bottom: 12px;
+  border: 3px solid white;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
 }
 
-.user-info h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.badge {
-  background-color: #007BFF;
-  color: white;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  margin-top: 6px;
-  display: inline-block;
-}
-
-.user-card-body {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 0 10px;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 0.95rem;
-  color: #555;
-}
-
-.info-item svg {
-  color: #007BFF;
-  min-width: 20px;
-  background-color: #e7f1ff;
-  border-radius: 50%;
-  padding: 3px;
+.profile-status-modern {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
   width: 15px;
   height: 15px;
+  background: #10b981;
+  border-radius: 50%;
+  border: 2px solid white;
 }
 
-.main-content {
-  background-color: white;
-  border-radius: 15px;
-  padding: 30px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+.user-info-modern {
+  flex: 1;
 }
 
+.user-name-modern {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.5px;
+}
+
+.badge-modern {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  padding: 0.35rem 0.8rem;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-icon-modern {
+  margin-right: 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* Corps */
+.user-card-body-modern {
+  padding: 1.5rem 2rem;
+}
+
+.info-grid-modern {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+}
+
+.info-item-modern {
+  display: flex;
+  align-items: flex-start;
+}
+
+.info-icon-modern {
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.info-content-modern {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-label-modern {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.2rem;
+}
+
+.info-value-modern {
+  font-size: 0.95rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+/* Pied de page */
+.user-card-footer-modern {
+  padding: 1rem 2rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.03);
+  background: #f9fafb;
+}
+
+.member-since-modern {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  display: block;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .info-grid-modern {
+    grid-template-columns: 1fr;
+  }
+  
+  .user-card-header-modern {
+    flex-direction: column;
+    text-align: center;
+    padding-bottom: 2rem;
+  }
+  
+  .profile-img-container-modern {
+    margin-right: 0;
+    margin-bottom: 1rem;
+  }
+  
+  .badge-modern {
+    margin: 0 auto;
+  }
+}

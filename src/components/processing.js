@@ -1,758 +1,1343 @@
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useState, useEffect } from 'react';
-import { faUser, faChartLine, faCog, faDatabase, faClone, faFileAlt, faTrash ,faHistory, faBrain,faRocket} from '@fortawesome/free-solid-svg-icons';
-import './Processing.css';
-import { mean} from 'mathjs';
+import { 
+  faUser, faChartLine, faCog, faDatabase, faClone, 
+  faFileAlt, faTrash, faHistory, faBrain, faRocket, 
+  faCheckCircle, faSave, faBroom, faArrowsRotate, 
+  faDownload, faFileLines, faChevronDown, faChevronUp,
+  faSpinner
+} from '@fortawesome/free-solid-svg-icons';
+import { mean } from 'mathjs';
 import axios from 'axios';
-import { faBroom, faArrowsRotate, faDownload } from '@fortawesome/free-solid-svg-icons';
 import KNN from 'ml-knn';
-import { useLocation } from 'react-router-dom';
+import './Processing.css';
 
 const Processing = () => {
   const location = useLocation();
-
   const navigate = useNavigate();
-  const { id, targetFeature ,fileData} = useParams();
+  const { id, targetFeature } = useParams();
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedColumns, setSelectedColumns] = useState([]);
   const [selectedColumnsNr, setSelectedColumnsNr] = useState([]);
-  const [normalizedColumns, setNormalizedColumns] = useState([]); // Nouveau state pour les colonnes normalisées
+  const [normalizedColumns, setNormalizedColumns] = useState([]);
   const [isOpen1, setIsOpen1] = useState(false);
   const [isOpen2, setIsOpen2] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isOpen3, setIsOpen3] = useState(false);
   const [showDropdown3, setShowDropdown3] = useState(false);
   const [selectedColumnsImp, setSelectedColumnsImp] = useState([]);
+  const [isImputing, setIsImputing] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [operationReports, setOperationReports] = useState([]);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [currentReport, setCurrentReport] = useState(null);
 
-  
+  // Navigation handlers
+  const handleProfileClick = () => navigate('/profile');
+  const handleGraphsClick = () => navigate(`/graphs/${id}/${targetFeature}`);
+  const handleProcessingClick = () => navigate(`/processing/${id}/${targetFeature}`);
+  const handleModelsClick = () => {
+    const encodedFiltdate = encodeURIComponent(JSON.stringify(filteredData));
+    navigate(`/models/${id}/${targetFeature}?filtdate=${encodedFiltdate}`);   
+  };
+  const handleDBClick = () => navigate(`/importSucc/${id}`);
+  const handleDescription = () => navigate(`/description/${id}/${targetFeature}`);
+  const handleHistorique = () => navigate(`/historique/${id}/${targetFeature}`);
+  const handleDepClick = () => navigate(`/deployment/${id}/${targetFeature}`);
 
-  
-  const handleColumnCheckboxChangeImp = (column) => {
-    setSelectedColumnsImp(prevSelectedColumns => {
-      if (prevSelectedColumns.includes(column)) {
-        // Retirer la colonne du tableau si elle est déjà sélectionnée
-        return prevSelectedColumns.filter(col => col !== column);
-      } else {
-        // Ajouter la colonne au tableau si elle n'est pas encore sélectionnée
-        return [...prevSelectedColumns, column];
-      }
-    });
-  };
-  const toggleDropdown = () => {
-    setShowDropdown(prevState => !prevState);
-  };
-  // Fonction pour basculer l'état de la liste déroulante
-  const toggleDropdown1 = () => {
-    setIsOpen1(prevState => !prevState);
-  };
-  const toggleDropdown2 = () => {
-    setIsOpen2(prevState => !prevState);
-  };
-  const toggleDropdown3 = () => {
-    setIsOpen3(prevState => !prevState);
-  };
-  const toggleDropdown4 = () => {
-    setShowDropdown3(prevState => !prevState);
-  };
-
-  
-  const cleanData = (data) => {
-    if (typeof data === 'string') {
-      return data.replace(/NaN/g, 'null');
-    }
-    return data;
-  };
-
-  const sanitizeJson = (jsonString) => {
-    return jsonString.replace(/NaN/g, 'null');
-  };
+  // Data fetching and cleaning
+  const cleanData = (data) => (typeof data === 'string' ? data.replace(/NaN/g, 'null') : data);
+  const sanitizeJson = (jsonString) => jsonString.replace(/NaN/g, 'null');
 
   const importBD = async () => {
     const token = localStorage.getItem('token');
-
     try {
       const response = await axios.get(`http://localhost:5000/projects/${id}/imported-files`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
 
-      const data = response.data;
       let cleanedData;
-
-      if (typeof data === 'object') {
-       
-        cleanedData = cleanData(data.data);
-      } else if (typeof data === 'string') {
-        try {
-          const sanitizedData = sanitizeJson(data);
-          const parsedData = JSON.parse(sanitizedData);
-
-        
-          cleanedData = cleanData(parsedData.data);
-        } catch (e) {
-          console.error('Error parsing JSON data:', e);
-          setError('Error parsing JSON data');
-          setLoading(false);
-          return;
-        }
-      } else {
-        setError('Unexpected response format');
-        setLoading(false);
-        return;
+      if (typeof response.data === 'object') {
+        cleanedData = cleanData(response.data.data);
+      } else if (typeof response.data === 'string') {
+        const parsed = JSON.parse(sanitizeJson(response.data));
+        cleanedData = cleanData(parsed.data);
       }
 
       if (Array.isArray(cleanedData)) {
         setData(cleanedData);
         setFilteredData(cleanedData);
-      } else if (typeof cleanedData === 'string') {
-        try {
-          const parsedData = JSON.parse(cleanedData);
-          setData(parsedData);
-          setFilteredData(parsedData);
-        } catch (e) {
-          setError('Error parsing cleaned data');
-        }
-      } else {
-        setError('Unexpected data format');
       }
     } catch (error) {
-      console.error('Error fetching imported files:', error);
+      console.error('Error fetching data:', error);
       setError('Error fetching data from server');
-      alert( error)
-
+      alert(error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Extraire le paramètre 'filtdate' de l'URL
     const urlParams = new URLSearchParams(location.search);
     const encodedFiltdate = urlParams.get('filtdate');
-  
+
     if (encodedFiltdate) {
       try {
-        // Décoder et parser les données JSON
         const decodedFiltdate = JSON.parse(decodeURIComponent(encodedFiltdate));
-  
-        // Mettre à jour l'état avec les données décodées
         setData(decodedFiltdate);
-        setFilteredData(decodedFiltdate)
-  
-        // Afficher les données décodées dans la console
-        console.log(decodedFiltdate);
+        setFilteredData(decodedFiltdate);
+        setLoading(false);
       } catch (error) {
-        console.error("Erreur lors du décodage des données:", error);
+        console.error("Decoding error:", error);
+        importBD();
       }
     } else {
-      importBD(); // Si fileData n'existe pas, importez la BD
+      importBD();
     }
   }, [id, location.search]);
 
-  const handleProfileClick = () => {
-    navigate('/profile');
+  // Helper to add operation report
+  const addOperationReport = (operation, details, affectedColumns, stats) => {
+    const newReport = {
+      timestamp: new Date().toISOString(),
+      operation,
+      details,
+      affectedColumns,
+      stats,
+      dataSample: filteredData.slice(0, 3)
+    };
+    
+    setOperationReports(prev => [newReport, ...prev].slice(0, 50));
+    return newReport;
   };
 
-  const handleGraphsClick = () => {
-    navigate(`/graphs/${id}/${targetFeature}`);
-  };
-
-  const handleProcessingClick = () => {
-    navigate(`/processing/${id}/${targetFeature}`);
-  };
-
-  const handleModelsClick = () => {
-    const encodedFiltdate = encodeURIComponent(JSON.stringify(filteredData)); // encodage du tableau en JSON
-
-    navigate(`/models/${id}/${targetFeature}/${filteredData}?filtdate=${encodedFiltdate}`);   
-  };
-
-  const handleDBClick = () => {
-    navigate(`/importSucc/${id}`);
-  };
-
-  const handleDescription = () => {
-    navigate(`/description/${id}/${targetFeature}`);
-  };
-  const handleHistorique=()=>{navigate(`/historique/${id}/${targetFeature}`)};
-  const handleDataCleaning = () => {
-    const means = {};
-    const columns = Object.keys(filteredData[0] || {});
-    let missingValueCount = 0;
-
-    columns.forEach(column => {
-      const values = filteredData.map(row => row[column]).filter(value => value !== null && !isNaN(value));
-      means[column] = mean(values);
-    });
-
-    const cleanedData = filteredData.map(row => {
-     
-      const cleanedRow = { ...row };
-      columns.forEach(column => {
-        if (cleanedRow[column] === null || isNaN(cleanedRow[column])) {
-          missingValueCount++;
-          cleanedRow[column] = means[column] || 0;
-        }
-      });
-      return cleanedRow;
-    });
-    setFilteredData(cleanedData);
-    alert(`Number of missing values found: ${missingValueCount}`);
-  };
-  const handleDataTransformation = (type) => {
-    // Vérifie si des colonnes sont sélectionnées
-    if (selectedColumnsNr.length === 0) {
-      alert("Veuillez sélectionner au moins une colonne pour normaliser.");
+  // Data processing functions with reporting
+  const handleDataCleaning = async () => {
+    if (filteredData.length === 0) {
+      alert("No data to clean");
       return;
     }
-  
-    // Initialiser les objets pour stocker les moyennes et écarts-types
-    let columnMeans = {};
-    let columnStdDevs = {};
-  
-    // Calculer les moyennes et écarts-types pour chaque colonne sélectionnée si nécessaire
-    if (type === 'Z-Score Normalization' || type === 'Mean Normalization') {
-      selectedColumnsNr.forEach(column => {
-        const values = filteredData.map(row => row[column]).filter(value => value !== null && value !== undefined);
-        const mean = values.reduce((acc, val) => acc + val, 0) / values.length;
-        const variance = values.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / values.length;
-        const stdDev = Math.sqrt(variance);
-    
-        columnMeans[column] = mean;
-        columnStdDevs[column] = stdDev;
+
+    setIsCleaning(true);
+    try {
+      const columns = Object.keys(filteredData[0] || {});
+      const means = {};
+      const nullStats = {};
+      let missingValueCount = 0;
+
+      // Calculate means and null counts for each column
+      columns.forEach(column => {
+        const numericValues = filteredData
+          .map(row => parseFloat(row[column]))
+          .filter(value => !isNaN(value));
+        
+        means[column] = numericValues.length > 0 ? mean(numericValues) : 0;
+        nullStats[column] = filteredData.filter(row => 
+          row[column] === null || row[column] === undefined || isNaN(row[column])
+        ).length;
       });
+
+      // Clean the data
+      const cleanedData = filteredData.map(row => {
+        const cleanedRow = { ...row };
+        columns.forEach(column => {
+          if (cleanedRow[column] === null || cleanedRow[column] === undefined || isNaN(cleanedRow[column])) {
+            missingValueCount++;
+            cleanedRow[column] = means[column];
+          }
+        });
+        return cleanedRow;
+      });
+
+      // Create report
+      const report = addOperationReport(
+        'Data Cleaning',
+        'Removed null values by mean imputation',
+        columns.filter(col => nullStats[col] > 0),
+        {
+          totalNullValues: Object.values(nullStats).reduce((a, b) => a + b, 0),
+          nullValuesByColumn: nullStats,
+          meansUsed: means
+        }
+      );
+
+      // Update state
+      setFilteredData(cleanedData);
+      setCurrentReport(report);
+      setShowReportModal(true);
+    } catch (error) {
+      console.error("Error during data cleaning:", error);
+      alert(`Error during data cleaning: ${error.message}`);
+    } finally {
+      setIsCleaning(false);
     }
-  
-    // Exécuter la normalisation basée sur le type sélectionné
-    let normalizedData = filteredData.map(row => {
-      let newRow = { ...row };
-  
-      selectedColumnsNr.forEach(column => {
-        if (newRow[column] !== null && newRow[column] !== undefined) {
-          const value = newRow[column];
+  };
+
+  const handleRemoveSelectedColumns = async () => {
+    if (selectedColumns.length === 0) {
+      alert("Please select columns to remove");
+      return;
+    }
+
+    setIsRemoving(true);
+    try {
+      const cleanedData = filteredData.map(row => {
+        const newRow = { ...row };
+        selectedColumns.forEach(col => {
+          delete newRow[col];
+        });
+        return newRow;
+      });
+
+      // Create report
+      const report = addOperationReport(
+        'Column Removal',
+        `Removed ${selectedColumns.length} columns from dataset`,
+        selectedColumns,
+        {
+          columnsRemoved: selectedColumns,
+          remainingColumns: Object.keys(cleanedData[0] || {}),
+          rowCount: cleanedData.length
+        }
+      );
+
+      // Update state
+      setFilteredData(cleanedData);
+      setSelectedColumns([]);
+      setCurrentReport(report);
+      setShowReportModal(true);
+    } catch (error) {
+      console.error("Error removing columns:", error);
+      alert(`Error removing columns: ${error.message}`);
+    } finally {
+      setIsRemoving(false);
+    }
+  };
+
+  const handleDataTransformation = (type) => {
+    if (selectedColumnsNr.length === 0) {
+      alert("Please select columns to normalize");
+      return;
+    }
+
+    let normalizedData = filteredData.map(row => ({ ...row }));
+    const transformationDetails = {};
+
+    selectedColumnsNr.forEach(column => {
+      const values = filteredData.map(row => parseFloat(row[column])).filter(v => !isNaN(v));
+      if (values.length === 0) return;
+
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const meanVal = values.reduce((a, b) => a + b, 0) / values.length;
+      const stdDev = Math.sqrt(values.reduce((acc, val) => acc + Math.pow(val - meanVal, 2), 0) / values.length);
+
+      transformationDetails[column] = { min, max, mean: meanVal, stdDev };
+
+      normalizedData.forEach(row => {
+        if (row[column] !== null && row[column] !== undefined) {
+          const value = parseFloat(row[column]);
           switch (type) {
             case 'Min-Max Normalization':
-              // Min-Max Normalization
-              const min = Math.min(...filteredData.map(row => row[column]));
-              const max = Math.max(...filteredData.map(row => row[column]));
-              newRow[column] = (value - min) / (max - min);
+              row[column] = (value - min) / (max - min);
               break;
-  
             case 'Z-Score Normalization':
-              // Z-Score Normalization
-              const mean = columnMeans[column];
-              const stdDev = columnStdDevs[column];
-              newRow[column] = (value - mean) / stdDev;
+              row[column] = stdDev !== 0 ? (value - meanVal) / stdDev : 0;
               break;
-  
             case 'Decimal Scaling':
-              // Decimal Scaling
-              const maxAbsValue = Math.max(...filteredData.map(row => Math.abs(row[column])));
-              const j = Math.ceil(Math.log10(maxAbsValue + 1));
-              newRow[column] = value / Math.pow(10, j);
+              const j = Math.ceil(Math.log10(max + 1));
+              row[column] = value / Math.pow(10, j);
               break;
-  
             case 'Mean Normalization':
-              // Mean Normalization
-              const minVal = Math.min(...filteredData.map(row => row[column]));
-              const maxVal = Math.max(...filteredData.map(row => row[column]));
-              const meanVal = columnMeans[column];
-              newRow[column] = (value - meanVal) / (maxVal - minVal);
+              row[column] = (value - meanVal) / (max - min);
               break;
-  
             case 'Logarithmic Scaling':
-              // Logarithmic Scaling
-              newRow[column] = Math.log(value + 1);
-              break;
-  
-            default:
-              console.error("Type de normalisation non reconnu");
+              row[column] = Math.log(value + 1);
               break;
           }
         }
       });
-  
-      return newRow;
     });
-    setNormalizedColumns(prevState => [...prevState, ...selectedColumnsNr]);
 
-  // Vider la sélection actuelle après normalisation
-   setSelectedColumnsNr([]);
+    const report = addOperationReport(
+      `Data Transformation - ${type}`,
+      `Applied ${type} to selected columns`,
+      selectedColumnsNr,
+      {
+        transformationType: type,
+        columnStats: transformationDetails,
+        normalizedColumnsCount: selectedColumnsNr.length
+      }
+    );
+
+    setNormalizedColumns([...new Set([...normalizedColumns, ...selectedColumnsNr])]);
     setFilteredData(normalizedData);
-    alert(`Normalisation ${type} terminée.`);
+    setSelectedColumnsNr([]);
+    setCurrentReport(report);
+    setShowReportModal(true);
   };
-  
-
 
   const handleDatadouble = () => {
     const uniqueRows = new Set();
-    const dt = filteredData.filter((row) => {
+    const duplicateRows = [];
+    const dt = filteredData.filter((row, index) => {
       const rowValues = Object.values(row).join('|');
       if (uniqueRows.has(rowValues)) {
+        duplicateRows.push({ index, data: row });
         return false;
-      } else {
-        uniqueRows.add(rowValues);
-        return true;
+      }
+      uniqueRows.add(rowValues);
+      return true;
+    });
+
+    const report = addOperationReport(
+      'Duplicate Removal',
+      'Removed duplicate rows from dataset',
+      Object.keys(filteredData[0] || {}),
+      {
+        initialRowCount: filteredData.length,
+        finalRowCount: dt.length,
+        duplicatesRemoved: filteredData.length - dt.length,
+        duplicateExamples: duplicateRows.slice(0, 3)
+      }
+    );
+
+    setFilteredData(dt);
+    setCurrentReport(report);
+    setShowReportModal(true);
+  };
+
+  // Imputation functions with reporting
+  const imputeByMean = (data, columns) => {
+    const updatedData = data.map(row => ({ ...row }));
+    const reportDetails = {};
+    
+    columns.forEach(col => {
+      const validValues = updatedData
+        .map(row => parseFloat(row[col]))
+        .filter(value => !isNaN(value));
+      
+      if (validValues.length === 0) return;
+      
+      const mean = validValues.reduce((sum, val) => sum + val, 0) / validValues.length;
+      const beforeNullCount = updatedData.filter(row => 
+        row[col] === null || row[col] === undefined || row[col] === 'N/A' || isNaN(parseFloat(row[col]))).length;
+      
+      updatedData.forEach(row => {
+        if (row[col] === null || row[col] === undefined || row[col] === 'N/A' || isNaN(parseFloat(row[col]))) {
+          row[col] = mean;
+        }
+      });
+
+      const afterNullCount = updatedData.filter(row => 
+        row[col] === null || row[col] === undefined || row[col] === 'N/A' || isNaN(parseFloat(row[col]))).length;
+
+      reportDetails[col] = {
+        before: beforeNullCount,
+        after: afterNullCount,
+        meanUsed: mean
+      };
+    });
+    
+    return { updatedData, reportDetails };
+  };
+
+  const imputeByMedian = (data, columns) => {
+    const updatedData = data.map(row => ({ ...row }));
+    const reportDetails = {};
+    
+    columns.forEach(col => {
+      const validValues = updatedData
+        .map(row => parseFloat(row[col]))
+        .filter(value => !isNaN(value))
+        .sort((a, b) => a - b);
+      
+      if (validValues.length === 0) return;
+      
+      const mid = Math.floor(validValues.length / 2);
+      const median = validValues.length % 2 !== 0 
+        ? validValues[mid] 
+        : (validValues[mid - 1] + validValues[mid]) / 2;
+
+      const beforeNullCount = updatedData.filter(row => 
+        row[col] === null || row[col] === undefined || row[col] === 'N/A' || isNaN(parseFloat(row[col]))).length;
+      
+      updatedData.forEach(row => {
+        if (row[col] === null || row[col] === undefined || row[col] === 'N/A' || isNaN(parseFloat(row[col]))) {
+          row[col] = median;
+        }
+      });
+
+      const afterNullCount = updatedData.filter(row => 
+        row[col] === null || row[col] === undefined || row[col] === 'N/A' || isNaN(parseFloat(row[col]))).length;
+
+      reportDetails[col] = {
+        before: beforeNullCount,
+        after: afterNullCount,
+        medianUsed: median
+      };
+    });
+    
+    return { updatedData, reportDetails };
+  };
+
+  const imputeByMode = (data, columns) => {
+    const updatedData = data.map(row => ({ ...row }));
+    const reportDetails = {};
+    
+    columns.forEach(col => {
+      const validValues = updatedData
+        .map(row => row[col])
+        .filter(value => value !== null && value !== undefined && value !== 'N/A');
+      
+      if (validValues.length === 0) return;
+      
+      const frequencyMap = {};
+      validValues.forEach(val => {
+        frequencyMap[val] = (frequencyMap[val] || 0) + 1;
+      });
+      
+      const mode = Object.keys(frequencyMap).reduce((a, b) => 
+        frequencyMap[a] > frequencyMap[b] ? a : b
+      );
+
+      const beforeNullCount = updatedData.filter(row => 
+        row[col] === null || row[col] === undefined || row[col] === 'N/A').length;
+      
+      updatedData.forEach(row => {
+        if (row[col] === null || row[col] === undefined || row[col] === 'N/A') {
+          row[col] = mode;
+        }
+      });
+
+      const afterNullCount = updatedData.filter(row => 
+        row[col] === null || row[col] === undefined || row[col] === 'N/A').length;
+
+      reportDetails[col] = {
+        before: beforeNullCount,
+        after: afterNullCount,
+        modeUsed: mode
+      };
+    });
+    
+    return { updatedData, reportDetails };
+  };
+
+  const imputeByKNN = (data, columns, k = 3) => {
+    const updatedData = data.map(row => ({ ...row }));
+    const reportDetails = {};
+    
+    // Filter rows with at least one valid value
+    const validData = data.filter(row => 
+      columns.some(col => row[col] !== null && row[col] !== undefined && !isNaN(parseFloat(row[col])))
+    );
+    
+    if (validData.length < k) {
+      console.warn('Not enough data for KNN imputation');
+      return { updatedData: data, reportDetails: {} };
+    }
+
+    // Prepare features and labels
+    const features = validData.map(row => 
+      columns.map(col => parseFloat(row[col]) || 0)
+    );
+    const labels = validData.map((_, idx) => idx);
+
+    // Train KNN model
+    const knn = new KNN(features, labels, { k });
+
+    // Calculate before counts
+    columns.forEach(col => {
+      reportDetails[col] = {
+        before: updatedData.filter(row => 
+          row[col] === null || row[col] === undefined || isNaN(parseFloat(row[col]))).length
+      };
+    });
+
+    // Impute missing values
+    updatedData.forEach(row => {
+      const hasMissing = columns.some(col => 
+        row[col] === null || row[col] === undefined || isNaN(parseFloat(row[col])));
+      
+      if (hasMissing) {
+        const features = columns.map(col => {
+          const val = parseFloat(row[col]);
+          return isNaN(val) ? 0 : val;
+        });
+        
+        const neighbors = knn.predict([features]);
+        neighbors.forEach(neighborIdx => {
+          const neighbor = validData[neighborIdx];
+          columns.forEach(col => {
+            if (row[col] === null || row[col] === undefined || isNaN(parseFloat(row[col]))) {
+              const neighborVal = parseFloat(neighbor[col]);
+              if (!isNaN(neighborVal)) {
+                row[col] = neighborVal;
+              }
+            }
+          });
+        });
       }
     });
 
-    setFilteredData(dt);
-    alert(`Number of duplicates removed: ${data.length - filteredData.length}`);
+    // Calculate after counts
+    columns.forEach(col => {
+      reportDetails[col].after = updatedData.filter(row => 
+        row[col] === null || row[col] === undefined || isNaN(parseFloat(row[col]))).length;
+      reportDetails[col].method = `KNN (k=${k})`;
+    });
+
+    return { updatedData, reportDetails };
+  };
+
+  const imputeByZero = (data, columns) => {
+    const updatedData = data.map(row => ({ ...row }));
+    const reportDetails = {};
+    
+    columns.forEach(col => {
+      const beforeNullCount = updatedData.filter(row => 
+        row[col] === null || row[col] === undefined || isNaN(parseFloat(row[col]))).length;
+      
+      updatedData.forEach(row => {
+        if (row[col] === null || row[col] === undefined || isNaN(parseFloat(row[col]))) {
+          row[col] = 0;
+        }
+      });
+
+      const afterNullCount = updatedData.filter(row => 
+        row[col] === null || row[col] === undefined || isNaN(parseFloat(row[col]))).length;
+
+      reportDetails[col] = {
+        before: beforeNullCount,
+        after: afterNullCount,
+        method: 'Zero imputation'
+      };
+    });
+    
+    return { updatedData, reportDetails };
+  };
+
+  const handleImputation = (method) => {
+    if (selectedColumnsImp.length === 0) {
+      alert("Please select columns for imputation");
+      return;
+    }
+
+    setIsImputing(true);
+    let result;
+
+    try {
+      switch (method) {
+        case 'Mean Imputation':
+          result = imputeByMean(filteredData, selectedColumnsImp);
+          break;
+        case 'Median Imputation':
+          result = imputeByMedian(filteredData, selectedColumnsImp);
+          break;
+        case 'Mode Imputation':
+          result = imputeByMode(filteredData, selectedColumnsImp);
+          break;
+        case 'KNN Imputation':
+          result = imputeByKNN(filteredData, selectedColumnsImp);
+          break;
+        case 'Zero Imputation':
+          result = imputeByZero(filteredData, selectedColumnsImp);
+          break;
+        default:
+          throw new Error("Unknown imputation method");
+      }
+
+      setFilteredData(result.updatedData);
+
+      const report = addOperationReport(
+        `Data Imputation - ${method}`,
+        `Applied ${method} to selected columns`,
+        selectedColumnsImp,
+        {
+          method,
+          columnStats: result.reportDetails,
+          totalNullsBefore: Object.values(result.reportDetails).reduce((sum, col) => sum + col.before, 0),
+          totalNullsAfter: Object.values(result.reportDetails).reduce((sum, col) => sum + col.after, 0)
+        }
+      );
+
+      setCurrentReport(report);
+      setShowReportModal(true);
+
+    } catch (error) {
+      console.error("Imputation error:", error);
+      alert(`Error during imputation: ${error.message}`);
+    } finally {
+      setIsImputing(false);
+    }
   };
 
   const handleDownload = () => {
     const csvData = [
-        Object.keys(filteredData[0] || {}).join(','),  // En-têtes
-        ...filteredData.slice(0, 15).map(row => Object.values(row).join(','))  // Lignes de données
+      Object.keys(filteredData[0] || {}).join(','),
+      ...filteredData.slice(0, 15).map(row => Object.values(row).join(','))
     ].join('\n');
 
-    // Ajout d'un BOM UTF-8 au début du fichier pour garantir l'encodage correct
-    const utf8BOM = '\uFEFF';  // Byte Order Mark UTF-8
-    const blob = new Blob([utf8BOM + csvData], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = 'processed_data.csv';
     a.click();
-    window.URL.revokeObjectURL(url);
-};
+    URL.revokeObjectURL(url);
+  };
+
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Authentication token missing');
+
+      const response = await fetch(`http://localhost:5000/save-data/${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ data: filteredData })
+      });
+
+      if (!response.ok) throw new Error('Failed to save data');
+      
+      const report = addOperationReport(
+        'Data Save',
+        'Saved processed data to server',
+        Object.keys(filteredData[0] || {}),
+        {
+          rowCount: filteredData.length,
+          columnCount: Object.keys(filteredData[0] || {}).length,
+          savedAt: new Date().toISOString()
+        }
+      );
+
+      setCurrentReport(report);
+      setShowReportModal(true);
+      alert("Data saved successfully!");
+    } catch (error) {
+      console.error('Save error:', error);
+      alert(`Error saving data: ${error.message}`);
+    }
+  };
+
+  // UI helpers
   const calculateNullPercentages = () => {
     const columns = Object.keys(filteredData[0] || {});
     const totalRows = filteredData.length;
     const nullPercentages = {};
 
     columns.forEach(column => {
-      const nullCount = filteredData.filter(row => row[column] === null || row[column] === '').length;
-      const percentage = (nullCount / totalRows) * 100;
-      nullPercentages[column] = percentage;
+      const nullCount = filteredData.filter(row => 
+        row[column] === null || row[column] === undefined || row[column] === 'N/A'
+      ).length;
+      nullPercentages[column] = (nullCount / totalRows) * 100;
     });
 
     return nullPercentages;
   };
 
-
   const nullPercentages = calculateNullPercentages();
-  const columnsWithHighNulls = Object.keys(nullPercentages).filter(column => nullPercentages[column] > 20);
+  const columnsWithHighNulls = Object.keys(nullPercentages).filter(
+    column => nullPercentages[column] > 20
+  );
 
   const handleColumnCheckboxChange = (column) => {
-    setSelectedColumns(prevSelectedColumns =>
-      prevSelectedColumns.includes(column)
-        ? prevSelectedColumns.filter(c => c !== column)
-        : [...prevSelectedColumns, column]
-    );
+    setSelectedColumns(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(column)) {
+        newSelection.delete(column);
+      } else {
+        newSelection.add(column);
+      }
+      return Array.from(newSelection);
+    });
   };
+
   const handleColumnCheckboxChangeNr = (column) => {
-    setSelectedColumnsNr(prevSelectedColumns => {
-      if (prevSelectedColumns.includes(column)) {
-        // Si la colonne est déjà sélectionnée, la retirer de la sélection
-        return prevSelectedColumns.filter(col => col !== column);
+    setSelectedColumnsNr(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(column)) {
+        newSelection.delete(column);
       } else {
-        // Sinon, ajouter la colonne à la sélection
-        return [...prevSelectedColumns, column];
+        newSelection.add(column);
       }
+      return Array.from(newSelection);
     });
   };
-  
 
-  const handleRemoveSelectedColumns = () => {
-    if (selectedColumns.length === 0) {
-      alert("Veuillez sélectionner au moins une colonne pour suppression.");
-      return;
-    }
-    const cleanedData = filteredData.map(row => {
-      const newRow = { ...row };
-      selectedColumns.forEach(column => {
-        delete newRow[column];
-      });
-      return newRow;
+  const handleColumnCheckboxChangeImp = (column) => {
+    setSelectedColumnsImp(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(column)) {
+        newSelection.delete(column);
+      } else {
+        newSelection.add(column);
+      }
+      return Array.from(newSelection);
     });
-    setFilteredData(cleanedData);
   };
-  const getCellClassName = (column) => {
-    if (nullPercentages[column] > 20) {
-      return 'cell-red'; // Classe CSS pour les cellules rouges
-    }
-    return '';
-  };
-  const getRowClassName = (row) => {
-    const hasNulls = Object.values(row).some(value => value === null || value === ''|| value === 'N/A	');
-    return hasNulls ? 'row-green' : '';
-  };
-  const headers = filteredData.length ? Object.keys(filteredData[0]).filter(header => header !== targetFeature) : [];
-  const rows = filteredData;
+
+  // Dropdown toggles
+  const toggleDropdown = () => setShowDropdown(!showDropdown);
+  const toggleDropdown1 = () => setIsOpen1(!isOpen1);
+  const toggleDropdown2 = () => setIsOpen2(!isOpen2);
+  const toggleDropdown3 = () => setIsOpen3(!isOpen3);
+  const toggleDropdown4 = () => setShowDropdown3(!showDropdown3);
+
+  // Data for rendering
+  const headers = filteredData.length > 0 ? 
+    Object.keys(filteredData[0]).filter(header => header !== targetFeature) : [];
   const availableColumns = headers.filter(header => !normalizedColumns.includes(header));
-  const handleSave = async () => {
-    console.log({filteredData})
-    try {
-      const response = await fetch(`http://localhost:5000/save-data/${id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ filteredData}), // Envoyer les données sous forme JSON
-      });
+  const rows = filteredData.slice(0, 15); // Only show first 15 rows for performance
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok.');
-      }
+  // Report Modal Component
+  const ReportModal = ({ report, onClose }) => {
+    if (!report) return null;
 
-      const result = await response.json();
-      console.log('Success:', result);
-      alert("Your data changes are successfully saved")
-      // Vous pouvez également ajouter du code pour gérer la réponse ici, par exemple afficher un message de succès
-    } catch (error) {
-      console.error('Error:', error);
-      // Gérez les erreurs ici, par exemple afficher un message d'erreur
-    }
-  };
-
-  const handleImputation = (method) => {
-    if ( selectedColumnsImp.length === 0) {
-      console.error('Aucune colonne sélectionnée pour l’imputation.');
-      return;
-    }
-  
-    const updatedData = (() => {
-      switch (method) {
-        case 'Mean Imputation':
-          console.log("Mean Imputation")
-          return imputeByMean(filteredData, selectedColumnsImp);
-          case 'Median Imputation':
-          console.log("Median Imputation")
-          return selectedColumnsImp.reduce((acc, col) => imputeByMedian(acc, col), filteredData);
-        case 'Mode Imputation':
-          console.log("Mode Imputation")
-          return selectedColumnsImp.reduce((acc, col) => imputeByMode(acc, col), filteredData);
-        case 'KNN Imputation':
-          console.log("KNN Imputation")
-          return imputeByKNN(filteredData, selectedColumnsImp);
+    const renderReportDetails = () => {
+      switch (report.operation) {
+        case 'Data Cleaning':
+          return (
+            <div className="report-section">
+              <h3>Cleaning Details</h3>
+              <p>Total null values replaced: {report.stats.totalNullValues}</p>
+              <h4>Columns affected:</h4>
+              <ul className="column-stats">
+                {report.affectedColumns.map(col => (
+                  <li key={col}>
+                    <span className="column-name">{col}</span>
+                    <span className="stat-value">
+                      {report.stats.nullValuesByColumn[col]} nulls replaced with mean {
+                        report.stats.meansUsed[col]?.toFixed(2) || 'N/A'
+                      }
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
         
-        case 'Interpolation Imputation':
-          return selectedColumnsImp.reduce((acc, col) => imputeByInterpolation(acc, col), filteredData);
-          case 'Zero Imputation':  // Nouveau cas ajouté
-          console.log("Zero Imputation");
-          return imputeByZero(filteredData, selectedColumnsImp);
-        default:
-          console.error('Méthode d’imputation non reconnue :', method);
-          return filteredData;
-      }
-    })();
-  
-    setFilteredData(updatedData);
-  };
-
-  const imputeByZero = (data, columns) => {
-    return data.map(row => {
-      // Créez une copie de la ligne
-      const newRow = { ...row };
-  
-      // Remplacez les valeurs manquantes (null ou undefined) par 0 uniquement pour les colonnes sélectionnées
-      columns.forEach(col => {
-        if (newRow[col] === null || newRow[col] === undefined) {
-          newRow[col] = 0;
-        }
-      });
-  
-      return newRow;
-    });
-  };
-  
-  const imputeByMean = (data, columns) => {
-    // Créez une copie des données pour éviter les modifications en place
-    const updatedData = data.map(row => ({ ...row }));
-  
-    // Pour chaque colonne spécifiée, calculez la moyenne et imputez les valeurs manquantes
-    columns.forEach(col => {
-      // Obtenez les valeurs valides pour la colonne
-      const validValues = updatedData
-        .map(d => d[col])
-        .filter(value => value !== null && value !== undefined && !isNaN(value));
-  
-      // Calculez la moyenne
-      const mean = validValues.reduce((acc, value) => acc + value, 0) / validValues.length;
-  
-      // Remplacez les valeurs manquantes par la moyenne
-      updatedData.forEach(row => {
-        if (row[col] === 'N/A' || row[col] === undefined || row[col] === null) {
-          row[col] = mean;
-        }
-      });
-    });
-  
-    return updatedData;
-  };
-  
-  
-  const imputeByMedian = (data, column) => {
-    const validValues = data.map(row => row[column]).filter(value => value !== null && value !== undefined && !isNaN(value));
-    validValues.sort((a, b) => a - b);
-    const medianIndex = Math.floor(validValues.length / 2);
-    const median = validValues.length % 2 === 0
-      ? (validValues[medianIndex - 1] + validValues[medianIndex]) / 2
-      : validValues[medianIndex];
-  
-    return data.map(row => {
-      if (row[column] === null || row[column] === undefined || isNaN(row[column])) {
-        return { ...row, [column]: median };
-      }
-      return row;
-    });
-  };
-  
-  const imputeByMode = (data, column) => {
-    const validValues = data.map(row => row[column]).filter(value => value !== null && value !== undefined);
-    const frequencyMap = validValues.reduce((map, value) => {
-      map[value] = (map[value] || 0) + 1;
-      return map;
-    }, {});
-    const mode = Object.keys(frequencyMap).reduce((a, b) => frequencyMap[a] > frequencyMap[b] ? a : b);
-  
-    return data.map(row => {
-      if (row[column] === null || row[column] === undefined) {
-        return { ...row, [column]: mode };
-      }
-      return row;
-    });
-  };
-  
-  const imputeByInterpolation = (data, column) => {
-    let lastKnownValue = null;
-    return data.map(row => {
-      if (row[column] === null || row[column] === undefined || isNaN(row[column])) {
-        const nextKnownRow = data.find(r => r[column] !== null && r[column] !== undefined && r !== row);
-        const nextKnownValue = nextKnownRow ? nextKnownRow[column] : null;
-        const interpolatedValue = lastKnownValue !== null && nextKnownValue !== null
-          ? (lastKnownValue + nextKnownValue) / 2
-          : lastKnownValue; 
-        return { ...row, [column]: interpolatedValue };
-      } else {
-        lastKnownValue = row[column];
-        return row;
-      }
-    });
-  };
-  const imputeByKNN = (data, columns, k = 5) => {
-    // Filtrer les lignes valides (sans valeurs manquantes)
-    const validData = data.filter(row => columns.every(col => row[col] !== null && row[col] !== undefined));
-    
-    // Vérifier s'il existe des données valides
-    if (validData.length === 0) {
-      console.warn('Pas de données valides pour entraîner le modèle KNN.');
-      return data;
-    }
-  
-    // Extraire les caractéristiques (X) et les étiquettes (y)
-    const X = validData.map(row => columns.map(col => row[col]));
-    const y = validData.map(row => columns.map(col => row[col]));
-  
-    // Créer un modèle KNN avec les données valides
-    const knn = new KNN(X, y, { k });
-  
-    // Parcourir toutes les lignes et imputer les valeurs manquantes
-    return data.map(row => {
-      const newRow = { ...row };
-      
-      // Vérifier si cette ligne contient des valeurs manquantes
-      if (columns.some(col => row[col] === null || row[col] === undefined)) {
-        // Extraire les caractéristiques pour cette ligne
-        const features = columns.map(col => row[col] !== null && row[col] !== undefined ? row[col] : 0); // Remplacer par 0 ou une autre valeur par défaut si nécessaire
-        
-        // Appliquer KNN pour prédire les valeurs manquantes
-        // Convertir en tableau de tableau pour la méthode predict
-        const imputedValues = knn.predict([features]);
-  
-        // Remplacer les valeurs manquantes par les valeurs imputées
-        columns.forEach((col, idx) => {
-          if (row[col] === null || row[col] === undefined) {
-            newRow[col] = imputedValues[0][idx]; // Première prédiction
-          }
-        });
-      }
-  
-      return newRow;
-    });
-  };
-  const handleDepClick = () => navigate(`/deployment/${id}/${targetFeature}`);
-
-  return (
-    <>
-      <div className="menu-bar">
-        <div className="app-name2">
-          <img src="/lg.png" alt="App Icon" className="app-icon" />
-          <span>MedicalVision</span>
-        </div>
-        <div className="menu-item" onClick={handleProfileClick}>
-          <FontAwesomeIcon icon={faUser} className="menu-icon" /> Profile
-        </div>
-        <div className="menu-item" onClick={handleDBClick}>
-          <FontAwesomeIcon icon={faDatabase} className="menu-icon" /> Database
-        </div>
-        <div className="menu-item" onClick={handleHistorique}>
-                     <FontAwesomeIcon icon={faHistory} className="menu-icon" /> History
+        case 'Data Imputation - Mean Imputation':
+        case 'Data Imputation - Median Imputation':
+        case 'Data Imputation - Mode Imputation':
+        case 'Data Imputation - KNN Imputation':
+        case 'Data Imputation - Zero Imputation':
+          return (
+            <div className="report-section">
+              <h3>Imputation Details</h3>
+              <p><strong>Method:</strong> {report.stats.method}</p>
+              <div className="stats-grid">
+                <div className="stat-item">
+                  <span className="stat-label">Total nulls before:</span>
+                  <span className="stat-value">{report.stats.totalNullsBefore}</span>
                 </div>
-        <div className="menu-item" onClick={handleDescription}>
-          <FontAwesomeIcon icon={faFileAlt} className="menu-icon" /> Description
-        </div>
-        <div className="menu-item" onClick={handleGraphsClick}>
-          <FontAwesomeIcon icon={faChartLine} className="menu-icon" /> Graphs
-        </div>
-        <div className="menu-item" onClick={handleProcessingClick}>
-          <FontAwesomeIcon icon={faCog} className="menu-icon" /> Processing
-        </div>
-        <div className="menu-item" onClick={handleModelsClick}>
-          <FontAwesomeIcon icon={faBrain} className="menu-icon" /> Models
-        </div>
-        <div className="menu-item" onClick={handleDepClick}>
-          <FontAwesomeIcon icon={faRocket} className="menu-icon" /> Deployment
+                <div className="stat-item">
+                  <span className="stat-label">Total nulls after:</span>
+                  <span className="stat-value">{report.stats.totalNullsAfter}</span>
+                </div>
+              </div>
+              <h4>Columns affected:</h4>
+              <ul className="column-stats">
+                {Object.entries(report.stats.columnStats).map(([col, stats]) => (
+                  <li key={col}>
+                    <span className="column-name">{col}</span>
+                    <span className="stat-value">
+                      {stats.before} → {stats.after} nulls
+                      {stats.meanUsed && ` (Mean: ${stats.meanUsed.toFixed(2)})`}
+                      {stats.medianUsed && ` (Median: ${stats.medianUsed.toFixed(2)})`}
+                      {stats.modeUsed && ` (Mode: ${stats.modeUsed})`}
+                      {stats.method && ` (${stats.method})`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        
+        case 'Data Transformation - Min-Max Normalization':
+        case 'Data Transformation - Z-Score Normalization':
+        case 'Data Transformation - Decimal Scaling':
+        case 'Data Transformation - Mean Normalization':
+        case 'Data Transformation - Logarithmic Scaling':
+          return (
+            <div className="report-section">
+              <h3>Transformation Details</h3>
+              <p><strong>Type:</strong> {report.stats.transformationType}</p>
+              <p><strong>Columns transformed:</strong> {report.stats.normalizedColumnsCount}</p>
+              <h4>Column Statistics:</h4>
+              <ul className="column-stats">
+                {Object.entries(report.stats.columnStats).map(([col, stats]) => (
+                  <li key={col}>
+                    <span className="column-name">{col}</span>
+                    <ul className="sub-stats">
+                      <li>Min: {stats.min?.toFixed(4)}</li>
+                      <li>Max: {stats.max?.toFixed(4)}</li>
+                      <li>Mean: {stats.mean?.toFixed(4)}</li>
+                      {stats.stdDev && <li>Std Dev: {stats.stdDev?.toFixed(4)}</li>}
+                    </ul>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        
+        case 'Duplicate Removal':
+          return (
+            <div className="report-section">
+              <h3>Duplicate Removal Details</h3>
+              <div className="stats-grid">
+                <div className="stat-item">
+                  <span className="stat-label">Initial rows:</span>
+                  <span className="stat-value">{report.stats.initialRowCount}</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Final rows:</span>
+                  <span className="stat-value">{report.stats.finalRowCount}</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Duplicates removed:</span>
+                  <span className="stat-value">{report.stats.duplicatesRemoved}</span>
+                </div>
+              </div>
+              <h4>Sample duplicates:</h4>
+              <div className="data-sample">
+                <pre>{JSON.stringify(report.stats.duplicateExamples, null, 2)}</pre>
+              </div>
+            </div>
+          );
+        
+        case 'Data Save':
+          return (
+            <div className="report-section">
+              <h3>Save Details</h3>
+              <div className="stats-grid">
+                <div className="stat-item">
+                  <span className="stat-label">Rows saved:</span>
+                  <span className="stat-value">{report.stats.rowCount}</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Columns saved:</span>
+                  <span className="stat-value">{report.stats.columnCount}</span>
+                </div>
+              </div>
+              <p><strong>Saved at:</strong> {new Date(report.stats.savedAt).toLocaleString()}</p>
+            </div>
+          );
+        
+        case 'Full Operations History':
+          return (
+            <div className="report-section">
+              <h3>Complete Operations History</h3>
+              <p><strong>Total operations:</strong> {report.stats.operations.length}</p>
+              <div className="full-history">
+                {report.stats.operations.map((op, idx) => (
+                  <div key={idx} className="history-item">
+                    <h4>{op.operation}</h4>
+                    <p className="timestamp">{new Date(op.timestamp).toLocaleString()}</p>
+                    <p className="details">{op.details}</p>
+                    <button 
+                      onClick={() => {
+                        setCurrentReport(op);
+                      }}
+                      className="view-details-btn"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+
+        default:
+          return (
+            <div className="report-section">
+              <h3>Operation Details</h3>
+              <div className="data-sample">
+                <pre>{JSON.stringify(report.stats, null, 2)}</pre>
+              </div>
+            </div>
+          );
+      }
+    };
+
+    return (
+      <div className="report-modal-overlay">
+        <div className="report-modal">
+          <div className="report-modal-header">
+            <h2>{report.operation}</h2>
+            <button onClick={onClose} className="close-btn">&times;</button>
+          </div>
+          <div className="report-modal-body">
+            <div className="report-meta">
+              <p><strong>Timestamp:</strong> {new Date(report.timestamp).toLocaleString()}</p>
+              <p><strong>Description:</strong> {report.details}</p>
+            </div>
+            
+            {renderReportDetails()}
+
+            <h4>Data Sample (first 3 rows):</h4>
+            <div className="data-sample">
+              <pre>{JSON.stringify(report.dataSample, null, 2)}</pre>
+            </div>
+          </div>
+          <div className="report-modal-footer">
+            <button onClick={onClose} className="btn-primary">Close</button>
+          </div>
         </div>
       </div>
-<div className="content1">
-        <h2>Pre-processing Data</h2>
-        <p className="header-subtitle">Clean, Transform, and Organize Your Dataset</p>
+    );
+  };
 
-        {loading && <p>Loading...</p>}
-        {error && <p className="error">{error}</p>}
+  return (
+    <div className="processing-modern">
+      {/* Sidebar */}
+      <div className="sidebar-modern">
+        <div className="sidebar-header-modern">
+          <img src="/lg.png" alt="MedicalVision" className="logo-modern" />
+          <h2>MedicalVision</h2>
+        </div>
+        
+        <nav className="nav-modern">
+          <button className="nav-item-modern" onClick={handleProfileClick}>
+            <FontAwesomeIcon icon={faUser} className="nav-icon-modern" />
+            <span>Profile</span>
+          </button>
+          <button className="nav-item-modern" onClick={handleDBClick}>
+            <FontAwesomeIcon icon={faDatabase} className="nav-icon-modern" />
+            <span>Database</span>
+          </button>
+          <button className="nav-item-modern" onClick={handleHistorique}>
+            <FontAwesomeIcon icon={faHistory} className="nav-icon-modern" />
+            <span>History</span>
+          </button>
+          <button className="nav-item-modern" onClick={handleDescription}>
+            <FontAwesomeIcon icon={faFileAlt} className="nav-icon-modern" />
+            <span>Description</span>
+          </button>
+          <button className="nav-item-modern" onClick={handleGraphsClick}>
+            <FontAwesomeIcon icon={faChartLine} className="nav-icon-modern" />
+            <span>Graphs</span>
+          </button>
+          <button className="nav-item-modern active-modern">
+            <FontAwesomeIcon icon={faCog} className="nav-icon-modern" />
+            <span>Processing</span>
+          </button>
+          <button className="nav-item-modern" onClick={handleModelsClick}>
+            <FontAwesomeIcon icon={faBrain} className="nav-icon-modern" />
+            <span>Models</span>
+          </button>
+          <button className="nav-item-modern" onClick={handleDepClick}>
+            <FontAwesomeIcon icon={faRocket} className="nav-icon-modern" />
+            <span>Deployment</span>
+          </button>
+        </nav>
+      </div>
 
-        <div className="actions-grid" style={{ position: 'relative', zIndex: 2 }}>
-          <div className="action-card">
-            <h4><FontAwesomeIcon icon={faTrash} /> Nettoyage</h4>
-            <button onClick={handleDataCleaning}>Remove rows with Nulls</button>
-            <button onClick={handleRemoveSelectedColumns}>Remove Columns with Nulls</button>
-            <button className="dropdown-toggle" onClick={toggleDropdown1}>Select Columns</button>
-            {isOpen1 && (
-              <div className="dropdown-wrapper" style={{ zIndex: 10, position: 'relative' }}>
-                <div className="dropdown-menu1">
-                  {columnsWithHighNulls.map(column => (
-                    <div key={column} className="checkbox-container">
-                      <input
-                        type="checkbox"
-                        id={`checkbox-${column}`}
-                        checked={selectedColumns.includes(column)}
-                        onChange={() => handleColumnCheckboxChange(column)}
-                      />
-                      <label htmlFor={`checkbox-${column}`}>{column}</label>
+      {/* Main Content */}
+      <main className="content-modern">
+        <header className="content-header-modern">
+          <h1>Data Processing Center</h1>
+          <p className="subtitle-modern">Clean, transform and prepare your medical data for analysis</p>
+        </header>
+
+        {loading && (
+          <div className="loading-modern">
+            <div className="spinner-modern"></div>
+            <p>Loading your data...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="error-modern">
+            <p>{error}</p>
+          </div>
+        )}
+
+        {/* Action Cards */}
+        <div className="action-grid-modern">
+          {/* Cleaning Card */}
+          <div className="action-card-modern">
+            <div className="card-header-modern">
+              <FontAwesomeIcon icon={faBroom} className="card-icon-modern" />
+              <h3>Data Cleaning</h3>
+            </div>
+            <div className="card-body-modern">
+              <button 
+                className="action-btn-modern primary"
+                onClick={handleDataCleaning}
+                disabled={loading || isCleaning}
+              >
+                {isCleaning ? (
+                  <>
+                    <FontAwesomeIcon icon={faSpinner} spin />
+                    <span>Cleaning...</span>
+                  </>
+                ) : 'Remove Null Values'}
+              </button>
+              
+              <button 
+                className="action-btn-modern secondary"
+                onClick={handleRemoveSelectedColumns}
+                disabled={selectedColumns.length === 0 || isRemoving}
+              >
+                {isRemoving ? (
+                  <>
+                    <FontAwesomeIcon icon={faSpinner} spin />
+                    <span>Removing...</span>
+                  </>
+                ) : 'Remove Columns'}
+              </button>
+              
+              <div className="dropdown-modern">
+                <button 
+                  className="dropdown-toggle-modern"
+                  onClick={toggleDropdown1}
+                  disabled={columnsWithHighNulls.length === 0}
+                >
+                  <span>Select Columns</span>
+                  <FontAwesomeIcon icon={isOpen1 ? faChevronUp : faChevronDown} className="dropdown-arrow" />
+                </button>
+                {isOpen1 && (
+                  <div className="dropdown-menu-modern">
+                    <div className="dropdown-header">
+                      <span>Columns with null values</span>
+                      <button 
+                        onClick={() => {
+                          setSelectedColumns(columnsWithHighNulls);
+                        }}
+                        className="select-all-btn"
+                      >
+                        Select All
+                      </button>
                     </div>
-                  ))}
-                </div>
+                    {columnsWithHighNulls.map(column => (
+                      <label key={column} className="checkbox-modern">
+                        <input
+                          type="checkbox"
+                          checked={selectedColumns.includes(column)}
+                          onChange={() => handleColumnCheckboxChange(column)}
+                        />
+                        <span className="column-name">{column}</span>
+                        <span className="null-percentage">({nullPercentages[column].toFixed(1)}% null)</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
-          <div className="action-card">
-            <h4><FontAwesomeIcon icon={faBroom} /> Imputation</h4>
-            <button onClick={toggleDropdown4}>Choose Imputation</button>
-            {showDropdown3 && (
-              <div className="dropdown-wrapper" style={{ zIndex: 10, position: 'relative' }}>
-                <ul className="dropdown-menu1">
-                  {['Mean', 'Median', 'Mode', 'KNN', 'Interpolation', 'Zero'].map(method => (
-                    <li key={method}>
-                      <button className="dropdown-btn" onClick={() => handleImputation(`${method} Imputation`)}>
+          {/* Imputation Card */}
+          <div className="action-card-modern">
+            <div className="card-header-modern">
+              <FontAwesomeIcon icon={faCheckCircle} className="card-icon-modern" />
+              <h3>Data Imputation</h3>
+            </div>
+            <div className="card-body-modern">
+              <div className="dropdown-modern">
+                <button 
+                  className="dropdown-toggle-modern"
+                  onClick={toggleDropdown4}
+                  disabled={isImputing}
+                >
+                  <span>{isImputing ? 'Processing...' : 'Imputation Methods'}</span>
+                  <FontAwesomeIcon icon={showDropdown3 ? faChevronUp : faChevronDown} className="dropdown-arrow" />
+                </button>
+                {showDropdown3 && (
+                  <div className="dropdown-menu-modern">
+                    {['Mean', 'Median', 'Mode', 'KNN', 'Zero'].map(method => (
+                      <button
+                        key={method}
+                        className="dropdown-item-modern"
+                        onClick={() => {
+                          setShowDropdown3(false);
+                          handleImputation(`${method} Imputation`);
+                        }}
+                      >
                         {method} Imputation
                       </button>
-                    </li>
-                  ))}
-                </ul>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-            <button className="dropdown-toggle" onClick={toggleDropdown3}>Select Columns</button>
-            {isOpen3 && (
-              <div className="dropdown-wrapper" style={{ zIndex: 10, position: 'relative' }}>
-                <ul className="dropdown-menu1">
-                  {availableColumns.map(header => (
-                    <li key={header} className="checkbox-container">
-                      <input
-                        type="checkbox"
-                        id={`checkbox-${header}`}
-                        checked={selectedColumnsImp.includes(header)}
-                        onChange={() => handleColumnCheckboxChangeImp(header)}
-                      />
-                      <label htmlFor={`checkbox-${header}`}>{header}</label>
-                    </li>
-                  ))}
-                </ul>
+              
+              <div className="dropdown-modern">
+                <button 
+                  className="dropdown-toggle-modern"
+                  onClick={toggleDropdown3}
+                  disabled={isImputing}
+                >
+                  <span>Select Columns</span>
+                  <FontAwesomeIcon icon={isOpen3 ? faChevronUp : faChevronDown} className="dropdown-arrow" />
+                </button>
+                {isOpen3 && (
+                  <div className="dropdown-menu-modern">
+                    <div className="dropdown-header">
+                      <span>Available columns</span>
+                      <button 
+                        onClick={() => {
+                          setSelectedColumnsImp(availableColumns);
+                        }}
+                        className="select-all-btn"
+                      >
+                        Select All
+                      </button>
+                    </div>
+                    {availableColumns.map(header => (
+                      <label key={header} className="checkbox-modern">
+                        <input
+                          type="checkbox"
+                          checked={selectedColumnsImp.includes(header)}
+                          onChange={() => handleColumnCheckboxChangeImp(header)}
+                          disabled={isImputing}
+                        />
+                        <span className="column-name">{header}</span>
+                        {nullPercentages[header] > 0 && (
+                          <span className="null-percentage">({nullPercentages[header].toFixed(1)}% null)</span>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
-          <div className="action-card">
-            <h4><FontAwesomeIcon icon={faArrowsRotate} /> Normalization</h4>
-            <button onClick={toggleDropdown}>Choose Normalization</button>
-            {showDropdown && (
-              <div className="dropdown-wrapper" style={{ zIndex: 10, position: 'relative' }}>
-                <ul className="dropdown-menu1">
-                  {['Min-Max', 'Z-Score', 'Decimal Scaling', 'Mean', 'Logarithmic'].map(type => (
-                    <li key={type}>
-                      <button className="dropdown-btn" onClick={() => handleDataTransformation(`${type} Normalization`)}>
+          {/* Normalization Card */}
+          <div className="action-card-modern">
+            <div className="card-header-modern">
+              <FontAwesomeIcon icon={faArrowsRotate} className="card-icon-modern" />
+              <h3>Data Normalization</h3>
+            </div>
+            <div className="card-body-modern">
+              <div className="dropdown-modern">
+                <button 
+                  className="dropdown-toggle-modern"
+                  onClick={toggleDropdown}
+                  disabled={selectedColumnsNr.length === 0}
+                >
+                  <span>Normalization Methods</span>
+                  <FontAwesomeIcon icon={showDropdown ? faChevronUp : faChevronDown} className="dropdown-arrow" />
+                </button>
+                {showDropdown && (
+                  <div className="dropdown-menu-modern">
+                    {['Min-Max', 'Z-Score', 'Decimal Scaling', 'Mean', 'Logarithmic'].map(type => (
+                      <button
+                        key={type}
+                        className="dropdown-item-modern"
+                        onClick={() => {
+                          setShowDropdown(false);
+                          handleDataTransformation(`${type} Normalization`);
+                        }}
+                      >
                         {type} Normalization
                       </button>
-                    </li>
-                  ))}
-                </ul>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-            <button className="dropdown-toggle" onClick={toggleDropdown2}>Select Columns</button>
-            {isOpen2 && (
-              <div className="dropdown-wrapper" style={{ zIndex: 10, position: 'relative' }}>
-                <ul className="dropdown-menu1">
-                  {availableColumns.map(header => (
-                    <li key={header} className="checkbox-container">
-                      <input
-                        type="checkbox"
-                        id={`checkbox-${header}`}
-                        checked={selectedColumnsNr.includes(header)}
-                        onChange={() => handleColumnCheckboxChangeNr(header)}
-                      />
-                      <label htmlFor={`checkbox-${header}`}>{header}</label>
-                    </li>
-                  ))}
-                </ul>
+              
+              <div className="dropdown-modern">
+                <button 
+                  className="dropdown-toggle-modern"
+                  onClick={toggleDropdown2}
+                >
+                  <span>Select Columns</span>
+                  <FontAwesomeIcon icon={isOpen2 ? faChevronUp : faChevronDown} className="dropdown-arrow" />
+                </button>
+                {isOpen2 && (
+                  <div className="dropdown-menu-modern">
+                    <div className="dropdown-header">
+                      <span>Available columns</span>
+                      <button 
+                        onClick={() => {
+                          setSelectedColumnsNr(availableColumns);
+                        }}
+                        className="select-all-btn"
+                      >
+                        Select All
+                      </button>
+                    </div>
+                    {availableColumns.map(header => (
+                      <label key={header} className="checkbox-modern">
+                        <input
+                          type="checkbox"
+                          checked={selectedColumnsNr.includes(header)}
+                          onChange={() => handleColumnCheckboxChangeNr(header)}
+                        />
+                        <span className="column-name">{header}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
-          <div className="action-card">
-            <h4><FontAwesomeIcon icon={faClone} /> Autres</h4>
-            <button onClick={handleDatadouble}>Remove Duplicates</button>
-            <button onClick={handleDownload}><FontAwesomeIcon icon={faDownload} /> Download Data</button>
-            <button onClick={handleSave}><FontAwesomeIcon icon={faDownload} /> Save Changes</button>
+          {/* Other Actions Card */}
+          <div className="action-card-modern">
+            <div className="card-header-modern">
+              <FontAwesomeIcon icon={faClone} className="card-icon-modern" />
+              <h3>Other Actions</h3>
+            </div>
+            <div className="card-body-modern">
+              <button 
+                className="action-btn-modern secondary"
+                onClick={handleDatadouble}
+              >
+                Remove Duplicates
+              </button>
+              
+              <button 
+                className="action-btn-modern primary"
+                onClick={handleDownload}
+              >
+                <FontAwesomeIcon icon={faDownload} />
+                Download Data
+              </button>
+              
+              <button 
+                className="action-btn-modern success"
+                onClick={handleSave}
+              >
+                <FontAwesomeIcon icon={faSave} />
+                Save Changes
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="data-preview" style={{ position: 'relative', zIndex: 1 }}>
-          <h3>Data Preview</h3>
-          <div className="table-container">
-            {rows.length > 0 && (
-              <table>
+        {/* Data Preview */}
+        <div className="data-preview-modern">
+          <div className="preview-header-modern">
+            <h2>Data Preview</h2>
+            <p>Showing {Math.min(rows.length, 15)} of {filteredData.length} rows</p>
+          </div>
+          
+          {rows.length > 0 ? (
+            <div className="table-wrapper-modern">
+              <table className="data-table-modern">
                 <thead>
                   <tr>
                     {headers.map(header => (
-                      <th key={header} className={getCellClassName(header)}>{header}</th>
+                      <th 
+                        key={header} 
+                        className={
+                          `${nullPercentages[header] > 20 ? 'highlight-column' : ''} 
+                          ${selectedColumnsImp.includes(header) ? 'imputed-column' : ''}`
+                        }
+                      >
+                        {header}
+                        {nullPercentages[header] > 20 && (
+                          <span className="null-percentage">
+                            ({nullPercentages[header].toFixed(1)}% null)
+                          </span>
+                        )}
+                        {selectedColumnsImp.includes(header) && (
+                          <span className="imputed-badge">Imputed</span>
+                        )}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row, rowIndex) => (
-                    <tr key={rowIndex} className={getRowClassName(row)}>
-                      {headers.map(column => (
-                        <td key={column} className={getCellClassName(column)}>
-                          {row[column] !== null ? row[column] : 'N/A'}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
+                  {rows.map((row, rowIndex) => {
+                    const hasNulls = Object.values(row).some(
+                      val => val === null || val === undefined || val === 'N/A'
+                    );
+                    
+                    return (
+                      <tr 
+                        key={rowIndex} 
+                        className={hasNulls ? 'highlight-row' : ''}
+                      >
+                        {headers.map(column => {
+                          const isNull = row[column] === null || row[column] === undefined || row[column] === 'N/A';
+                          return (
+                            <td 
+                              key={column} 
+                              className={
+                                `${isNull ? 'highlight-cell' : ''} 
+                                ${selectedColumnsImp.includes(column) ? 'imputed-cell' : ''}`
+                              }
+                            >
+                              {isNull ? 'N/A' : 
+                               normalizedColumns.includes(column) ? row[column].toFixed(4) : 
+                               row[column]}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="no-data-modern">
+              <p>No data available for preview</p>
+            </div>
+          )}
         </div>
+      </main>
+
+      {/* Operations History Panel */}
+      <div className="operations-history">
+        <h3>Recent Operations</h3>
+        <div className="operations-list">
+          {operationReports.slice(0, 5).map((report, index) => (
+            <div 
+              key={index} 
+              className="operation-item"
+              onClick={() => {
+                setCurrentReport(report);
+                setShowReportModal(true);
+              }}
+            >
+              <FontAwesomeIcon icon={faFileLines} className="report-icon" />
+              <div className="operation-summary">
+                <h4>{report.operation}</h4>
+                <p>{new Date(report.timestamp).toLocaleTimeString()}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {operationReports.length > 5 && (
+          <button 
+            className="view-all-btn"
+            onClick={() => {
+              setCurrentReport({
+                operation: 'Full Operations History',
+                details: 'Complete log of all operations performed',
+                stats: { operations: operationReports },
+                timestamp: new Date().toISOString()
+              });
+              setShowReportModal(true);
+            }}
+          >
+            View All ({operationReports.length})
+          </button>
+        )}
       </div>
-    </>
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <ReportModal 
+          report={currentReport} 
+          onClose={() => setShowReportModal(false)} 
+        />
+      )}
+    </div>
   );
 };
 

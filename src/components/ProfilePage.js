@@ -11,6 +11,11 @@ import {
   faTrashAlt,
   faSearch,
   faNotesMedical,
+  faRocket,
+  faChartLine,  
+  faBell,
+  faLightbulb,
+  faFolderOpen,
 } from '@fortawesome/free-solid-svg-icons';
 import './ProfilePage.css';
 import UserCard from './UserCard';
@@ -120,6 +125,7 @@ const ProfilePage = ({ onLogout = () => {} }) => {
       const response = await axios.delete(`http://localhost:5000/projects/${projectId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       if (response.status === 200) {
         setProjects(projects.filter((project) => project.id !== projectId));
       } else {
@@ -162,15 +168,52 @@ const ProfilePage = ({ onLogout = () => {} }) => {
 
       <main className="main-content">
         <UserCard user={user} />
-        <div className="welcome-banner">
-    👋 Hello <strong>{user.name}</strong>!<br />
-  Welcome to <strong>MedicalVision</strong> <br />
-  your hub for managing medical data and AI-powered diagnosis tools.<br />
-  Start by selecting a project or create a new one to get started!<br />
+        <div className="welcome-banner-modern">
+  <div className="welcome-content-modern">
+    <div className="welcome-text-modern">
+      <div className="welcome-header-modern">
+        <span className="welcome-greeting-modern">Bonjour, Dr. {user.name.split(' ')[0]}</span>
+        <h1 className="welcome-title-modern">
+          Votre Espace <span className="welcome-highlight-modern">Médical</span>
+        </h1>
+      </div>
+      <p className="welcome-subtitle-modern">
+        Optimisez vos diagnostics avec nos outils IA dernière génération
+      </p>
+      
+      <div className="welcome-stats-modern">
+        <div className="stat-modern">
+          <div className="stat-value-modern">{projects.length}</div>
+          <div className="stat-label-modern">Projets actifs</div>
+        </div>
+        <div className="stat-modern">
+          <div className="stat-value-modern">97%</div>
+          <div className="stat-label-modern">Précision IA</div>
+        </div>
+        <div className="stat-modern">
+          <div className="stat-value-modern">
+            <FontAwesomeIcon icon={faRocket} />
+          </div>
+          <div className="stat-label-modern">Nouveautés</div>
+        </div>
+      </div>
+    </div>
+    
+    <div className="welcome-decoration-modern">
+      <div className="decoration-circle-modern"></div>
+      <div className="decoration-wave-modern"></div>
+    </div>
+  </div>
+  
+  <div className="welcome-footer-modern">
+    <div className="welcome-tip-modern">
+      <FontAwesomeIcon icon={faLightbulb} className="tip-icon-modern" />
+      <span>Astuce : Utilisez Ctrl+K pour accéder rapidement à toutes les fonctionnalités</span>
+    </div>
+  </div>
 </div>
 
-
-        <section className="projects-section">
+<section className="projects-section">
           <div className="projects-header">
             <h2 className="projects-title">
               Projects
@@ -249,8 +292,9 @@ const ProfilePage = ({ onLogout = () => {} }) => {
                 </div>
               </div>
             </div>
-          )}
-        </section>
+  )}
+</section>
+
       </main>
     </div>
   );

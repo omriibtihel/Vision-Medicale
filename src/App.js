@@ -20,13 +20,12 @@ import Deployment from './components/deployment';
 import AdminDashboard from './components/AdminDashboard';
 function App() {
   return (
-    <Router>
       <div className="App">
         <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-          <Route element={<PrivateRoute />}>
+            <Route path="/" element={<Login />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route element={<PrivateRoute />}>
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/project/:id/:name" element={<ProjectDetails />} />
@@ -51,7 +50,6 @@ function App() {
           </Route>
         </Routes>
       </div>
-    </Router>
   );
 }
 
