@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faChartLine, faCog, faBrain, faDatabase,faPlay, faFileAlt,faHistory ,faRocket} from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import './models.css';
+import './sidebar.css'; // Assurez-vous que le chemin est correct
 import FeatureImportanceChart from './FeatureImportanceChart'; // Assurez-vous que le chemin est correct
 import { useLocation } from 'react-router-dom';
 
@@ -212,38 +213,75 @@ const handleDepClick = () => navigate(`/deployment/${id}/${targetFeature}`);
 
   return (
     <>
-      <div className="menu-bar">
-        <div className="app-name2">
-          <img src="/lg.png" alt="App Icon" className="app-icon" />
-          <span>MedicalVision</span>
-        </div>
-        <div className="menu-item" onClick={handleProfileClick}>
-          <FontAwesomeIcon icon={faUser} className="menu-icon" /> Profile
-        </div>
-        <div className="menu-item" onClick={handleDBClick}>
-          <FontAwesomeIcon icon={faDatabase} className="menu-icon" /> Database
-        </div>
-        <div className="menu-item" onClick={handleHistorique}>
-                     <FontAwesomeIcon icon={faHistory} className="menu-icon" /> History
-                </div>
-        <div className="menu-item" onClick={handleDescription}>
-          <FontAwesomeIcon icon={faFileAlt} className="menu-icon" /> Description
-        </div>
-        <div className="menu-item" onClick={handleGraphsClick}>
-          <FontAwesomeIcon icon={faChartLine} className="menu-icon" /> Graphs
-        </div>
-        <div className="menu-item" onClick={handleProcessingClick}>
-          <FontAwesomeIcon icon={faCog} className="menu-icon" /> Processing
-        </div>
-        <div className="menu-item" onClick={handleModelsClick}>
-          <FontAwesomeIcon icon={faBrain} className="menu-icon" /> Models
-        </div>
-        <div className="menu-item" onClick={handleDepClick}>
-          <FontAwesomeIcon icon={faRocket} className="menu-icon" /> Deployment
-        </div>
-        
-     
+        {/* Sidebar modernisée */}
+    <div className="app-sidebar">
+      <div className="sidebar-header">
+        <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
+        <h2>MedicalVision</h2>
       </div>
+      
+      <nav className="sidebar-nav">
+        {[
+          { 
+            icon: faUser,
+            label: "Profile",
+            action: handleProfileClick,
+            active: false
+          },
+          { 
+            icon: faDatabase,
+            label: "Database", 
+            action: handleDBClick,
+            active: false
+          },
+          { 
+            icon: faHistory,
+            label: "History",
+            action: handleHistorique,
+            active: false
+          },
+          { 
+            icon: faFileAlt,
+            label: "Description",
+            action: handleDescription,
+            active: false
+          },
+          { 
+            icon: faChartLine,
+            label: "Graphs",
+            action: handleGraphsClick,
+            active: false
+          },
+          { 
+            icon: faCog,
+            label: "Processing",
+            action: handleProcessingClick,
+            active: false
+          },
+          { 
+            icon: faBrain,
+            label: "Models",
+            action: () => {}, // Vide car déjà sur cette page
+            active: true
+          },
+          { 
+            icon: faRocket,
+            label: "Deployment",
+            action: handleDepClick,
+            active: false
+          }
+        ].map((item, index) => (
+          <button
+            key={index}
+            className={`nav-item ${item.active ? 'active' : ''}`}
+            onClick={item.action}
+          >
+            <FontAwesomeIcon icon={item.icon} />
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
       <div className="content2">
   <h1>Model Training</h1> 
 

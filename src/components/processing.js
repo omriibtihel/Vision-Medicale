@@ -1,22 +1,26 @@
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {faChevronLeft , faChevronRight} from '@fortawesome/free-solid-svg-icons';
 import React, { useState, useEffect } from 'react';
+import  {  useRef } from 'react';
+import useOutsideClick from '../useOutsideClick';
 import { 
   faUser, faChartLine, faCog, faDatabase, faClone, 
   faFileAlt, faTrash, faHistory, faBrain, faRocket, 
   faCheckCircle, faSave, faBroom, faArrowsRotate, 
   faDownload, faFileLines, faChevronDown, faChevronUp,
-  faSpinner
+  faSpinner, faTags, faLanguage, faListOl, faTextWidth
 } from '@fortawesome/free-solid-svg-icons';
 import { mean } from 'mathjs';
 import axios from 'axios';
 import KNN from 'ml-knn';
 import './Processing.css';
+import '../useOutsideClick.js';
 
 const Processing = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { id, targetFeature } = useParams();
+  const { id, targetFeature: initialTargetFeature } = useParams();
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +32,6 @@ const Processing = () => {
   const [isOpen2, setIsOpen2] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isOpen3, setIsOpen3] = useState(false);
-  const [showDropdown3, setShowDropdown3] = useState(false);
   const [selectedColumnsImp, setSelectedColumnsImp] = useState([]);
   const [isImputing, setIsImputing] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
@@ -36,6 +39,38 @@ const Processing = () => {
   const [operationReports, setOperationReports] = useState([]);
   const [showReportModal, setShowReportModal] = useState(false);
   const [currentReport, setCurrentReport] = useState(null);
+  const [targetFeature, setTargetFeature] = useState(initialTargetFeature || '');
+  const [isOpen4, setIsOpen4] = useState(false);
+const [showImputationDropdown, setShowImputationDropdown] = useState(false);
+const [showEncodingDropdown, setShowEncodingDropdown] = useState(false);
+const toggleImputationDropdown = () => setShowImputationDropdown(!showImputationDropdown);
+const toggleEncodingDropdown = () => setShowEncodingDropdown(!showEncodingDropdown);
+  const [isProcessingCat, setIsProcessingCat] = useState(false);
+const [selectedColumnsCat, setSelectedColumnsCat] = useState([]);
+const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+
+// Créez des refs pour chaque menu déroulant
+  const dropdownRef1 = useRef(null);
+  const dropdownRef2 = useRef(null);
+  const dropdownRef3 = useRef(null);
+  const dropdownRef4 = useRef(null);
+  const imputationDropdownRef = useRef(null);
+  const encodingDropdownRef = useRef(null);
+  const normalizationDropdownRef = useRef(null);
+
+  // Utilisez le hook pour chaque menu déroulant
+  useOutsideClick([dropdownRef1], () => setIsOpen1(false));
+  useOutsideClick([dropdownRef2], () => setIsOpen2(false));
+  useOutsideClick([dropdownRef3], () => setIsOpen3(false));
+  useOutsideClick([dropdownRef4], () => setIsOpen4(false));
+  useOutsideClick([imputationDropdownRef], () => setShowImputationDropdown(false));
+  useOutsideClick([encodingDropdownRef], () => setShowEncodingDropdown(false));
+  useOutsideClick([normalizationDropdownRef], () => setShowDropdown(false));
+
+
+  const [encodingMethod, setEncodingMethod] = useState('');
+  const [columnTypes, setColumnTypes] = useState({});
 
   // Navigation handlers
   const handleProfileClick = () => navigate('/profile');
@@ -50,10 +85,30 @@ const Processing = () => {
   const handleHistorique = () => navigate(`/historique/${id}/${targetFeature}`);
   const handleDepClick = () => navigate(`/deployment/${id}/${targetFeature}`);
 
-  // Data fetching and cleaning
+  // Data cleaning helpers
   const cleanData = (data) => (typeof data === 'string' ? data.replace(/NaN/g, 'null') : data);
   const sanitizeJson = (jsonString) => jsonString.replace(/NaN/g, 'null');
 
+  // Fetch target feature from backend
+  const fetchTargetFeature = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/projects/${id}/target-feature`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data.currentTarget) {
+        setTargetFeature(response.data.currentTarget);
+        return response.data.currentTarget;
+      }
+    } catch (error) {
+      console.error('Error fetching target feature:', error);
+    }
+    return null;
+  };
+
+  // Main data import function
   const importBD = async () => {
     const token = localStorage.getItem('token');
     try {
@@ -73,42 +128,140 @@ const Processing = () => {
       if (Array.isArray(cleanedData)) {
         setData(cleanedData);
         setFilteredData(cleanedData);
+        
+        if (cleanedData.length > 0) {
+          const availableFeatures = Object.keys(cleanedData[0]);
+          
+          if (!targetFeature || !availableFeatures.includes(targetFeature)) {
+            const fetchedTarget = await fetchTargetFeature();
+            
+            if (fetchedTarget && availableFeatures.includes(fetchedTarget)) {
+              setTargetFeature(fetchedTarget);
+            } else if (availableFeatures.length > 0) {
+              setTargetFeature(availableFeatures[0]);
+              setError(`Target feature not found. Using ${availableFeatures[0]} as default.`);
+            } else {
+              setError('No features available in dataset');
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      setError('Error fetching data from server');
-      alert(error);
+      setError(`Error fetching data: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    const encodedFiltdate = urlParams.get('filtdate');
-
-    if (encodedFiltdate) {
-      try {
-        const decodedFiltdate = JSON.parse(decodeURIComponent(encodedFiltdate));
-        setData(decodedFiltdate);
-        setFilteredData(decodedFiltdate);
+    const loadData = async () => {
+      setLoading(true);
+      
+      if (location.state?.isFromHistory) {
+        setData(location.state.fileData);
+        setFilteredData(location.state.fileData);
+        if (location.state.targetFeature) {
+          setTargetFeature(location.state.targetFeature);
+        }
         setLoading(false);
-      } catch (error) {
-        console.error("Decoding error:", error);
-        importBD();
+        return;
       }
-    } else {
-      importBD();
-    }
-  }, [id, location.search]);
 
-  // Helper to add operation report
+      const urlParams = new URLSearchParams(location.search);
+      const versionId = urlParams.get('versionId');
+      
+      if (versionId) {
+        try {
+          const response = await fetch(`http://localhost:5000/fichier/${versionId}`);
+          const result = await response.json();
+          
+          if (result.data) {
+            setData(result.data);
+            setFilteredData(result.data);
+            if (result.targetFeature) {
+              setTargetFeature(result.targetFeature);
+            }
+          }
+        } catch (error) {
+          console.error("Error loading version:", error);
+        }
+      } else {
+        await importBD();
+      }
+      
+      setLoading(false);
+    };
+
+    loadData();
+  }, [id, location.state, location.search]);
+
+  
+
+  useEffect(() => {
+    if (filteredData.length > 0) {
+      const columns = Object.keys(filteredData[0]);
+      
+      if (targetFeature && !columns.includes(targetFeature)) {
+        const possibleTargets = columns.filter(col => 
+          col.toLowerCase().includes('target') || 
+          col.toLowerCase().includes('class') ||
+          col.toLowerCase().includes('label')
+        );
+        
+        if (possibleTargets.length > 0) {
+          setTargetFeature(possibleTargets[0]);
+        } else {
+          setError(`La target feature "${targetFeature}" est introuvable.`);
+        }
+      }
+
+      // Detect column types when data changes
+      const types = {};
+      columns.forEach(col => {
+        types[col] = detectColumnType(col);
+      });
+      setColumnTypes(types);
+    }
+  }, [filteredData, targetFeature]);
+
+  // Improved column type detection
+  const detectColumnType = (column) => {
+    if (!filteredData.length) return 'unknown';
+    
+    const sample = filteredData.slice(0, 100).map(row => row[column]);
+    const nonNullSample = sample.filter(val => val !== null && val !== undefined);
+    
+    if (nonNullSample.length === 0) return 'unknown';
+    
+    // Check if all values are numeric
+    const allNumeric = nonNullSample.every(val => !isNaN(parseFloat(val)) && isFinite(val));
+    
+    // Check if values look like categorical codes (e.g., "001", "002")
+    const looksLikeCode = nonNullSample.some(
+      val => typeof val === 'string' && /^[0-9]+$/.test(val) && val.length <= 5
+    );
+    
+    // Check cardinality
+    const uniqueValues = new Set(nonNullSample);
+    const lowCardinality = uniqueValues.size <= Math.min(20, filteredData.length * 0.1);
+    
+    if (allNumeric && !looksLikeCode && !lowCardinality) {
+      return 'numeric';
+    } else if (looksLikeCode || lowCardinality) {
+      return 'categorical';
+    } else {
+      return 'text';
+    }
+  };
+
+  // Operation reporting
   const addOperationReport = (operation, details, affectedColumns, stats) => {
     const newReport = {
       timestamp: new Date().toISOString(),
       operation,
       details,
-      affectedColumns,
+      affectedColumns: affectedColumns.filter(col => col !== targetFeature),
       stats,
       dataSample: filteredData.slice(0, 3)
     };
@@ -117,7 +270,7 @@ const Processing = () => {
     return newReport;
   };
 
-  // Data processing functions with reporting
+  // Data processing functions
   const handleDataCleaning = async () => {
     if (filteredData.length === 0) {
       alert("No data to clean");
@@ -126,12 +279,11 @@ const Processing = () => {
 
     setIsCleaning(true);
     try {
-      const columns = Object.keys(filteredData[0] || {});
+      const columns = Object.keys(filteredData[0] || {}).filter(col => col !== targetFeature);
       const means = {};
       const nullStats = {};
       let missingValueCount = 0;
 
-      // Calculate means and null counts for each column
       columns.forEach(column => {
         const numericValues = filteredData
           .map(row => parseFloat(row[column]))
@@ -143,7 +295,6 @@ const Processing = () => {
         ).length;
       });
 
-      // Clean the data
       const cleanedData = filteredData.map(row => {
         const cleanedRow = { ...row };
         columns.forEach(column => {
@@ -155,7 +306,7 @@ const Processing = () => {
         return cleanedRow;
       });
 
-      // Create report
+
       const report = addOperationReport(
         'Data Cleaning',
         'Removed null values by mean imputation',
@@ -163,11 +314,11 @@ const Processing = () => {
         {
           totalNullValues: Object.values(nullStats).reduce((a, b) => a + b, 0),
           nullValuesByColumn: nullStats,
-          meansUsed: means
+          meansUsed: means,
+          targetFeatureProtected: targetFeature
         }
       );
 
-      // Update state
       setFilteredData(cleanedData);
       setCurrentReport(report);
       setShowReportModal(true);
@@ -185,31 +336,37 @@ const Processing = () => {
       return;
     }
 
+    if (selectedColumns.includes(targetFeature)) {
+      alert(`Cannot remove the target feature: ${targetFeature}`);
+      return;
+    }
+
     setIsRemoving(true);
     try {
       const cleanedData = filteredData.map(row => {
         const newRow = { ...row };
         selectedColumns.forEach(col => {
-          delete newRow[col];
+          if (col !== targetFeature) {
+            delete newRow[col];
+          }
         });
         return newRow;
       });
 
-      // Create report
       const report = addOperationReport(
         'Column Removal',
         `Removed ${selectedColumns.length} columns from dataset`,
         selectedColumns,
         {
-          columnsRemoved: selectedColumns,
+          columnsRemoved: selectedColumns.filter(col => col !== targetFeature),
           remainingColumns: Object.keys(cleanedData[0] || {}),
-          rowCount: cleanedData.length
+          rowCount: cleanedData.length,
+          targetFeaturePreserved: targetFeature
         }
       );
 
-      // Update state
       setFilteredData(cleanedData);
-      setSelectedColumns([]);
+      setSelectedColumns(prev => prev.filter(col => col !== targetFeature));
       setCurrentReport(report);
       setShowReportModal(true);
     } catch (error) {
@@ -221,15 +378,17 @@ const Processing = () => {
   };
 
   const handleDataTransformation = (type) => {
-    if (selectedColumnsNr.length === 0) {
-      alert("Please select columns to normalize");
+    const columnsToTransform = selectedColumnsNr.filter(col => col !== targetFeature);
+    
+    if (columnsToTransform.length === 0) {
+      alert("Please select columns to normalize (excluding the target feature)");
       return;
     }
 
     let normalizedData = filteredData.map(row => ({ ...row }));
     const transformationDetails = {};
 
-    selectedColumnsNr.forEach(column => {
+    columnsToTransform.forEach(column => {
       const values = filteredData.map(row => parseFloat(row[column])).filter(v => !isNaN(v));
       if (values.length === 0) return;
 
@@ -268,17 +427,18 @@ const Processing = () => {
     const report = addOperationReport(
       `Data Transformation - ${type}`,
       `Applied ${type} to selected columns`,
-      selectedColumnsNr,
+      columnsToTransform,
       {
         transformationType: type,
         columnStats: transformationDetails,
-        normalizedColumnsCount: selectedColumnsNr.length
+        normalizedColumnsCount: columnsToTransform.length,
+        targetFeatureExcluded: targetFeature
       }
     );
 
-    setNormalizedColumns([...new Set([...normalizedColumns, ...selectedColumnsNr])]);
+    setNormalizedColumns([...new Set([...normalizedColumns, ...columnsToTransform])]);
     setFilteredData(normalizedData);
-    setSelectedColumnsNr([]);
+    setSelectedColumnsNr(prev => prev.filter(col => col !== targetFeature));
     setCurrentReport(report);
     setShowReportModal(true);
   };
@@ -287,7 +447,11 @@ const Processing = () => {
     const uniqueRows = new Set();
     const duplicateRows = [];
     const dt = filteredData.filter((row, index) => {
-      const rowValues = Object.values(row).join('|');
+      const rowValues = Object.entries(row)
+        .filter(([key]) => key !== targetFeature)
+        .map(([_, value]) => value)
+        .join('|');
+      
       if (uniqueRows.has(rowValues)) {
         duplicateRows.push({ index, data: row });
         return false;
@@ -299,12 +463,13 @@ const Processing = () => {
     const report = addOperationReport(
       'Duplicate Removal',
       'Removed duplicate rows from dataset',
-      Object.keys(filteredData[0] || {}),
+      Object.keys(filteredData[0] || {}).filter(col => col !== targetFeature),
       {
         initialRowCount: filteredData.length,
         finalRowCount: dt.length,
         duplicatesRemoved: filteredData.length - dt.length,
-        duplicateExamples: duplicateRows.slice(0, 3)
+        duplicateExamples: duplicateRows.slice(0, 3),
+        targetFeaturePreserved: targetFeature
       }
     );
 
@@ -313,12 +478,12 @@ const Processing = () => {
     setShowReportModal(true);
   };
 
-  // Imputation functions with reporting
+  // Imputation functions
   const imputeByMean = (data, columns) => {
     const updatedData = data.map(row => ({ ...row }));
     const reportDetails = {};
     
-    columns.forEach(col => {
+    columns.filter(col => col !== targetFeature).forEach(col => {
       const validValues = updatedData
         .map(row => parseFloat(row[col]))
         .filter(value => !isNaN(value));
@@ -433,7 +598,6 @@ const Processing = () => {
     const updatedData = data.map(row => ({ ...row }));
     const reportDetails = {};
     
-    // Filter rows with at least one valid value
     const validData = data.filter(row => 
       columns.some(col => row[col] !== null && row[col] !== undefined && !isNaN(parseFloat(row[col])))
     );
@@ -443,16 +607,13 @@ const Processing = () => {
       return { updatedData: data, reportDetails: {} };
     }
 
-    // Prepare features and labels
     const features = validData.map(row => 
       columns.map(col => parseFloat(row[col]) || 0)
     );
     const labels = validData.map((_, idx) => idx);
 
-    // Train KNN model
     const knn = new KNN(features, labels, { k });
 
-    // Calculate before counts
     columns.forEach(col => {
       reportDetails[col] = {
         before: updatedData.filter(row => 
@@ -460,7 +621,6 @@ const Processing = () => {
       };
     });
 
-    // Impute missing values
     updatedData.forEach(row => {
       const hasMissing = columns.some(col => 
         row[col] === null || row[col] === undefined || isNaN(parseFloat(row[col])));
@@ -486,7 +646,6 @@ const Processing = () => {
       }
     });
 
-    // Calculate after counts
     columns.forEach(col => {
       reportDetails[col].after = updatedData.filter(row => 
         row[col] === null || row[col] === undefined || isNaN(parseFloat(row[col]))).length;
@@ -524,8 +683,10 @@ const Processing = () => {
   };
 
   const handleImputation = (method) => {
-    if (selectedColumnsImp.length === 0) {
-      alert("Please select columns for imputation");
+    const columnsToImpute = selectedColumnsImp.filter(col => col !== targetFeature);
+    
+    if (columnsToImpute.length === 0) {
+      alert("Please select columns for imputation (excluding the target feature)");
       return;
     }
 
@@ -535,19 +696,19 @@ const Processing = () => {
     try {
       switch (method) {
         case 'Mean Imputation':
-          result = imputeByMean(filteredData, selectedColumnsImp);
+          result = imputeByMean(filteredData, columnsToImpute);
           break;
         case 'Median Imputation':
-          result = imputeByMedian(filteredData, selectedColumnsImp);
+          result = imputeByMedian(filteredData, columnsToImpute);
           break;
         case 'Mode Imputation':
-          result = imputeByMode(filteredData, selectedColumnsImp);
+          result = imputeByMode(filteredData, columnsToImpute);
           break;
         case 'KNN Imputation':
-          result = imputeByKNN(filteredData, selectedColumnsImp);
+          result = imputeByKNN(filteredData, columnsToImpute);
           break;
         case 'Zero Imputation':
-          result = imputeByZero(filteredData, selectedColumnsImp);
+          result = imputeByZero(filteredData, columnsToImpute);
           break;
         default:
           throw new Error("Unknown imputation method");
@@ -558,23 +719,223 @@ const Processing = () => {
       const report = addOperationReport(
         `Data Imputation - ${method}`,
         `Applied ${method} to selected columns`,
-        selectedColumnsImp,
+        columnsToImpute,
         {
           method,
           columnStats: result.reportDetails,
           totalNullsBefore: Object.values(result.reportDetails).reduce((sum, col) => sum + col.before, 0),
-          totalNullsAfter: Object.values(result.reportDetails).reduce((sum, col) => sum + col.after, 0)
+          totalNullsAfter: Object.values(result.reportDetails).reduce((sum, col) => sum + col.after, 0),
+          targetFeatureExcluded: targetFeature
         }
       );
 
       setCurrentReport(report);
       setShowReportModal(true);
+      setSelectedColumnsImp(prev => prev.filter(col => col !== targetFeature));
 
     } catch (error) {
       console.error("Imputation error:", error);
       alert(`Error during imputation: ${error.message}`);
     } finally {
       setIsImputing(false);
+    }
+  };
+
+  // Categorical data functions
+  const identifyCategoricalColumns = () => {
+    if (filteredData.length === 0) return [];
+    
+    return Object.keys(filteredData[0]).filter(column => {
+      if (column === targetFeature || normalizedColumns.includes(column)) return false;
+      
+      return columnTypes[column] === 'categorical';
+    });
+  };
+
+  const handleOneHotEncoding = () => {
+    if (selectedColumnsCat.length === 0) {
+      alert("Veuillez sélectionner des colonnes catégorielles");
+      return;
+    }
+
+    setIsProcessingCat(true);
+    try {
+      const newColumns = {};
+      selectedColumnsCat.forEach(col => {
+        const uniqueValues = [...new Set(filteredData.map(row => row[col]))];
+        uniqueValues.forEach(val => {
+          newColumns[`${col}_${val}`] = filteredData.map(row => row[col] === val ? 1 : 0);
+        });
+      });
+
+      const newData = filteredData.map((row, index) => {
+        const newRow = { ...row };
+        selectedColumnsCat.forEach(col => {
+          delete newRow[col];
+        });
+        
+        Object.keys(newColumns).forEach(newCol => {
+          newRow[newCol] = newColumns[newCol][index];
+        });
+        
+        return newRow;
+      });
+
+      const report = addOperationReport(
+        'One-Hot Encoding',
+        `Encodage one-hot appliqué à ${selectedColumnsCat.length} colonnes`,
+        selectedColumnsCat,
+        {
+          method: 'One-Hot Encoding',
+          originalColumns: selectedColumnsCat,
+          newColumns: Object.keys(newColumns),
+          targetFeaturePreserved: targetFeature
+        }
+      );
+
+      setFilteredData(newData);
+      setCurrentReport(report);
+      setShowReportModal(true);
+      setSelectedColumnsCat([]);
+    } catch (error) {
+      console.error("Erreur d'encodage one-hot:", error);
+      alert(`Erreur d'encodage: ${error.message}`);
+    } finally {
+      setIsProcessingCat(false);
+    }
+  };
+
+  const handleLabelEncoding = () => {
+    if (selectedColumnsCat.length === 0) {
+      alert("Veuillez sélectionner des colonnes catégorielles");
+      return;
+    }
+
+    setIsProcessingCat(true);
+    try {
+      const encodingMaps = {};
+      const newData = filteredData.map(row => ({ ...row }));
+      
+      selectedColumnsCat.forEach(col => {
+        const uniqueValues = [...new Set(filteredData.map(row => row[col]))];
+        encodingMaps[col] = {};
+        
+        uniqueValues.forEach((val, index) => {
+          encodingMaps[col][val] = index;
+        });
+        
+        newData.forEach(row => {
+          row[col] = encodingMaps[col][row[col]] || 0;
+        });
+      });
+
+      const report = addOperationReport(
+        'Label Encoding',
+        `Encodage label appliqué à ${selectedColumnsCat.length} colonnes`,
+        selectedColumnsCat,
+        {
+          method: 'Label Encoding',
+          encodingMaps: encodingMaps,
+          targetFeaturePreserved: targetFeature
+        }
+      );
+
+      setFilteredData(newData);
+      setCurrentReport(report);
+      setShowReportModal(true);
+      setSelectedColumnsCat([]);
+    } catch (error) {
+      console.error("Erreur d'encodage label:", error);
+      alert(`Erreur d'encodage: ${error.message}`);
+    } finally {
+      setIsProcessingCat(false);
+    }
+  };
+
+  const handleFrequencyEncoding = () => {
+    if (selectedColumnsCat.length === 0) {
+      alert("Veuillez sélectionner des colonnes catégorielles");
+      return;
+    }
+
+    setIsProcessingCat(true);
+    try {
+      const frequencyMaps = {};
+      const newData = filteredData.map(row => ({ ...row }));
+      
+      selectedColumnsCat.forEach(col => {
+        const valueCounts = filteredData.reduce((acc, row) => {
+          acc[row[col]] = (acc[row[col]] || 0) + 1;
+          return acc;
+        }, {});
+        
+        frequencyMaps[col] = valueCounts;
+        const total = filteredData.length;
+        
+        newData.forEach(row => {
+          row[col] = valueCounts[row[col]] / total;
+        });
+      });
+
+      const report = addOperationReport(
+        'Frequency Encoding',
+        `Encodage par fréquence appliqué à ${selectedColumnsCat.length} colonnes`,
+        selectedColumnsCat,
+        {
+          method: 'Frequency Encoding',
+          frequencyMaps: frequencyMaps,
+          targetFeaturePreserved: targetFeature
+        }
+      );
+
+      setFilteredData(newData);
+      setCurrentReport(report);
+      setShowReportModal(true);
+      setSelectedColumnsCat([]);
+    } catch (error) {
+      console.error("Erreur d'encodage par fréquence:", error);
+      alert(`Erreur d'encodage: ${error.message}`);
+    } finally {
+      setIsProcessingCat(false);
+    }
+  };
+
+  const handleTextLengthExtraction = () => {
+    if (selectedColumnsCat.length === 0) {
+      alert("Veuillez sélectionner des colonnes textuelles");
+      return;
+    }
+
+    setIsProcessingCat(true);
+    try {
+      const newData = filteredData.map(row => ({ ...row }));
+      
+      selectedColumnsCat.forEach(col => {
+        newData.forEach(row => {
+          row[`${col}_length`] = String(row[col]).length;
+        });
+      });
+
+      const report = addOperationReport(
+        'Text Length Extraction',
+        `Extraction de longueur de texte appliquée à ${selectedColumnsCat.length} colonnes`,
+        selectedColumnsCat,
+        {
+          method: 'Text Length Extraction',
+          newFeatures: selectedColumnsCat.map(col => `${col}_length`),
+          targetFeaturePreserved: targetFeature
+        }
+      );
+
+      setFilteredData(newData);
+      setCurrentReport(report);
+      setShowReportModal(true);
+      setSelectedColumnsCat([]);
+    } catch (error) {
+      console.error("Erreur d'extraction de texte:", error);
+      alert(`Erreur d'extraction: ${error.message}`);
+    } finally {
+      setIsProcessingCat(false);
     }
   };
 
@@ -593,23 +954,24 @@ const Processing = () => {
     URL.revokeObjectURL(url);
   };
 
-  const handleSave = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Authentication token missing');
-
-      const response = await fetch(`http://localhost:5000/save-data/${id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ data: filteredData })
-      });
+ const handleSave = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`http://localhost:5000/save-data/${id}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ 
+        data: filteredData,
+        preprocessing_steps: operationReports, // Envoyez l'historique
+        modification: "Traitement personnalisé" 
+      })
+    });
 
       if (!response.ok) throw new Error('Failed to save data');
-      
-      const report = addOperationReport(
+            const report = addOperationReport(
         'Data Save',
         'Saved processed data to server',
         Object.keys(filteredData[0] || {}),
@@ -631,7 +993,7 @@ const Processing = () => {
 
   // UI helpers
   const calculateNullPercentages = () => {
-    const columns = Object.keys(filteredData[0] || {});
+    const columns = Object.keys(filteredData[0] || {}).filter(col => col !== targetFeature);
     const totalRows = filteredData.length;
     const nullPercentages = {};
 
@@ -651,6 +1013,8 @@ const Processing = () => {
   );
 
   const handleColumnCheckboxChange = (column) => {
+    if (column === targetFeature) return;
+    
     setSelectedColumns(prev => {
       const newSelection = new Set(prev);
       if (newSelection.has(column)) {
@@ -663,6 +1027,8 @@ const Processing = () => {
   };
 
   const handleColumnCheckboxChangeNr = (column) => {
+    if (column === targetFeature) return;
+    
     setSelectedColumnsNr(prev => {
       const newSelection = new Set(prev);
       if (newSelection.has(column)) {
@@ -675,7 +1041,23 @@ const Processing = () => {
   };
 
   const handleColumnCheckboxChangeImp = (column) => {
+    if (column === targetFeature) return;
+    
     setSelectedColumnsImp(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(column)) {
+        newSelection.delete(column);
+      } else {
+        newSelection.add(column);
+      }
+      return Array.from(newSelection);
+    });
+  };
+
+  const handleColumnCheckboxChangeCat = (column) => {
+    if (column === targetFeature) return;
+    
+    setSelectedColumnsCat(prev => {
       const newSelection = new Set(prev);
       if (newSelection.has(column)) {
         newSelection.delete(column);
@@ -690,14 +1072,18 @@ const Processing = () => {
   const toggleDropdown = () => setShowDropdown(!showDropdown);
   const toggleDropdown1 = () => setIsOpen1(!isOpen1);
   const toggleDropdown2 = () => setIsOpen2(!isOpen2);
-  const toggleDropdown3 = () => setIsOpen3(!isOpen3);
-  const toggleDropdown4 = () => setShowDropdown3(!showDropdown3);
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+
+
+
 
   // Data for rendering
   const headers = filteredData.length > 0 ? 
     Object.keys(filteredData[0]).filter(header => header !== targetFeature) : [];
   const availableColumns = headers.filter(header => !normalizedColumns.includes(header));
-  const rows = filteredData.slice(0, 15); // Only show first 15 rows for performance
+  const categoricalColumns = identifyCategoricalColumns();
+  const rows = filteredData.slice(0, 15);
 
   // Report Modal Component
   const ReportModal = ({ report, onClose }) => {
@@ -858,6 +1244,55 @@ const Processing = () => {
             </div>
           );
 
+        case 'One-Hot Encoding':
+        case 'Label Encoding':
+        case 'Frequency Encoding':
+        case 'Text Length Extraction':
+          return (
+            <div className="report-section">
+              <h3>Encoding Details</h3>
+              <p><strong>Method:</strong> {report.stats.method}</p>
+              <div className="stats-grid">
+                <div className="stat-item">
+                  <span className="stat-label">Original Columns:</span>
+                  <span className="stat-value">{report.affectedColumns.length}</span>
+                </div>
+                {report.stats.newColumns && (
+                  <div className="stat-item">
+                    <span className="stat-label">New Columns:</span>
+                    <span className="stat-value">{report.stats.newColumns.length}</span>
+                  </div>
+                )}
+              </div>
+              <h4>Columns affected:</h4>
+              <ul className="column-stats">
+                {report.affectedColumns.map(col => (
+                  <li key={col}>
+                    <span className="column-name">{col}</span>
+                    {report.stats.encodingMaps?.[col] && (
+                      <div className="encoding-map">
+                        {Object.entries(report.stats.encodingMaps[col]).map(([key, val]) => (
+                          <div key={key} className="encoding-pair">
+                            <span>{key}</span> → <span>{val}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {report.stats.frequencyMaps?.[col] && (
+                      <div className="frequency-map">
+                        {Object.entries(report.stats.frequencyMaps[col]).map(([key, val]) => (
+                          <div key={key} className="frequency-pair">
+                            <span>{key}</span> → <span>{val.toFixed(4)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+
         default:
           return (
             <div className="report-section">
@@ -899,56 +1334,109 @@ const Processing = () => {
   };
 
   return (
-    <div className="processing-modern">
-      {/* Sidebar */}
-      <div className="sidebar-modern">
-        <div className="sidebar-header-modern">
-          <img src="/lg.png" alt="MedicalVision" className="logo-modern" />
-          <h2>MedicalVision</h2>
-        </div>
-        
-        <nav className="nav-modern">
-          <button className="nav-item-modern" onClick={handleProfileClick}>
-            <FontAwesomeIcon icon={faUser} className="nav-icon-modern" />
-            <span>Profile</span>
-          </button>
-          <button className="nav-item-modern" onClick={handleDBClick}>
-            <FontAwesomeIcon icon={faDatabase} className="nav-icon-modern" />
-            <span>Database</span>
-          </button>
-          <button className="nav-item-modern" onClick={handleHistorique}>
-            <FontAwesomeIcon icon={faHistory} className="nav-icon-modern" />
-            <span>History</span>
-          </button>
-          <button className="nav-item-modern" onClick={handleDescription}>
-            <FontAwesomeIcon icon={faFileAlt} className="nav-icon-modern" />
-            <span>Description</span>
-          </button>
-          <button className="nav-item-modern" onClick={handleGraphsClick}>
-            <FontAwesomeIcon icon={faChartLine} className="nav-icon-modern" />
-            <span>Graphs</span>
-          </button>
-          <button className="nav-item-modern active-modern">
-            <FontAwesomeIcon icon={faCog} className="nav-icon-modern" />
-            <span>Processing</span>
-          </button>
-          <button className="nav-item-modern" onClick={handleModelsClick}>
-            <FontAwesomeIcon icon={faBrain} className="nav-icon-modern" />
-            <span>Models</span>
-          </button>
-          <button className="nav-item-modern" onClick={handleDepClick}>
-            <FontAwesomeIcon icon={faRocket} className="nav-icon-modern" />
-            <span>Deployment</span>
-          </button>
-        </nav>
+  <div className="processing-modern">
+    {/* Sidebar modernisée avec toggle */}
+    <div className={`app-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
+      <div className="sidebar-header">
+        <button className="sidebar-toggle" onClick={toggleSidebar}>
+          <FontAwesomeIcon 
+            icon={isSidebarOpen ? faChevronLeft : faChevronRight} 
+            className="toggle-icon"
+          />
+        </button>
+        {isSidebarOpen && (
+          <>
+            <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
+            <h2>MedicalVision</h2>
+          </>
+        )}
       </div>
-
+      
+      <nav className="sidebar-nav">
+        {[
+          { 
+            icon: faUser,
+            label: "Profile",
+            action: handleProfileClick,
+            active: false
+          },
+          { 
+            icon: faDatabase,
+            label: "Database", 
+            action: handleDBClick,
+            active: false
+          },
+          { 
+            icon: faHistory,
+            label: "History",
+            action: handleHistorique,
+            active: false
+          },
+          { 
+            icon: faFileAlt,
+            label: "Description",
+            action: handleDescription,
+            active: false
+          },
+          { 
+            icon: faChartLine,
+            label: "Graphs",
+            action: handleGraphsClick,
+            active: false
+          },
+          { 
+            icon: faCog,
+            label: "Processing",
+            action: () => {},
+            active: true
+          },
+          { 
+            icon: faBrain,
+            label: "Models",
+            action: handleModelsClick,
+            active: false
+          },
+          { 
+            icon: faRocket,
+            label: "Deployment",
+            action: handleDepClick,
+            active: false
+          }
+        ].map((item, index) => (
+          <button
+            key={index}
+            className={`nav-item ${item.active ? 'active' : ''}`}
+            onClick={item.action}
+            title={!isSidebarOpen ? item.label : ''}
+          >
+            <div className="nav-icon-container">
+              <FontAwesomeIcon icon={item.icon} className="nav-icon" />
+            </div>
+            {isSidebarOpen && <span className="nav-label">{item.label}</span>}
+          </button>
+        ))}
+      </nav>
+    </div>
       {/* Main Content */}
       <main className="content-modern">
-        <header className="content-header-modern">
+      <div className={`content-modern  ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+
           <h1>Data Processing Center</h1>
           <p className="subtitle-modern">Clean, transform and prepare your medical data for analysis</p>
-        </header>
+
+          <div className="target-feature-display">
+            <span className="target-label">Target Feature:</span>
+            <span className="target-value">{targetFeature || 'Not set'}</span>
+            {error && error.includes('Target feature') && (
+              <button 
+                onClick={fetchTargetFeature}
+                className="refresh-target-btn"
+              >
+                <FontAwesomeIcon icon={faArrowsRotate} /> Refresh
+              </button>
+            )}
+          </div>
+          <br/>
 
         {loading && (
           <div className="loading-modern">
@@ -998,7 +1486,7 @@ const Processing = () => {
                 ) : 'Remove Columns'}
               </button>
               
-              <div className="dropdown-modern">
+              <div className="dropdown-modern"ref={dropdownRef1}>
                 <button 
                   className="dropdown-toggle-modern"
                   onClick={toggleDropdown1}
@@ -1020,98 +1508,106 @@ const Processing = () => {
                         Select All
                       </button>
                     </div>
-                    {columnsWithHighNulls.map(column => (
-                      <label key={column} className="checkbox-modern">
-                        <input
-                          type="checkbox"
-                          checked={selectedColumns.includes(column)}
-                          onChange={() => handleColumnCheckboxChange(column)}
-                        />
-                        <span className="column-name">{column}</span>
-                        <span className="null-percentage">({nullPercentages[column].toFixed(1)}% null)</span>
-                      </label>
-                    ))}
+                         {columnsWithHighNulls.map(column => (
+                          <label key={column} className="checkbox-modern">
+                            <input
+                              type="checkbox"
+                              checked={selectedColumns.includes(column)}
+                              onChange={() => handleColumnCheckboxChange(column)}
+                              disabled={column === targetFeature}
+                            />
+                            <span className={`column-name ${column === targetFeature ? 'target-feature' : ''}`}>
+                              {column}
+                              {column === targetFeature && <span className="target-badge">Target</span>}
+                            </span>
+                            <span className="null-percentage">({nullPercentages[column].toFixed(1)}% null)</span>
+                          </label>
+                        ))}
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Imputation Card */}
-          <div className="action-card-modern">
-            <div className="card-header-modern">
-              <FontAwesomeIcon icon={faCheckCircle} className="card-icon-modern" />
-              <h3>Data Imputation</h3>
-            </div>
-            <div className="card-body-modern">
-              <div className="dropdown-modern">
-                <button 
-                  className="dropdown-toggle-modern"
-                  onClick={toggleDropdown4}
-                  disabled={isImputing}
-                >
-                  <span>{isImputing ? 'Processing...' : 'Imputation Methods'}</span>
-                  <FontAwesomeIcon icon={showDropdown3 ? faChevronUp : faChevronDown} className="dropdown-arrow" />
-                </button>
-                {showDropdown3 && (
-                  <div className="dropdown-menu-modern">
-                    {['Mean', 'Median', 'Mode', 'KNN', 'Zero'].map(method => (
-                      <button
-                        key={method}
-                        className="dropdown-item-modern"
-                        onClick={() => {
-                          setShowDropdown3(false);
-                          handleImputation(`${method} Imputation`);
-                        }}
-                      >
-                        {method} Imputation
-                      </button>
-                    ))}
-                  </div>
-                )}
+            {/* Imputation Card */}
+            <div className="action-card-modern">
+              <div className="card-header-modern">
+                <FontAwesomeIcon icon={faCheckCircle} className="card-icon-modern" />
+                <h3>Data Imputation</h3>
               </div>
-              
-              <div className="dropdown-modern">
-                <button 
-                  className="dropdown-toggle-modern"
-                  onClick={toggleDropdown3}
-                  disabled={isImputing}
-                >
-                  <span>Select Columns</span>
-                  <FontAwesomeIcon icon={isOpen3 ? faChevronUp : faChevronDown} className="dropdown-arrow" />
-                </button>
-                {isOpen3 && (
-                  <div className="dropdown-menu-modern">
-                    <div className="dropdown-header">
-                      <span>Available columns</span>
-                      <button 
-                        onClick={() => {
-                          setSelectedColumnsImp(availableColumns);
-                        }}
-                        className="select-all-btn"
-                      >
-                        Select All
-                      </button>
+              <div className="card-body-modern">
+                    <div className="dropdown-modern dropdown-imputation" ref={imputationDropdownRef}>
+
+                  <button 
+                    className="dropdown-toggle-modern"
+                    onClick={toggleImputationDropdown}
+                    disabled={isImputing}
+                  >
+                    <span>{isImputing ? 'Processing...' : 'Imputation Methods'}</span>
+                    <FontAwesomeIcon icon={showImputationDropdown ? faChevronUp : faChevronDown} className="dropdown-arrow" />
+                  </button>
+                  {showImputationDropdown && (
+                    <div className="dropdown-menu-modern">
+                      {['Mean', 'Median', 'Mode', 'KNN', 'Zero'].map(method => (
+                        <button
+                          key={method}
+                          className="dropdown-item-modern"
+                          onClick={() => {
+                            setShowImputationDropdown(false);
+                            handleImputation(`${method} Imputation`);
+                          }}
+                        >
+                          {method} Imputation
+                        </button>
+                      ))}
                     </div>
-                    {availableColumns.map(header => (
-                      <label key={header} className="checkbox-modern">
-                        <input
-                          type="checkbox"
-                          checked={selectedColumnsImp.includes(header)}
-                          onChange={() => handleColumnCheckboxChangeImp(header)}
-                          disabled={isImputing}
-                        />
-                        <span className="column-name">{header}</span>
-                        {nullPercentages[header] > 0 && (
-                          <span className="null-percentage">({nullPercentages[header].toFixed(1)}% null)</span>
-                        )}
-                      </label>
-                    ))}
-                  </div>
-                )}
+                  )}
+                </div>
+                
+                    <div className="dropdown-modern dropdown-columns" ref={dropdownRef3}>
+                  <button 
+                    className="dropdown-toggle-modern"
+                    onClick={() => setIsOpen3(!isOpen3)}
+                    disabled={isImputing}
+                  >
+                    <span>Select Columns</span>
+                    <FontAwesomeIcon icon={isOpen3 ? faChevronUp : faChevronDown} className="dropdown-arrow" />
+                  </button>
+                  {isOpen3 && (
+                    <div className="dropdown-menu-modern">
+                      <div className="dropdown-header">
+                        <span>Available columns</span>
+                        <button 
+                          onClick={() => {
+                            setSelectedColumnsImp(availableColumns);
+                          }}
+                          className="select-all-btn"
+                        >
+                          Select All
+                        </button>
+                      </div>
+                      {availableColumns.map(header => (
+                        <label key={header} className="checkbox-modern">
+                          <input
+                            type="checkbox"
+                            checked={selectedColumnsImp.includes(header)}
+                            onChange={() => handleColumnCheckboxChangeImp(header)}
+                            disabled={header === targetFeature || isImputing}
+                          />
+                          <span className={`column-name ${header === targetFeature ? 'target-feature' : ''}`}>
+                            {header}
+                            {header === targetFeature && <span className="target-badge">Target</span>}
+                          </span>
+                          {nullPercentages[header] > 0 && (
+                            <span className="null-percentage">({nullPercentages[header].toFixed(1)}% null)</span>
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
           {/* Normalization Card */}
           <div className="action-card-modern">
@@ -1120,7 +1616,7 @@ const Processing = () => {
               <h3>Data Normalization</h3>
             </div>
             <div className="card-body-modern">
-              <div className="dropdown-modern">
+              <div className= "dropdown-modern dropdown-normalization"   ref={normalizationDropdownRef}>
                 <button 
                   className="dropdown-toggle-modern"
                   onClick={toggleDropdown}
@@ -1147,7 +1643,7 @@ const Processing = () => {
                 )}
               </div>
               
-              <div className="dropdown-modern">
+              <div className=  "dropdown-modern dropdown-columns"      ref={dropdownRef2}>
                 <button 
                   className="dropdown-toggle-modern"
                   onClick={toggleDropdown2}
@@ -1168,19 +1664,128 @@ const Processing = () => {
                         Select All
                       </button>
                     </div>
-                    {availableColumns.map(header => (
+                      {availableColumns.map(header => (
+                              <label key={header} className="checkbox-modern">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedColumnsNr.includes(header)}
+                                  onChange={() => handleColumnCheckboxChangeNr(header)}
+                                  disabled={header === targetFeature}
+                                />
+                                <span className={`column-name ${header === targetFeature ? 'target-feature' : ''}`}>
+                                  {header}
+                                  {header === targetFeature && <span className="target-badge">Target</span>}
+                                </span>
+                              </label>
+                            ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Categorical Data Card */}
+          <div className="action-card-modern">
+            <div className="card-header-modern">
+              <FontAwesomeIcon icon={faTags} className="card-icon-modern" />
+              <h3>Categorical Data</h3>
+            </div>
+            <div className="card-body-modern">
+              <div className= "dropdown-modern dropdown-encoding"    ref={encodingDropdownRef}>
+                <button 
+                  className="dropdown-toggle-modern"
+                  onClick={toggleEncodingDropdown}
+                  disabled={isProcessingCat}
+                >
+                  <span>{encodingMethod || 'Encoding Methods'}</span>
+                  <FontAwesomeIcon icon={showEncodingDropdown ? faChevronUp : faChevronDown} className="dropdown-arrow" />
+                </button>
+                {showEncodingDropdown && (
+                  <div className="dropdown-menu-modern">
+                    <button className="dropdown-item-modern" onClick={() => {
+                      setShowEncodingDropdown(false);
+                      handleOneHotEncoding();
+                      setEncodingMethod('One-Hot Encoding');
+                    }}>
+                      One-Hot Encoding
+                    </button>
+                    <button className="dropdown-item-modern" onClick={() => {
+                      setShowEncodingDropdown(false);
+                      handleLabelEncoding();
+                      setEncodingMethod('Label Encoding');
+                    }}>
+                      Label Encoding
+                    </button>
+                    <button className="dropdown-item-modern" onClick={() => {
+                      setShowEncodingDropdown(false);
+                      handleFrequencyEncoding();
+                      setEncodingMethod('Frequency Encoding');
+                    }}>
+                      Frequency Encoding
+                    </button>
+                    <button className="dropdown-item-modern" onClick={() => {
+                      setShowEncodingDropdown(false);
+                      handleTextLengthExtraction();
+                      setEncodingMethod('Text Length');
+                    }}>
+                      Text Length Extraction
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <div className= "dropdown-modern dropdown-columns" ref={dropdownRef4}>
+                <button 
+                  className="dropdown-toggle-modern"
+                  onClick={() => {
+                    const catCols = identifyCategoricalColumns();
+                    setIsOpen4(!isOpen4);
+                    if (catCols.length === 0 && filteredData.length > 0) {
+                      alert("No categorical columns identified in the first 100 rows");
+                    }
+                  }}
+                  disabled={isProcessingCat}
+                >
+                  <span>Select Columns</span>
+                  <FontAwesomeIcon icon={isOpen4 ? faChevronUp : faChevronDown} className="dropdown-arrow" />
+                </button>
+                {isOpen4 && (
+                  <div className="dropdown-menu-modern">
+                    <div className="dropdown-header">
+                      <span>Categorical columns</span>
+                      <button 
+                        onClick={() => {
+                          setSelectedColumnsCat(identifyCategoricalColumns());
+                        }}
+                        className="select-all-btn"
+                      >
+                        Select All
+                      </button>
+                    </div>
+                    {categoricalColumns.map(header => (
                       <label key={header} className="checkbox-modern">
                         <input
                           type="checkbox"
-                          checked={selectedColumnsNr.includes(header)}
-                          onChange={() => handleColumnCheckboxChangeNr(header)}
+                          checked={selectedColumnsCat.includes(header)}
+                          onChange={() => handleColumnCheckboxChangeCat(header)}
+                          disabled={header === targetFeature}
                         />
-                        <span className="column-name">{header}</span>
+                        <span className={`column-name ${header === targetFeature ? 'target-feature' : ''}`}>
+                          {header}
+                          {header === targetFeature && <span className="target-badge">Target</span>}
+                        </span>
                       </label>
                     ))}
                   </div>
                 )}
               </div>
+              
+              {isProcessingCat && (
+                <div className="processing-indicator">
+                  <FontAwesomeIcon icon={faSpinner} spin />
+                  <span>Processing...</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1229,25 +1834,35 @@ const Processing = () => {
               <table className="data-table-modern">
                 <thead>
                   <tr>
-                    {headers.map(header => (
-                      <th 
-                        key={header} 
-                        className={
-                          `${nullPercentages[header] > 20 ? 'highlight-column' : ''} 
-                          ${selectedColumnsImp.includes(header) ? 'imputed-column' : ''}`
-                        }
-                      >
-                        {header}
-                        {nullPercentages[header] > 20 && (
-                          <span className="null-percentage">
-                            ({nullPercentages[header].toFixed(1)}% null)
-                          </span>
-                        )}
-                        {selectedColumnsImp.includes(header) && (
-                          <span className="imputed-badge">Imputed</span>
-                        )}
-                      </th>
-                    ))}
+                    {headers.map(header => {
+                      const columnType = columnTypes[header] || 'unknown';
+                      const isHighNull = nullPercentages[header] > 20;
+                      const isImputed = selectedColumnsImp.includes(header);
+                      
+                      return (
+                        <th 
+                          key={header} 
+                          className={`
+                            ${isHighNull ? 'highlight-column' : ''}
+                            ${isImputed ? 'imputed-column' : ''}
+                            ${columnType === 'categorical' ? 'categorical-column' : ''}
+                            ${columnType === 'numeric' ? 'numeric-column' : ''}
+                          `}
+                        >
+                          {header}
+                          {isHighNull && (
+                            <span className="null-percentage">
+                              ({nullPercentages[header].toFixed(1)}% null)
+                            </span>
+                          )}
+                          {isImputed && (
+                            <span className="imputed-badge">Imputed</span>
+                          )}
+                       
+                        
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
@@ -1268,7 +1883,8 @@ const Processing = () => {
                               key={column} 
                               className={
                                 `${isNull ? 'highlight-cell' : ''} 
-                                ${selectedColumnsImp.includes(column) ? 'imputed-cell' : ''}`
+                                ${selectedColumnsImp.includes(column) ? 'imputed-cell' : ''}
+                                ${categoricalColumns.includes(column) ? 'categorical-cell' : ''}`
                               }
                             >
                               {isNull ? 'N/A' : 
@@ -1288,7 +1904,8 @@ const Processing = () => {
               <p>No data available for preview</p>
             </div>
           )}
-        </div>
+        </div> 
+      </div>
       </main>
 
       {/* Operations History Panel */}

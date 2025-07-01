@@ -189,7 +189,7 @@ const ProjectDetail = () => {
           <div className="project-hero-modern">
             <div className="project-image-container-modern">
               <img 
-                src="/image/hand-drawn-business-planning-concept.png" 
+                src="/image/Data analysis-amico.svg"
                 alt="Project Illustration" 
                 className="project-image-modern" 
               />

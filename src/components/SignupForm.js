@@ -1,53 +1,69 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
-
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaUser, FaEnvelope, FaLock, FaExclamationCircle, FaUserPlus, FaPhone, FaBirthdayCake ,FaBriefcaseMedical, FaSchool, FaTimes, FaClock} from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaExclamationCircle, FaUserPlus, FaPhone, FaBriefcaseMedical, FaHospital, FaCamera } from 'react-icons/fa';
 
+// Animations
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const gradientFlow = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+`;
+
+// Styles
 const FormContainer = styled.div`
-  padding: 2.5rem;
-  width: 100%;
-  margin-top: 1.5rem;
-  box-sizing: border-box;
+  padding: 0rem;
+  width: 80;
+  max-width: 1200px;
+  margin: 2rem auto;
+  animation: ${fadeIn} 0.6s ease-out;
 
   @media (max-width: 768px) {
     padding: 1rem;
-    margin-top: 1.5rem; // Réduction sur mobile si nécessaire
-
+    margin-top: 1rem;
   }
 `;
 
 const Header = styled.div`
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2.5rem;
 `;
 
 const LogoIcon = styled.div`
-  background: #1a7bd3;
-  width: 60px;
-  height: 60px;
+  background: linear-gradient(135deg, #3B3BFD, #6366F1);
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   color: white;
-  font-size: 1.8rem;
+  font-size: 2rem;
+  box-shadow: 0 8px 24px rgba(59, 59, 253, 0.3);
 `;
 
 const Title = styled.h1`
-  font-size: 1.8rem;
-  margin-bottom: 0.5rem;
-  color: #1a7bd3;
-  font-family: 'Poppins', sans-serif;
+  font-size: 2.2rem;
+  background: linear-gradient(to right, #3B3BFD, #6366F1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
 `;
 
 const Subtitle = styled.p`
-  color: #666;
-  font-size: 0.9rem;
+  color: #7f8c8d;
+  font-size: 1rem;
   margin-bottom: 0;
+  font-family: 'Montserrat', sans-serif;
 `;
 
 const Form = styled.form`
@@ -55,150 +71,159 @@ const Form = styled.form`
   flex-direction: column;
 `;
 
+const PageContainer = styled.div`
+  display: flex;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+  background: white;
+  font-family: 'Montserrat', sans-serif;
+  width: 90%
+  margin:0 auto;
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+  }
+`;
+
+const Panel = styled.div`
+  flex: 1;
+  padding: 3rem;
+  position: relative;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 2rem 1.5rem;
+  }
+`;
+
+const LeftPanel = styled(Panel)`
+  background: white;
+  max-width: 50%;
+  
+  @media (max-width: 1024px) {
+    max-width: 100%;
+  }
+`;
+
+const RightPanel = styled(Panel)`
+  background: linear-gradient(135deg, #3B3BFD, #6366F1);
+  color: white;
+  max-width: 50%;
+
+  @media (max-width: 1024px) {
+    max-width: 100%;
+  }
+`;
+
+const ColumnTitle = styled.h3`
+  margin-bottom: 1.8rem;
+  font-size: 1.4rem;
+  color: ${props => props.theme === 'dark' ? 'white' : '#2c3e50'};
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+  position: relative;
+  display: inline-block;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 50px;
+    height: 3px;
+    background: ${props => props.theme === 'dark' ? 'white' : '#3B3BFD'};
+    border-radius: 3px;
+  }
+`;
+
 const InputGroup = styled.div`
   position: relative;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.8rem;
 `;
 
 const Input = styled.input`
-  padding: 0.9rem 1rem 0.9rem 3rem;
-  font-size: 1rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
   width: 80%;
-  transition: all 0.3s ease;
-  font-family: 'Poppins', sans-serif;
+  padding: 1.1rem 1.1rem 1.1rem 3.5rem;
+  font-size: 0.95rem;
+  font-family: 'Montserrat', sans-serif;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: rgba(245, 248, 250, 0.8);
+  color: #2c3e50;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
   &:focus {
-    border-color: #1a7bd3;
+    border-color: #3B3BFD;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(26, 123, 211, 0.1);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(59, 59, 253, 0.1);
+    transform: translateY(-2px);
+  }
+
+  &::placeholder {
+    color: #95a5a6;
+  }
+`;
+
+const DarkInput = styled(Input)`
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  &:focus {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: white;
   }
 `;
 
 const Icon = styled.div`
   position: absolute;
+  left: 1.2rem;
   top: 50%;
-  left: 1rem;
   transform: translateY(-50%);
-  color: #1a7bd3;
-`;
-
-const Button = styled.button`
-  margin: 1rem auto;
-  padding: 0.7rem 1.2rem;
-  font-size: 0.9rem;
-  color: white;
-  background-color: #1a7bd3;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: 'Poppins', sans-serif;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  width: auto;
-  display: block;
-  max-width: 200px;
-
-  &:hover {
-    background-color: #1560a8;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(26, 123, 211, 0.2);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const ErrorMessage = styled.p`
-  color: #e74c3c;
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Poppins', sans-serif;
+  color: ${props => props.theme === 'dark' ? 'white' : '#3B3BFD'};
+  font-size: 1.1rem;
 `;
 
 const PasswordRequirements = styled.div`
-  text-align: left;
-  font-size: 0.75rem;
-  padding: 0.75rem;
-  margin: 0.25rem 0 1rem;
+  padding: 1rem;
+  margin: 0.5rem 0 1.5rem;
   background: #f8f9fa;
-  border-radius: 6px;
+  border-radius: 10px;
   color: #666;
-  font-family: 'Poppins', sans-serif;
-`;
-
-const StyledLink = styled(Link)`
-  color: #1a7bd3;
-  text-decoration: none;
-  margin-top: 1.5rem;
-  display: block;
-  text-align: center;
-  font-size: 0.9rem;
-  font-family: 'Poppins', sans-serif;
-  transition: color 0.2s ease;
-
-  &:hover {
-    color: #1560a8;
-    text-decoration: underline;
-  }
-`;
-
-const ColumnTitle = styled.h3`
-  margin-bottom: 1rem;
-  font-size: 1.2rem;
-  color: #1a7bd3;
-  font-weight: 600;
-  font-family: 'Poppins', sans-serif;
-`;
-
-const Select = styled.select`
-  padding: 0.9rem 1rem 0.9rem 3rem;
-  font-size: 1rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  width: 100%;
-  font-family: 'Poppins', sans-serif;
-  background-color: white;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='14' height='10' viewBox='0 0 14 10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%231a7bd3' stroke-width='2' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  background-size: 12px;
-  cursor: pointer;
-
-  &:focus {
-    border-color: #1a7bd3;
-    box-shadow: 0 0 0 3px rgba(26, 123, 211, 0.1);
-    outline: none;
-  }
+  font-size: 0.85rem;
+  font-family: 'Montserrat', sans-serif;
+  border-left: 4px solid #3B3BFD;
 `;
 
 const FileInputWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 `;
 
 const UploadLabel = styled.label`
-  display: inline-block;
-  background-color: #1a7bd3;
-  color: white;
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  background: ${props => props.theme === 'dark' ? 'rgba(255,255,255,0.2)' : '#f0f4f8'};
+  color: ${props => props.theme === 'dark' ? 'white' : '#3B3BFD'};
+  padding: 0.8rem 1.5rem;
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 0.9rem;
-  font-family: 'Poppins', sans-serif;
-  transition: background-color 0.3s;
+  font-size: 0.95rem;
+  font-family: 'Montserrat', sans-serif;
+  transition: all 0.3s ease;
+  border: 1px dashed ${props => props.theme === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(59, 59, 253, 0.3)'};
 
   &:hover {
-    background-color: #1560a8;
+    background: ${props => props.theme === 'dark' ? 'rgba(255,255,255,0.3)' : '#e6f0ff'};
+  }
+
+  svg {
+    margin-right: 0.8rem;
   }
 `;
 
@@ -206,274 +231,311 @@ const FileInput = styled.input`
   display: none;
 `;
 
-const ImagePreview = styled.img`
-  margin-top: 1rem;
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
+const ImagePreview = styled.div`
+  margin-top: 1.5rem;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
-  border: 2px solid #1a7bd3;
-`;
-
-const PageContainer = styled.div`
-  display: flex;
-  border-radius: 20px;
+  background: ${props => props.src ? `url(${props.src}) center/cover` : '#f0f4f8'};
+  border: 3px solid #3B3BFD;
+  position: relative;
   overflow: hidden;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.1);
-  margin: 0rem auto;
-  font-family: 'Poppins', sans-serif;
-  width: 100%;
-  max-width: 1000px;
-  justify-content: center;
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-  }
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 `;
 
-
-const LeftPanel = styled.div`
-  background: white;
-  flex: 1;
-  padding: 2.5rem;
-  max-width: 600px;
-  width: 100%;
-`;
-
-const RightPanel = styled.div`
-  flex: 1;
-  background: linear-gradient(135deg, #3B3BFD, #6366F1);
+const Button = styled.button`
+  margin: 2rem auto 0;
+  padding: 1.1rem 2.5rem;
+  font-size: 1rem;
   color: white;
-  padding: 2.5rem;
-  max-width: 600px;
-  width: 100%;
+  background: linear-gradient(to right, #3B3BFD, #6366F1);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 5px 20px rgba(59, 59, 253, 0.3);
+  position: relative;
+  overflow: hidden;
 
-  h3, label {
-    color: white;
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(59, 59, 253, 0.4);
   }
 
-  input, select {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+  &:active {
+    transform: translateY(0);
+  }
+`;
 
-    &::placeholder {
-      color: rgba(255, 255, 255, 0.7);
+const ErrorMessage = styled.div`
+  color: #ff6b6b;
+  font-size: 0.9rem;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Montserrat', sans-serif;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 8px;
+  border-left: 4px solid #ff6b6b;
+
+  svg {
+    margin-right: 0.5rem;
+  }
+`;
+
+const StyledLink = styled(Link)`
+  color: #3B3BFD;
+  text-decoration: none;
+  margin: 1.5rem auto 0;
+  display: block;
+  text-align: center;
+  font-size: 0.95rem;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -2px;
+    left: 0;
+    background-color: #3B3BFD;
+    transition: width 0.3s ease;
+  }
+
+  &:hover {
+    color: #6366F1;
+    
+    &::after {
+      width: 100%;
     }
   }
 `;
 
+const CheckboxContainer = styled.label`
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: ${props => props.theme === 'dark' ? 'white' : '#666'};
+  font-family: 'Montserrat', sans-serif;
+  margin-top: 1rem;
 
-
-
-
-
-
+  input {
+    margin-right: 0.8rem;
+    width: 18px;
+    height: 18px;
+    accent-color: #3B3BFD;
+    cursor: pointer;
+  }
+`;
 
 function SignupForm() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phoneNumber: '',
+    specialty: '',
+    hospital: '',
+    rememberMe: false
+  });
   const [profileImage, setProfileImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [specialty, setSpecialty] = useState('');
-  const [hospital, setHospital] = useState('');
-
-
-
-
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
-
-
-
-
-  
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (password !== confirmPassword) {
-    setError('Passwords do not match');
-    return;
-  }
-
-  try {
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('email', email);
-    formData.append('password', password);
-    formData.append('phoneNumber', phoneNumber);
-    formData.append('rememberMe', rememberMe);
-    formData.append('specialty', specialty);
-    formData.append('hospital', hospital);
-    if (profileImage) {
-      formData.append('profileImage', profileImage);
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
     }
 
-    const response = await axios.post('http://localhost:5000/signup', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
+    try {
+      const data = new FormData();
+      for (const key in formData) {
+        data.append(key, formData[key]);
       }
-    });
+      if (profileImage) data.append('profileImage', profileImage);
 
-    console.log('Signed up successfully');
-    navigate('/login');
-  } catch (error) {
-    setError(error.response?.data?.message || 'Error creating account');
-  }
-};
+      await axios.post('http://localhost:5000/signup', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
 
+      navigate('/login');
+    } catch (error) {
+      setError(error.response?.data?.message || 'Error creating account');
+    }
+  };
 
   return (
     <FormContainer>
       <Header>
         <LogoIcon>
-          <FaUserPlus size={20} /> {/* Icône légèrement réduite */}
+          <FaUserPlus size={24} />
         </LogoIcon>
-        <Title style={{ fontSize: '1.7rem' }}>Create Account</Title> {/* Taille réduite */}
-        <Subtitle style={{ fontSize: '0.85rem' }}>Join our medical platform today</Subtitle>
+        <Title>Create Account</Title>
+        <Subtitle>Join our medical platform today</Subtitle>
       </Header>
       
       <Form onSubmit={handleSubmit}>
-  <PageContainer>
-    {/* Colonne gauche */}
-    <LeftPanel>
-      <ColumnTitle>Informations Générales</ColumnTitle>
-      <InputGroup>
-        <Icon><FaUser /></Icon>
-        <Input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Full Name"
-          required
-        />
-      </InputGroup>
-
-      <InputGroup>
-        <Icon><FaEnvelope /></Icon>
-        <Input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-          required
-        />
-      </InputGroup>
-
-      <InputGroup>
-        <Icon><FaLock /></Icon>
-        <Input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          required
-          minLength="8"
-        />
-      </InputGroup>
-
-      <PasswordRequirements>
-        Password must contain:
-        <ul style={{ margin: '0.3rem 0 0 1rem', paddingLeft: '1rem' }}>
-          <li>At least 8 characters,1 uppercase letter,1 number</li>
-        </ul>
-      </PasswordRequirements>
-
-      <InputGroup>
-        <Icon><FaLock /></Icon>
-        <Input
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          placeholder="Confirm Password"
-          required
-        />
-      </InputGroup>
-
-      
-
-      <InputGroup>
-              <Icon><FaBriefcaseMedical /></Icon>
-
-        <Input
-          placeholder="Spécialité"
-          value={specialty}
-          onChange={(e) => setSpecialty(e.target.value)}
-        />
-      </InputGroup>
-
-    </LeftPanel>
-
-    {/* Colonne droite */}
-    <RightPanel>
-          <ColumnTitle>Contact</ColumnTitle>
+        <PageContainer>
+          <LeftPanel>
+            <ColumnTitle>General Information</ColumnTitle>
+            
+            <InputGroup>
+              <Icon><FaUser /></Icon>
+              <Input
+                name="name"
+                type="text"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Full Name"
+                required
+              />
+            </InputGroup>
 
             <InputGroup>
-        <Icon><FaPhone/></Icon>
-      <Input
-          type="tel"
-          name="phone"
-          placeholder="(+216) 12 345 678"
-          value={phoneNumber}
-          onChange={(e) => setPhoneNumber(e.target.value)}
-          required
-        />
-        </InputGroup>
+              <Icon><FaEnvelope /></Icon>
+              <Input
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Email"
+                required
+              />
+            </InputGroup>
 
+            <InputGroup>
+              <Icon><FaLock /></Icon>
+              <Input
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Password"
+                required
+                minLength="8"
+              />
+            </InputGroup>
 
-          
+            <PasswordRequirements>
+              Password must contain:
+              <ul style={{ margin: '0.5rem 0 0 1rem', paddingLeft: '1rem' }}>
+                <li>At least 8 characters</li>
+                <li>1 uppercase letter</li>
+                <li>1 number</li>
+              </ul>
+            </PasswordRequirements>
 
-      <InputGroup>
-        <Input
-          placeholder="Hôpital d’affiliation"
-          value={hospital}
-          onChange={(e) => setHospital(e.target.value)}
-        />
-      </InputGroup>
+            <InputGroup>
+              <Icon><FaLock /></Icon>
+              <Input
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="Confirm Password"
+                required
+              />
+            </InputGroup>
 
-      <FileInputWrapper>
-  <UploadLabel htmlFor="profileImage">Upload Profile Picture</UploadLabel>
-  <FileInput
-    type="file"
-    id="profileImage"
-    accept="image/*"
-    onChange={(e) => {
-      const file = e.target.files[0];
-      setProfileImage(file);
-      setPreviewUrl(URL.createObjectURL(file));
-    }}
-  />
-  {previewUrl && <ImagePreview src={previewUrl} alt="Profile Preview" />}
-</FileInputWrapper>
-<label>
-        <input
-          type="checkbox"
-          checked={rememberMe}
-          onChange={e => setRememberMe(e.target.checked)}
-        />
-        Se souvenir de moi
-      </label>
+            <InputGroup>
+              <Icon><FaBriefcaseMedical /></Icon>
+              <Input
+                name="specialty"
+                placeholder="Specialty"
+                value={formData.specialty}
+                onChange={handleChange}
+              />
+            </InputGroup>
+          </LeftPanel>
 
-    </RightPanel>
-  </PageContainer>
+          <RightPanel>
+            <ColumnTitle theme="dark">Contact Details</ColumnTitle>
 
-  {error && (
-    <ErrorMessage>
-      <FaExclamationCircle style={{ marginRight: '5px' }} />
-      {error}
-    </ErrorMessage>
-  )}
+            <InputGroup>
+              <Icon theme="dark"><FaPhone /></Icon>
+              <DarkInput
+                name="phoneNumber"
+                type="tel"
+                placeholder="Phone Number"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                required
+                theme="dark"
+              />
+            </InputGroup>
 
-  
-  <Button type="submit">Créer un compte</Button>
-  <StyledLink to="/login">Déjà inscrit ? Se connecter</StyledLink>
-</Form>
+            <InputGroup>
+              <Icon theme="dark"><FaHospital /></Icon>
+              <DarkInput
+                name="hospital"
+                placeholder="Affiliated Hospital"
+                value={formData.hospital}
+                onChange={handleChange}
+                theme="dark"
+              />
+            </InputGroup>
+
+            <FileInputWrapper>
+              <UploadLabel htmlFor="profileImage" theme="dark">
+                <FaCamera /> Upload Profile Picture
+              </UploadLabel>
+              <FileInput
+                type="file"
+                id="profileImage"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  setProfileImage(file);
+                  setPreviewUrl(URL.createObjectURL(file));
+                }}
+              />
+              {previewUrl && <ImagePreview src={previewUrl} />}
+            </FileInputWrapper>
+
+            <CheckboxContainer theme="dark">
+              <input
+                type="checkbox"
+                name="rememberMe"
+                checked={formData.rememberMe}
+                onChange={handleChange}
+              />
+              Remember me
+            </CheckboxContainer>
+          </RightPanel>
+        </PageContainer>
+
+        {error && (
+          <ErrorMessage>
+            <FaExclamationCircle /> {error}
+          </ErrorMessage>
+        )}
+
+        <Button type="submit">Create Account</Button>
+        <StyledLink to="/login">Already have an account? Sign In</StyledLink>
+      </Form>
     </FormContainer>
   );
 }

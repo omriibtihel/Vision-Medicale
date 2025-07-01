@@ -1,23 +1,84 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useState, useEffect } from 'react';
+import {faChevronLeft , faChevronRight} from '@fortawesome/free-solid-svg-icons';
+
 import axios from 'axios';
+import './sidebar.css';
 import { 
   faUser, faChartLine, faCog, faBrain, 
   faDatabase, faFileAlt, faHistory, faRocket,
-  faSearch, faFilter, faDownload, faEye
+  faSearch, faFilter, faDownload, faEye, faSyncAlt
 } from '@fortawesome/free-solid-svg-icons';
 import './Historique.css';
 
 const Historique = () => {
   const navigate = useNavigate();
-  const { id, targetFeature } = useParams();
+  const { id, targetFeature: initialTargetFeature } = useParams();
   const [hist, setHist] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileData, setFileData] = useState(null);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
+  const [targetFeature, setTargetFeature] = useState(initialTargetFeature || '');
+  const [loadingTarget, setLoadingTarget] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+
+  const handleProfileClick = () => navigate('/profile');
+  const handleDBClick = () => navigate(`/importSucc/${id}`);
+  const handleDescription = () => navigate(`/description/${id}/${targetFeature}`);
+  const handleGraphsClick = () => navigate(`/graphs/${id}/${targetFeature}`);
+  const handleProcessingClick = () => navigate(`/processing/${id}/${targetFeature}`);
+  const handleModelsClick = () => navigate(`/models/${id}/${targetFeature}`);
+  const handleDepClick = () => navigate(`/deployment/${id}/${targetFeature}`);
+  const filteredData = fileData ? fileData.filter(row => row[targetFeature] !== undefined) : [];
+
+  // Fonction pour récupérer la target feature depuis le backend
+  const fetchTargetFeature = async () => {
+    setLoadingTarget(true);
+    const token = localStorage.getItem('token');
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/projects/${id}/target-feature`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data.currentTarget) {
+        setTargetFeature(response.data.currentTarget);
+        return response.data.currentTarget;
+      }
+    } catch (error) {
+      console.error('Error fetching target feature:', error);
+    } finally {
+      setLoadingTarget(false);
+    }
+    return null;
+  };
+
+  // Vérifie que la target feature existe dans les données
+const validateTargetFeature = (data) => {
+  if (!data) return false;
+
+  let availableFeatures = [];
+
+  if (Array.isArray(data) && data.length > 0) {
+    availableFeatures = Object.keys(data[0]);
+  } else if (typeof data === 'object') {
+    availableFeatures = Object.keys(data);
+  }
+
+  if (!targetFeature || !availableFeatures.includes(targetFeature)) {
+    setError(`La target feature "${targetFeature}" n'existe pas dans ces données.`);
+    return false;
+  }
+
+  return true;
+};
+
 
   // Chargement de l'historique
   const importhist = async () => {
@@ -40,26 +101,63 @@ const Historique = () => {
   };
 
   // Chargement des données d'un fichier spécifique
-  const loadFileData = async (fileId) => {
-    if (!fileId) return;
-    
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/fichier/${fileId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      });
+const loadFileData = async (fileId) => {
+  if (!fileId) return;
 
-      const rawData = response.data?.data || response.data;
-      let parsedData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-      
-      if (!Array.isArray(parsedData)) parsedData = [parsedData];
-      
-      setFileData(parsedData);
-    } catch (error) {
-      setError(`Erreur de chargement: ${error.message}`);
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get(`http://localhost:5000/fichier/${fileId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      withCredentials: true,
+    });
+
+    let rawData = response.data?.data || response.data;
+
+    // Parse si c'est une string
+    let parsedData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+
+    // ⚠️ Extraire le champ "data" si présent
+    if (parsedData && parsedData.data && Array.isArray(parsedData.data)) {
+      parsedData = parsedData.data;
     }
-  };
+
+    // Si ce n'est toujours pas un tableau, on le met dans un tableau
+    if (!Array.isArray(parsedData)) {
+      parsedData = [parsedData];
+    }
+
+    // Récupération des features disponibles
+    let availableFeatures = [];
+    if (parsedData.length > 0 && typeof parsedData[0] === 'object') {
+      availableFeatures = Object.keys(parsedData[0]);
+    }
+
+    console.log("✅ Clés détectées dans les données :", availableFeatures);
+
+    // Vérification de la target feature
+    if (availableFeatures.length > 0) {
+      if (!availableFeatures.includes(targetFeature)) {
+        const fetchedTarget = await fetchTargetFeature();
+
+        if (fetchedTarget && availableFeatures.includes(fetchedTarget)) {
+          setTargetFeature(fetchedTarget);
+        } else {
+          setError(`La target feature "${fetchedTarget || targetFeature}" est introuvable dans les données.`);
+          return;
+        }
+      }
+    }
+
+    setFileData(parsedData);
+
+  } catch (error) {
+    setError(`Erreur de chargement: ${error.message}`);
+    console.error("❌ Erreur loadFileData:", error);
+  }
+};
+
+
+
 
   // Tri des colonnes
   const requestSort = (key) => {
@@ -77,23 +175,38 @@ const Historique = () => {
     return value.toString();
   };
 
-  // Navigation
+  
+  // Navigation avec vérification de la target feature
   const navigateTo = (path) => {
     if (!fileData) {
       setError('Sélectionnez des données d\'abord');
       return;
     }
+
+    if (!validateTargetFeature(fileData)) {
+      return;
+    }
+
     const encodedData = encodeURIComponent(JSON.stringify(fileData));
     navigate(`${path}/${id}/${targetFeature}?filtdate=${encodedData}`);
   };
 
   useEffect(() => {
-    importhist();
+    const initialize = async () => {
+      await importhist();
+      
+      // Si pas de target feature, on essaie de la récupérer
+      if (!targetFeature) {
+        await fetchTargetFeature();
+      }
+    };
+    
+    initialize();
   }, [id]);
 
   useEffect(() => {
     if (selectedFile) loadFileData(selectedFile.id);
-  }, [selectedFile]);
+  }, [selectedFile, targetFeature]);
 
   // Filtrage et tri
   const filteredHistory = hist.filter(item =>
@@ -112,40 +225,123 @@ const Historique = () => {
   return (
     <div className="historique-container">
       {/* Sidebar modernisée */}
-      <div className="app-sidebar">
-        <div className="sidebar-header">
-          <img src="/lg.png" alt="Logo" className="sidebar-logo" />
-          <h2>MedicalVision</h2>
-        </div>
-        
-        <nav className="sidebar-nav">
-          {[
-            { icon: faDatabase, label: "Base de données", action: () => navigate(`/importSucc/${id}`) },
-            { icon: faHistory, label: "Historique", action: () => navigate(`/historique/${id}/${targetFeature}`) },
-            { icon: faChartLine, label: "Graphiques", action: () => navigateTo('/graphs') },
-            { icon: faCog, label: "Traitement", action: () => navigateTo('/processing') },
-            { icon: faBrain, label: "Modèles", action: () => navigateTo('/models') },
-            { icon: faRocket, label: "Déploiement", action: () => navigate(`/deployment/${id}/${targetFeature}`) },
-          ].map((item, index) => (
-            <button 
-              key={index}
-              className={`nav-item ${window.location.pathname.includes(item.label.toLowerCase()) ? 'active' : ''}`}
-              onClick={item.action}
-            >
-              <FontAwesomeIcon icon={item.icon} />
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-      </div>
+          <div className={`app-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
+            <div className="sidebar-header">
+              <button className="sidebar-toggle" onClick={toggleSidebar}>
+                <FontAwesomeIcon 
+                  icon={isSidebarOpen ? faChevronLeft : faChevronRight} 
+                  className="toggle-icon"
+                />
+              </button>
+              {isSidebarOpen && (
+                <>
+                  <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
+                  <h2>MedicalVision</h2>
+                </>
+              )}
+            </div>
+      
+            <nav className="sidebar-nav">
+              {[
+                { 
+                  icon: faUser,
+                  label: "Profile",
+                  action: handleProfileClick,
+                  active: false
+                },
+                { 
+                  icon: faDatabase,
+                  label: "Database", 
+                  action: handleDBClick,
+                  active: false
+                },
+                { 
+                  icon: faHistory,
+                  label: "History",
+                  action: () => {},
+                  active: true
+                },
+                { 
+                  icon: faFileAlt,
+                  label: "Description",
+                  action: handleDescription,
+                  active: false
+                },
+                { 
+                  icon: faChartLine,
+                  label: "Graphs",
+                  action: handleGraphsClick,
+                  active: false
+                },
+                { 
+                  icon: faCog,
+                  label: "Processing",
+                  action: handleProcessingClick,
+                  active: false
+                },
+                { 
+                  icon: faBrain,
+                  label: "Models",
+                  action: handleModelsClick,
+                  active: false
+                },
+                { 
+                  icon: faRocket,
+                  label: "Deployment",
+                  action: handleDepClick,
+                  active: false
+                }
+              ].map((item, index) => (
+                        <button
+                          key={index}
+                          className={`nav-item ${item.active ? 'active' : ''}`}
+                          onClick={item.action}
+                          title={!isSidebarOpen ? item.label : ''}
+                        >
+                          <div className="nav-icon-wrapper">
+                            <FontAwesomeIcon icon={item.icon} className="nav-icon" />
+                          </div>
+                          {isSidebarOpen && <span className="nav-label">{item.label}</span>}
+                        </button>
+                      ))}
+                    </nav>
+          </div>
+
+           {/* Overlay mobile */}
+  {isSidebarOpen && window.innerWidth <= 992 && (
+    <div className="sidebar-overlay" onClick={toggleSidebar} />
+  )}
 
       {/* Contenu principal */}
       <main className="historique-content">
+              <div className={`historique-content ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+
         <header className="content-header">
           <h1>
             <FontAwesomeIcon icon={faHistory} />
             Historique des Versions
           </h1>
+          
+          <div className="target-feature-display">
+            <span className="target-label">Target Feature:</span>
+            {loadingTarget ? (
+              <FontAwesomeIcon icon={faSyncAlt} spin />
+            ) : (
+              <>
+                <span className="target-value">{targetFeature || 'Non définie'}</span>
+                {error && error.includes('target feature') && (
+                  <button 
+                    onClick={fetchTargetFeature}
+                    className="refresh-target-btn"
+                    title="Rafraîchir la target feature"
+                  >
+                    <FontAwesomeIcon icon={faSyncAlt} />
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+          
           <p className="subtitle">Suivi des modifications de vos données</p>
         </header>
 
@@ -233,6 +429,7 @@ const Historique = () => {
                 <button 
                   className="action-btn primary"
                   onClick={() => navigateTo('/processing')}
+                  disabled={!targetFeature}
                 >
                   <FontAwesomeIcon icon={faCog} /> Traiter ces données
                 </button>
@@ -240,6 +437,7 @@ const Historique = () => {
                 <button 
                   className="action-btn secondary"
                   onClick={() => navigateTo('/models')}
+                  disabled={!targetFeature}
                 >
                   <FontAwesomeIcon icon={faBrain} /> Modéliser
                 </button>
@@ -258,6 +456,7 @@ const Historique = () => {
                         className={key === targetFeature ? 'target-feature' : ''}
                       >
                         {key}
+                        {key === targetFeature && <span className="target-badge">Target</span>}
                         {sortConfig.key === key && (
                           <span className="sort-indicator">
                             {sortConfig.direction === 'asc' ? '↑' : '↓'}
@@ -296,6 +495,7 @@ const Historique = () => {
             </div>
           </section>
         )}
+        </div>
       </main>
     </div>
   );

@@ -165,36 +165,86 @@ const Graphs = () => {
   // Available attributes
   const attributes = data.length > 0 ? Object.keys(data[0]) : [];
 
+
+    const handleProfileClick = () => navigate('/profile');
+    const handleProcessingClick = () => navigate(`/processing/${id}/${targetFeature}`);
+    const handleModelsClick = () => navigate(`/models/${id}/${targetFeature}`);
+    const handleDepClick = () => navigate(`/deployment/${id}/${targetFeature}`);
+
+    const handleDescription = () => navigate(`/description/${id}/${targetFeature}`);
+    const handleHistorique = () => {navigate(`/historique/${id}/${targetFeature}`)}
+
   return (
     <div className="graphs-container">
-      {/* Sidebar */}
-      <div className="app-sidebar">
-        <div className="sidebar-header">
-          <img src="/lg.png" alt="Logo" className="sidebar-logo" />
-          <h2>MedicalVision</h2>
-        </div>
-        
-        <nav className="sidebar-nav">
-          {[
-            { icon: faDatabase, label: "Database", action: handleDBClick },
-            { icon: faHistory, label: "History", action: () => navigateTo('historique') },
-            { icon: faFileAlt, label: "Description", action: () => navigateTo('description') },
-            { icon: faChartLine, label: "Graphs", action: () => navigateTo('graphs') },
-            { icon: faCog, label: "Processing", action: () => navigateTo('processing') },
-            { icon: faBrain, label: "Models", action: () => navigateTo('models') },
-            { icon: faRocket, label: "Deployment", action: () => navigateTo('deployment') },
-          ].map((item, index) => (
-            <button 
-              key={index}
-              className={`nav-item ${window.location.pathname.includes(item.label.toLowerCase()) ? 'active' : ''}`}
-              onClick={item.action}
-            >
-              <FontAwesomeIcon icon={item.icon} />
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
+        {/* Sidebar modernisée */}
+    <div className="app-sidebar">
+      <div className="sidebar-header">
+        <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
+        <h2>MedicalVision</h2>
       </div>
+      
+      <nav className="sidebar-nav">
+        {[
+          { 
+            icon: faUser,
+            label: "Profile",
+            action: handleProfileClick,
+            active: false
+          },
+          { 
+            icon: faDatabase,
+            label: "Database", 
+            action: handleDBClick,
+            active: false
+          },
+          { 
+            icon: faHistory,
+            label: "History",
+            action: handleHistorique,
+            active: false
+          },
+          { 
+            icon: faFileAlt,
+            label: "Description",
+            action: handleDescription,
+            active: false
+          },
+          { 
+            icon: faChartLine,
+            label: "Graphs",
+            action: () => {}, // Vide car déjà sur cette page
+            active: true
+          },
+          { 
+            icon: faCog,
+            label: "Processing",
+            action: handleProcessingClick,
+            active: false
+          },
+          { 
+            icon: faBrain,
+            label: "Models",
+            action: handleModelsClick,
+            active: false
+          },
+          { 
+            icon: faRocket,
+            label: "Deployment",
+            action: handleDepClick,
+            active: false
+          }
+        ].map((item, index) => (
+          <button
+            key={index}
+            className={`nav-item ${item.active ? 'active' : ''}`}
+            onClick={item.action}
+          >
+            <FontAwesomeIcon icon={item.icon} />
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
 
       {/* Main Content */}
       <main className="graphs-content">
