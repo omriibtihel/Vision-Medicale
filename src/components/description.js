@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import'./sidebar.css';
 import { faUser, faChartLine, faCog, faBrain, faDatabase,  faFileAlt,faHistory ,faRocket} from '@fortawesome/free-solid-svg-icons';
+import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { mean, std, min, max } from 'mathjs';
 import './Description.css'; // Assurez-vous d'avoir un fichier CSS pour le style
 
@@ -126,17 +127,27 @@ const nullCountpr = (values.length === 0 ? 0 : (nullCount / values.length) * 100
     const handleDescription = () => navigate(`/description/${id}/${targetFeature}`);
     const handleHistorique = () => {navigate(`/historique/${id}/${targetFeature}`)}
 
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
     return (
-        <>
+        <div className="description-container">
               {/* Sidebar modernisée */}
-    <div className="app-sidebar">
-      <div className="sidebar-header">
-        <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
-        <h2>MedicalVision</h2>
-      </div>
+            <div className={`app-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
+                        <div className="sidebar-header">
+                          <button className="sidebar-toggle" onClick={toggleSidebar}>
+                            <FontAwesomeIcon 
+                              icon={isSidebarOpen ? faChevronLeft : faChevronRight} 
+                              className="toggle-icon"
+                            />
+                          </button>
+                          {isSidebarOpen && (
+                            <>
+                              <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
+                              <h2>MedicalVision</h2>
+                            </>
+                          )}
+                        </div>
       
       <nav className="sidebar-nav">
         {[
@@ -189,16 +200,19 @@ const nullCountpr = (values.length === 0 ? 0 : (nullCount / values.length) * 100
             active: false
           }
         ].map((item, index) => (
-          <button
-            key={index}
-            className={`nav-item ${item.active ? 'active' : ''}`}
-            onClick={item.action}
-          >
-            <FontAwesomeIcon icon={item.icon} />
-            <span>{item.label}</span>
-          </button>
-        ))}
-      </nav>
+                                <button
+                                  key={index}
+                                  className={`nav-item ${item.active ? 'active' : ''}`}
+                                  onClick={item.action}
+                                  title={!isSidebarOpen ? item.label : ''}
+                                >
+                                  <div className="nav-icon-wrapper">
+                                    <FontAwesomeIcon icon={item.icon} className="nav-icon" />
+                                  </div>
+                                  {isSidebarOpen && <span className="nav-label">{item.label}</span>}
+                                </button>
+                              ))}
+                            </nav>
     </div>
 
             <div className="content1">
@@ -260,7 +274,7 @@ const nullCountpr = (values.length === 0 ? 0 : (nullCount / values.length) * 100
                     </table>
                 </div>
             </div>
-        </>
+        </div>
     );
 };
 

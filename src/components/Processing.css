@@ -367,6 +367,22 @@
   background: white;
 }
 
+.action-btn-modern.warning {
+  background-color: #f0ad4e;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.action-btn-modern.warning:disabled {
+  background-color: #d3d3d3;
+  cursor: not-allowed;
+}
+
 /* DROPDOWN STYLES - Version corrigée */
 .dropdown-modern {
     position: relative;

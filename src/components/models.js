@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faChartLine, faCog, faBrain, faDatabase,faPlay, faFileAlt,faHistory ,faRocket} from '@fortawesome/free-solid-svg-icons';
+import { faUser, faChartLine, faCog, faBrain, faDatabase,faPlay, faFileAlt,faLightbulb,  faCheck,  faHistory ,faRocket} from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import './models.css';
+import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import './sidebar.css'; // Assurez-vous que le chemin est correct
 import FeatureImportanceChart from './FeatureImportanceChart'; // Assurez-vous que le chemin est correct
 import { useLocation } from 'react-router-dom';
+import LoadingOverlay from './LoadingOverlay';
+
+
 
 
 const Models = () => {
@@ -25,6 +29,12 @@ const Models = () => {
   const [selectedMetrics, setSelectedMetrics] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false); // Gérer l'état du dropdown
   const [isDropdownOpen1, setIsDropdownOpen1] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  
 
   const classificationModels = [
     'Random Forest',
@@ -75,32 +85,79 @@ const regressionMetrics = metrics.filter(metric =>
 );
 
   useEffect(() => {
-  // Extraire le paramètre 'filtdate' de l'URL
-  const urlParams = new URLSearchParams(location.search);
-  const encodedFiltdate = urlParams.get('filtdate');
-
-  if (encodedFiltdate) {
-    try {
-      // Décoder et parser les données JSON
-      const decodedFiltdate = JSON.parse(decodeURIComponent(encodedFiltdate));
-
-      // Mettre à jour l'état avec les données décodées
-      setData(decodedFiltdate);
-
-      // Afficher les données décodées dans la console
-      console.log(decodedFiltdate);
-    } catch (error) {
-      console.error("Erreur lors du décodage des données:", error);
+  // 1. Essayer de charger depuis l'URL
+  const loadFromURL = () => {
+    const urlParams = new URLSearchParams(location.search);
+    const encodedFiltdate = urlParams.get('filtdate');
+    
+    if (encodedFiltdate) {
+      try {
+        const decodedData = JSON.parse(decodeURIComponent(encodedFiltdate));
+        setData(decodedData);
+        console.log("Données chargées depuis URL", decodedData);
+        return true;
+      } catch (error) {
+        console.error("Erreur décodage URL", error);
+        return false;
+      }
     }
-  }
-  console.log("models :",models)
-  console.log("metrics:",selectedMetrics)
+    return false;
+  };
 
-  // Vérification du fichier de données
-  if (!fileData) {
-    alert("Importez vos données depuis l'historique ou traitez d'abord vos données !");
+  // 2. Essayer de charger depuis fileData
+  const loadFromFileData = () => {
+    if (fileData) {
+      try {
+        const parsedData = typeof fileData === 'string' ? JSON.parse(fileData) : fileData;
+        setData(parsedData);
+        console.log("Données chargées depuis fileData", parsedData);
+        return true;
+      } catch (e) {
+        console.error("Erreur parsing fileData", e);
+        return false;
+      }
+    }
+    return false;
+  };
+
+  // 3. Essayer de charger depuis le localStorage
+  const loadFromLocalStorage = () => {
+    const savedData = localStorage.getItem(`projectData_${id}`);
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        setData(parsedData);
+        console.log("Données chargées depuis localStorage", parsedData);
+        return true;
+      } catch (e) {
+        console.error("Erreur parsing localStorage", e);
+        return false;
+      }
+    }
+    return false;
+  };
+
+  // Tentative de chargement dans l'ordre de priorité
+  const loaded = loadFromURL() || loadFromFileData() || loadFromLocalStorage();
+
+  if (!loaded) {
+    alert("Données manquantes. Redirection vers la page de traitement...");
+    navigate(`/processing/${id}/${targetFeature}`);
   }
-}, [location.search, fileData,selectedMetrics,models]); // Réexécuter l'effet lorsque l'URL ou fileData change
+
+  if (data.length > 0 && targetFeature) {
+    const targetValues = data.map(row => row[targetFeature]);
+    const inferredTask = detectTaskType(targetValues);
+    setTaskType(inferredTask);
+    console.log("🔍 Task type détecté :", inferredTask);
+  }
+
+
+}, [id, targetFeature, location.search]); // fileData retiré des dépendances
+
+
+
+
 
 
   const handleProfileClick = () => navigate('/profile');
@@ -144,37 +201,62 @@ const regressionMetrics = metrics.filter(metric =>
   };
 
   const handleSubmit = async () => {
-   
-    try {
-     const response = await axios.post(`http://localhost:5000/train/${id}`, {
-        model: models,
-        targ:targetFeature,
-        trainset:trainingSetSize,
-        testset:testSetSize,
-        valtest:validationSetSize,
-        metrics:selectedMetrics,
-        data,
-        k:kSets,
-        task:taskType
-      }, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        withCredentials: true
-      });
-      console.log("aaaaa",response.data)
-      // Stocker le résultat dans localStorage
+  // Vérification que des modèles sont sélectionnés
+  if (models.length === 0) {
+    alert("Veuillez sélectionner au moins un modèle");
+    return;
+  }
+  
+  // Vérification que des métriques sont sélectionnées
+  if (selectedMetrics.length === 0) {
+    alert("Veuillez sélectionner au moins une métrique");
+    return;
+  }
+
+  // Dans votre handleSubmit, vérifiez que data n'est pas vide
+  if (!data || data.length === 0) {
+    alert("Aucune donnée à traiter !");
+    return;
+  }
+
+   if (!data || !Array.isArray(data) || data.length === 0) {
+    alert("Données corrompues. Veuillez recharger les données.");
+    console.error("Data invalide:", {
+      type: typeof data,
+      length: data?.length,
+      sample: data?.slice(0, 3)
+    });
+    return;
+  }
+  setLoading(true); // ⏳ juste avant l’appel
+  try {
+    const response = await axios.post(`http://localhost:5000/train/${id}`, {
+      model: models,
+      targ: targetFeature,
+      trainset: trainingSetSize,  // Envoyer 70 au lieu de 0.7
+      testset: testSetSize,
+      valtest: validationSetSize,
+      metrics: selectedMetrics,
+      data: data,
+      k: kSets,
+      task: taskType
+    }, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      withCredentials: true
+    });
+    
     localStorage.setItem('modelResult', JSON.stringify(response.data));
     setError(null);
-
-    // Rediriger vers la page des résultats
     navigate(`/resultat/${id}`);
-      
-    } catch (error) {
-      alert('Error during model training:',error)
-      console.error('Error during model training:', error);
-    }
-  };
+  } catch (error) {
+    alert('Erreur lors de l\'entraînement du modèle: ' + error.message);
+    console.error('Error during model training:', error);
+  } finally {
+    setLoading(false); // ✅ désactive après réponse ou erreur
+  }
+};
 
   const getRemainingSize = (currentSetSize) => Math.max(0, 100 - currentSetSize);
 
@@ -209,221 +291,307 @@ const regressionMetrics = metrics.filter(metric =>
     backgroundColor: '#a9aeb4', // couleur de la ligne
     margin: '5px 0'    // espacement autour de la ligne
 };
+
+const detectTaskType = (targetValues) => {
+  const uniqueValues = [...new Set(targetValues)];
+  const uniqueCount = uniqueValues.length;
+
+  if (typeof targetValues[0] === 'string' || uniqueCount <= 10) {
+    return 'classification';
+  }
+  return 'regression';
+};
+
+useEffect(() => {
+  if (taskType === 'classification') {
+    setModels(['Random Forest', 'Logistic Regression']); // Suggestion de base
+  } else if (taskType === 'regression') {
+    setModels(['Random Forest', 'Gradient Boosting']);
+  }
+}, [taskType]);
+
+useEffect(() => {
+  if (taskType === 'classification') {
+    setSelectedMetrics(['Accuracy', 'F1 Score']);
+  } else if (taskType === 'regression') {
+    setSelectedMetrics(['Mean Absolute Error', 'R² Score']);
+  }
+}, [taskType]);
+
 const handleDepClick = () => navigate(`/deployment/${id}/${targetFeature}`);
 
   return (
-    <>
-        {/* Sidebar modernisée */}
-    <div className="app-sidebar">
-      <div className="sidebar-header">
-        <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
-        <h2>MedicalVision</h2>
-      </div>
-      
-      <nav className="sidebar-nav">
-        {[
-          { 
-            icon: faUser,
-            label: "Profile",
-            action: handleProfileClick,
-            active: false
-          },
-          { 
-            icon: faDatabase,
-            label: "Database", 
-            action: handleDBClick,
-            active: false
-          },
-          { 
-            icon: faHistory,
-            label: "History",
-            action: handleHistorique,
-            active: false
-          },
-          { 
-            icon: faFileAlt,
-            label: "Description",
-            action: handleDescription,
-            active: false
-          },
-          { 
-            icon: faChartLine,
-            label: "Graphs",
-            action: handleGraphsClick,
-            active: false
-          },
-          { 
-            icon: faCog,
-            label: "Processing",
-            action: handleProcessingClick,
-            active: false
-          },
-          { 
-            icon: faBrain,
-            label: "Models",
-            action: () => {}, // Vide car déjà sur cette page
-            active: true
-          },
-          { 
-            icon: faRocket,
-            label: "Deployment",
-            action: handleDepClick,
-            active: false
-          }
-        ].map((item, index) => (
-          <button
-            key={index}
-            className={`nav-item ${item.active ? 'active' : ''}`}
-            onClick={item.action}
-          >
-            <FontAwesomeIcon icon={item.icon} />
-            <span>{item.label}</span>
+        <div className="models-container">
+      {/* Sidebar élégant */}
+      <div className={`app-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
+        <div className="sidebar-header">
+          <button className="sidebar-toggle" onClick={toggleSidebar}>
+            <FontAwesomeIcon icon={isSidebarOpen ? faChevronLeft : faChevronRight} />
           </button>
-        ))}
-      </nav>
-    </div>
-      <div className="content2">
-  <h1>Model Training</h1> 
-
-  <div style={lineStyle}></div>
-  <p className="header-subtitle">Start the training process with your configured data and options</p> 
-
-  <div className="section target-feature">
-    <h2>Target Feature</h2>
-    <p>{targetFeature}</p>
- 
-    <h2> Task Type</h2>
-    <div className="task-selection">
-      <select value={taskType} onChange={(e) => setTaskType(e.target.value)}>
-        <option value="" disabled>Select a task type</option>
-        <option value="classification">Classification</option>
-        <option value="regression">Regression</option>
-      </select>
-    </div>
-  </div>
-
-  {taskType && (
-    <div className="section model-training">
-      <h2>Model and Training Parameters</h2>
-      <div className="model-selection">
-      <button onClick={() => {
-        setIsDropdownOpen(!isDropdownOpen);
-        console.log("Dropdown state:", isDropdownOpen); // Vérifier l'état lors du clic
-      }}>
-        Select Models
-      </button>
-
-      {isDropdownOpen && (
-        <div className='dropdown2'>
-          {availableModels.map(model => (
-            <label key={model} style={{ display: 'block' }}>
-              <input
-                type="checkbox"
-                checked={models.includes(model)}
-                onChange={() => handleModelSelection(model)}
-              />
-              {model}
-            </label>
-          ))}
+          {isSidebarOpen && (
+            <div className="sidebar-brand">
+              <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
+              <h2>MedicalVision AI</h2>
+            </div>
+          )}
         </div>
-      )}
-      </div>
-      <div>
-      <label>Cross-Validation Type:</label>
-      <div className="radio-buttons">
-        <label>
-          <input
-            type="radio"
-            value="division"
-            checked={crossValidationType === 'division'}
-            onChange={() => setCrossValidationType('division')}
-          />
-          Division
-        </label>
-        <label>
-          <input
-            type="radio"
-            value="kfold"
-            checked={crossValidationType === 'kfold'}
-            onChange={() => setCrossValidationType('kfold')}
-          />
-          K-Fold
-        </label>
+        
+        <nav className="sidebar-nav">
+          {[
+            { icon: faUser, label: "Profile", action: handleProfileClick },
+            { icon: faDatabase, label: "Database", action: handleDBClick },
+            { icon: faHistory, label: "History", action: handleHistorique },
+            { icon: faFileAlt, label: "Description", action: handleDescription },
+            { icon: faChartLine, label: "Analytics", action: handleGraphsClick },
+            { icon: faCog, label: "Processing", action: handleProcessingClick },
+            { icon: faBrain, label: "Models", action: () => {}, active: true },
+            { icon: faRocket, label: "Deploy", action: handleDepClick }
+          ].map((item, index) => (
+            <button
+              key={index}
+              className={`nav-item ${item.active ? 'active' : ''}`}
+              onClick={item.action}
+              title={!isSidebarOpen ? item.label : ''}
+            >
+              <FontAwesomeIcon icon={item.icon} className="nav-icon" />
+              {isSidebarOpen && <span className="nav-label">{item.label}</span>}
+              {item.active && isSidebarOpen && <div className="active-indicator"></div>}
+            </button>
+          ))}
+        </nav>
       </div>
 
-      {/* Si le type de validation est K-fold, afficher les paramètres K sets */}
-      {crossValidationType === 'kfold' && (
-        <div className="k-sets-container">
-          <label htmlFor="k-sets">K sets:</label>
-          <input
-            id="k-sets"
-            type="number"
-            min="1" // Éviter les valeurs négatives ou nulles
-            value={kSets}
-            onChange={handleK}
-          />
-        </div>
-      )}
+      {/* Contenu principal */}
+      <div className="content-wrapper">
+        {loading && <LoadingOverlay message={"Training models...\nAnalyzing performance metrics"} />}
 
-      {/* Si le type de validation est division, afficher les paramètres de taille des ensembles */}
-      {crossValidationType === 'division' && (
-        <div className="training-parameters">
-          <label>Training Set Size:</label>
-          <input
-            type="number"
-            min="0"
-            value={trainingSetSize}
-            onChange={handleTrainingSetSizeChange}
-          />
-          <label>Validation Set Size:</label>
-          <input
-            type="number"
-            min="0"
-            value={validationSetSize}
-            onChange={handleValidationSetSizeChange}
-          />
-          <label>Test Set Size:</label>
-          <input
-            type="number"
-            min="0"
-            value={testSetSize}
-            onChange={handleTestSetSizeChange}
-          />
-        </div>
-      )}
-    </div>
-    <div className="metric-selection">
-      <button className='met' onClick={() => setIsDropdownOpen1(!isDropdownOpen1)}>
-        Select Metrics
-      </button>
-      
-      {isDropdownOpen1 && (
-        <div className="dropdown2">
-          {availableMetrics.map(metricOption => (
-            <label key={metricOption} style={{ display: 'block' }}>
-              <input
-                type="checkbox"
-                checked={selectedMetrics.includes(metricOption)}
-                onChange={() => handleMetricSelection(metricOption)}
-              />
-              {metricOption}
-            </label>
-          ))}
-        </div>
-      )}
-    </div>
-    
-      <div className='btn1'>
-        <button onClick={handleSubmit} className='bb'>
-  <FontAwesomeIcon icon={faPlay} className="button-icon" /> Train Model
-</button>        </div>
-    </div>
-  )}
- 
-</div>
+        <header className="page-header">
+          <h1>Model Training Studio</h1>
+          <p className="header-subtitle">Configure and train machine learning models with precision</p>
+          <div className="header-divider"></div>
+        </header>
 
-      
-    </>
+        <div className="content-grid">
+          {/* Section Configuration */}
+          <section className="config-section glass-card">
+            <div className="section-header">
+              <FontAwesomeIcon icon={faCog} className="section-icon" />
+              <h2>Configuration</h2>
+            </div>
+            
+            <div className="config-item">
+              <label className="config-label">Target Feature</label>
+              <div className="feature-display">{targetFeature}</div>
+            </div>
+
+            <div className="config-item">
+              <label className="config-label">Task Type</label>
+              <select 
+                value={taskType} 
+                onChange={(e) => setTaskType(e.target.value)}
+                className="elegant-select"
+              >
+                <option value="" disabled>Select task type</option>
+                <option value="classification">Classification</option>
+                <option value="regression">Regression</option>
+              </select>
+            </div>
+
+            {taskType && (
+              <div className="auto-suggestions">
+                <div className="suggestion-header">
+                  <FontAwesomeIcon icon={faLightbulb} />
+                  <span>Smart Suggestions</span>
+                </div>
+                <ul>
+                  <li><strong>Recommended models:</strong> {taskType === 'classification' ? 'Random Forest, XGBoost' : 'Gradient Boosting, Neural Network'}</li>
+                  <li><strong>Key metrics:</strong> {taskType === 'classification' ? 'Accuracy, F1 Score' : 'RMSE, R²'}</li>
+                </ul>
+              </div>
+            )}
+          </section>
+
+          {/* Section Modèles */}
+          <section className="models-section glass-card">
+            <div className="section-header">
+              <FontAwesomeIcon icon={faBrain} className="section-icon" />
+              <h2>Model Selection</h2>
+            </div>
+
+            <div className="dropdown-container">
+              <button 
+                className="dropdown-toggle"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              >
+                <span>Select Models ({models.length})</span>
+                <FontAwesomeIcon icon={isDropdownOpen ? faChevronLeft : faChevronRight} />
+              </button>
+
+              {isDropdownOpen && (
+                <div className="model-dropdown">
+                  {availableModels.map(model => (
+                    <label key={model} className="model-option">
+                      <input
+                        type="checkbox"
+                        checked={models.includes(model)}
+                        onChange={() => handleModelSelection(model)}
+                      />
+                      <span className="checkmark"></span>
+                      {model}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="selected-models">
+              {models.map(model => (
+                <span key={model} className="model-tag">
+                  {model}
+                  <button onClick={() => handleModelSelection(model)}>×</button>
+                </span>
+              ))}
+            </div>
+          </section>
+
+          {/* Section Paramètres */}
+          <section className="params-section glass-card">
+            <div className="section-header">
+              <FontAwesomeIcon icon={faChartLine} className="section-icon" />
+              <h2>Training Parameters</h2>
+            </div>
+
+            <div className="params-tabs">
+              <button 
+                className={`tab ${crossValidationType === 'division' ? 'active' : ''}`}
+                onClick={() => setCrossValidationType('division')}
+              >
+                Train/Val/Test Split
+              </button>
+              <button 
+                className={`tab ${crossValidationType === 'kfold' ? 'active' : ''}`}
+                onClick={() => setCrossValidationType('kfold')}
+              >
+                K-Fold CV
+              </button>
+            </div>
+
+            {crossValidationType === 'division' ? (
+              <div className="split-params">
+                <div className="param-group">
+                  <label>Training Set</label>
+                  <div className="slider-container">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={trainingSetSize}
+                      onChange={handleTrainingSetSizeChange}
+                    />
+                    <span>{trainingSetSize}%</span>
+                  </div>
+                </div>
+
+                <div className="param-group">
+                  <label>Validation Set</label>
+                  <div className="slider-container">
+                    <input
+                      type="range"
+                      min="0"
+                      max={100 - trainingSetSize}
+                      value={validationSetSize}
+                      onChange={handleValidationSetSizeChange}
+                    />
+                    <span>{validationSetSize}%</span>
+                  </div>
+                </div>
+
+                <div className="param-group">
+                  <label>Test Set</label>
+                  <div className="slider-container">
+                    <input
+                      type="range"
+                      min="0"
+                      max={100 - trainingSetSize - validationSetSize}
+                      value={testSetSize}
+                      onChange={handleTestSetSizeChange}
+                    />
+                    <span>{testSetSize}%</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="kfold-params">
+                <label>Number of Folds (K)</label>
+                <input
+                  type="number"
+                  min="2"
+                  max="10"
+                  value={kSets}
+                  onChange={handleK}
+                  className="k-input"
+                />
+              </div>
+            )}
+          </section>
+
+          {/* Section Métriques */}
+          <section className="metrics-section glass-card">
+            <div className="section-header">
+              <FontAwesomeIcon icon={faCheck} className="section-icon" />
+              <h2>Evaluation Metrics</h2>
+            </div>
+
+            <div className="dropdown-container">
+              <button 
+                className="dropdown-toggle"
+                onClick={() => setIsDropdownOpen1(!isDropdownOpen1)}
+              >
+                <span>Select Metrics ({selectedMetrics.length})</span>
+                <FontAwesomeIcon icon={isDropdownOpen1 ? faChevronLeft : faChevronRight} />
+              </button>
+
+              {isDropdownOpen1 && (
+                <div className="metrics-dropdown">
+                  {availableMetrics.map(metric => (
+                    <label key={metric} className="metric-option">
+                      <input
+                        type="checkbox"
+                        checked={selectedMetrics.includes(metric)}
+                        onChange={() => handleMetricSelection(metric)}
+                      />
+                      <span className="checkmark"></span>
+                      {metric}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="selected-metrics">
+              {selectedMetrics.map(metric => (
+                <span key={metric} className="metric-tag">
+                  {metric}
+                  <button onClick={() => handleMetricSelection(metric)}>×</button>
+                </span>
+              ))}
+            </div>
+          </section>
+
+          {/* Bouton d'action */}
+          <div className="action-section">
+            <button 
+              onClick={handleSubmit} 
+              className="train-button"
+              disabled={models.length === 0 || selectedMetrics.length === 0}
+            >
+              <FontAwesomeIcon icon={faPlay} />
+              <span>Train Models</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

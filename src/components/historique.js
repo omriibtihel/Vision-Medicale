@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useState, useEffect } from 'react';
-import {faChevronLeft , faChevronRight} from '@fortawesome/free-solid-svg-icons';
+import {faChevronLeft , faChevronRight  ,faCheckCircle , faListOl         } from '@fortawesome/free-solid-svg-icons';
 
 import axios from 'axios';
 import './sidebar.css';
@@ -23,7 +23,7 @@ const Historique = () => {
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
   const [targetFeature, setTargetFeature] = useState(initialTargetFeature || '');
   const [loadingTarget, setLoadingTarget] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
 const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
@@ -368,54 +368,64 @@ const loadFileData = async (fileId) => {
         </div>
 
         {/* Liste des versions */}
-        <section className="version-list">
-          {filteredHistory.length > 0 ? (
-            filteredHistory.map((file) => (
-              <div 
-                key={file.id} 
-                className={`version-card ${selectedFile?.id === file.id ? 'selected' : ''}`}
-                onClick={() => setSelectedFile(file)}
-              >
-                <div className="card-header">
-                  <h3>{file.name}</h3>
-                  <span className="version-date">
-                    {new Date(file.created_at).toLocaleDateString('fr-FR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </span>
-                </div>
-                
-                <div className="card-body">
-                  <p className="modification-type">{file.modification || 'Modification non spécifiée'}</p>
+        <div className="version-list">
+            {filteredHistory.length > 0 ? (
+              filteredHistory.map((file) => (
+                <div key={file.id} className={`version-card ${selectedFile?.id === file.id ? 'selected' : ''}`}>
+                  <div className="card-header">
+                    <h3>{file.name}</h3>
+                    <span className="version-date">
+                      {new Date(file.created_at).toLocaleDateString('fr-FR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
                   
-                  <div className="card-actions">
-                    <button 
-                      className="action-btn view-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedFile(file);
-                      }}
-                    >
-                      <FontAwesomeIcon icon={faEye} /> Voir
-                    </button>
+                  <div className="card-body">
+                    <div className="modification-details">
+                      {file.modification.split('|').map((mod, i) => {
+                        // Extraire les colonnes entre parenthèses si présentes
+                        const [mainText, columnsText] = mod.split('(Colonnes:');
+                        const columns = columnsText ? columnsText.replace(')', '').trim() : null;
+                        
+                        return (
+                          <div key={i} className="modification-step">
+                            <div className="step-main">
+                              <FontAwesomeIcon icon={faCheckCircle} className="step-icon" />
+                              <span>{mainText.trim()}</span>
+                            </div>
+                            {columns && (
+                              <div className="step-columns">
+                                <FontAwesomeIcon icon={faListOl} className="column-icon" />
+                                <span>{columns}</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                     
-                    <button className="action-btn download-btn">
-                      <FontAwesomeIcon icon={faDownload} /> Télécharger
-                    </button>
+                    <div className="card-actions">
+                      <button className="action-btn view-btn" onClick={() => setSelectedFile(file)}>
+                        <FontAwesomeIcon icon={faEye} /> Voir
+                      </button>
+                      <button className="action-btn download-btn">
+                        <FontAwesomeIcon icon={faDownload} /> Télécharger
+                      </button>
+                    </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <div className="empty-state">
+                <p>Aucune version historique trouvée</p>
               </div>
-            ))
-          ) : (
-            <div className="empty-state">
-              <p>Aucune version historique trouvée</p>
-            </div>
-          )}
-        </section>
+            )}
+          </div>
 
         {/* Aperçu des données */}
         {selectedFile && fileData && (

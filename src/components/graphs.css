@@ -1,16 +1,70 @@
-/* Base Styles */
-.graphs-container {
-  display: flex;
-  min-height: 100vh;
-  background-color: #f8fafc;
-  font-family: 'Inter', sans-serif;
+/* Variables modernes */
+:root {
+  --sidebar-width-open: 280px;
+  --sidebar-width-closed: 80px;
+  --sidebar-transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    --sidebar-content-gap: 1rem; /* 16px - vous pouvez ajuster cette valeur */
+
 }
 
-/* Main Content Styles */
-.graphs-content {
+/* Structure de base */
+.graphs-container{
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.app-sidebar {
+  width: var(--sidebar-width-open);
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  transition: var(--sidebar-transition);
+  background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
+  color: white;
+  transition: width var(--transition-speed) ease;
+  z-index: 1000;
+  overflow: hidden;
+  box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.app-sidebar.closed {
+  width: var(--sidebar-width-closed);
+}
+
+/* Contenu principal */
+  .graphs-content {
   flex: 1;
-  padding: 30px;
-  max-width: calc(100% - 280px);
+  padding: 30px 30px 30px calc(var(--sidebar-content-gap) + 30px); /* Ajout du padding gauche */
+  margin-left: var(--sidebar-width-open);
+  transition: var(--sidebar-transition);
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.app-sidebar.closed ~   .graphs-content {
+  margin-left: var(--sidebar-width-closed);
+  padding-left: calc(var(--sidebar-content-gap) + 30px); /* Conserve le même padding */
+
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app-sidebar {
+    transform: translateX(-100%);
+    z-index: 1000;
+  }
+  
+  .app-sidebar.open {
+    transform: translateX(0);
+    width: 80%;
+  }
+  
+  .graphs-content {
+    margin-left: 0 !important;
+    width: 100%;
+  }
 }
 
 .content-header {

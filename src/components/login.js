@@ -6,12 +6,7 @@ import LoginForm from './LoginForm';
 function Login() {
   return (
     <Container>
-      <Wrapper>
-        <Illustration />
-        <FormWrapper>
           <LoginForm />
-        </FormWrapper>
-      </Wrapper>
     </Container>
   );
 }

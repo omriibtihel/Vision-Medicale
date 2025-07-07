@@ -11,6 +11,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement,
   LineElement, BarElement, ArcElement, Title, Tooltip, Legend, 
   RadialLinearScale } from 'chart.js';
 import { Line, Bar, Pie, Radar, Doughnut, PolarArea, Bubble, Scatter } from 'react-chartjs-2';
+import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import './graphs.css';
 
 ChartJS.register(
@@ -26,6 +27,10 @@ const Graphs = () => {
   const [xAttribute, setXAttribute] = useState('');
   const [yAttribute, setYAttribute] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
 
   // Navigation handlers
   const navigateTo = (path) => navigate(`/${path}/${id}/${targetFeature}`);
@@ -177,11 +182,21 @@ const Graphs = () => {
   return (
     <div className="graphs-container">
         {/* Sidebar modernisée */}
-    <div className="app-sidebar">
-      <div className="sidebar-header">
-        <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
-        <h2>MedicalVision</h2>
-      </div>
+     <div className={`app-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
+                            <div className="sidebar-header">
+                              <button className="sidebar-toggle" onClick={toggleSidebar}>
+                                <FontAwesomeIcon 
+                                  icon={isSidebarOpen ? faChevronLeft : faChevronRight} 
+                                  className="toggle-icon"
+                                />
+                              </button>
+                              {isSidebarOpen && (
+                                <>
+                                  <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
+                                  <h2>MedicalVision</h2>
+                                </>
+                              )}
+                            </div>
       
       <nav className="sidebar-nav">
         {[
@@ -234,16 +249,19 @@ const Graphs = () => {
             active: false
           }
         ].map((item, index) => (
-          <button
-            key={index}
-            className={`nav-item ${item.active ? 'active' : ''}`}
-            onClick={item.action}
-          >
-            <FontAwesomeIcon icon={item.icon} />
-            <span>{item.label}</span>
-          </button>
-        ))}
-      </nav>
+            <button
+              key={index}
+              className={`nav-item ${item.active ? 'active' : ''}`}
+              onClick={item.action}
+              title={!isSidebarOpen ? item.label : ''}
+            >
+              <div className="nav-icon-wrapper">
+                <FontAwesomeIcon icon={item.icon} className="nav-icon" />
+              </div>
+              {isSidebarOpen && <span className="nav-label">{item.label}</span>}
+            </button>
+          ))}
+        </nav>
     </div>
 
       {/* Main Content */}

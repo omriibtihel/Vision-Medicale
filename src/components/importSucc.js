@@ -45,7 +45,7 @@ const ImportSuccess = () => {
   const [targetFeatureError, setTargetFeatureError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [availableFeatures, setAvailableFeatures] = useState([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
 

@@ -1,18 +1,11 @@
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {faChevronLeft , faChevronRight} from '@fortawesome/free-solid-svg-icons';
-import React, { useState, useEffect } from 'react';
-import  {  useRef } from 'react';
+import { faChevronLeft, faChevronRight, faUser, faChartLine, faCog, faDatabase, faClone, faFileAlt, faTrash, faHistory, faBrain, faRocket, faCheckCircle, faSave, faBroom, faArrowsRotate, faDownload, faFileLines, faChevronDown, faChevronUp, faSpinner, faTags, faLanguage, faListOl, faTextWidth, faUndo } from '@fortawesome/free-solid-svg-icons';
+import React, { useState, useEffect, useRef } from 'react';
 import useOutsideClick from '../useOutsideClick';
-import { 
-  faUser, faChartLine, faCog, faDatabase, faClone, 
-  faFileAlt, faTrash, faHistory, faBrain, faRocket, 
-  faCheckCircle, faSave, faBroom, faArrowsRotate, 
-  faDownload, faFileLines, faChevronDown, faChevronUp,
-  faSpinner, faTags, faLanguage, faListOl, faTextWidth
-} from '@fortawesome/free-solid-svg-icons';
 import { mean } from 'mathjs';
 import axios from 'axios';
+import pako from 'pako';
 import KNN from 'ml-knn';
 import './Processing.css';
 import '../useOutsideClick.js';
@@ -41,16 +34,17 @@ const Processing = () => {
   const [currentReport, setCurrentReport] = useState(null);
   const [targetFeature, setTargetFeature] = useState(initialTargetFeature || '');
   const [isOpen4, setIsOpen4] = useState(false);
-const [showImputationDropdown, setShowImputationDropdown] = useState(false);
-const [showEncodingDropdown, setShowEncodingDropdown] = useState(false);
-const toggleImputationDropdown = () => setShowImputationDropdown(!showImputationDropdown);
-const toggleEncodingDropdown = () => setShowEncodingDropdown(!showEncodingDropdown);
+  const [showImputationDropdown, setShowImputationDropdown] = useState(false);
+  const [showEncodingDropdown, setShowEncodingDropdown] = useState(false);
   const [isProcessingCat, setIsProcessingCat] = useState(false);
-const [selectedColumnsCat, setSelectedColumnsCat] = useState([]);
-const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [selectedColumnsCat, setSelectedColumnsCat] = useState([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
+  const toggleImputationDropdown = () => setShowImputationDropdown(!showImputationDropdown);
+  const toggleEncodingDropdown = () => setShowEncodingDropdown(!showEncodingDropdown);
 
-// Créez des refs pour chaque menu déroulant
   const dropdownRef1 = useRef(null);
   const dropdownRef2 = useRef(null);
   const dropdownRef3 = useRef(null);
@@ -59,7 +53,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const encodingDropdownRef = useRef(null);
   const normalizationDropdownRef = useRef(null);
 
-  // Utilisez le hook pour chaque menu déroulant
   useOutsideClick([dropdownRef1], () => setIsOpen1(false));
   useOutsideClick([dropdownRef2], () => setIsOpen2(false));
   useOutsideClick([dropdownRef3], () => setIsOpen3(false));
@@ -68,28 +61,24 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   useOutsideClick([encodingDropdownRef], () => setShowEncodingDropdown(false));
   useOutsideClick([normalizationDropdownRef], () => setShowDropdown(false));
 
-
   const [encodingMethod, setEncodingMethod] = useState('');
   const [columnTypes, setColumnTypes] = useState({});
 
-  // Navigation handlers
   const handleProfileClick = () => navigate('/profile');
   const handleGraphsClick = () => navigate(`/graphs/${id}/${targetFeature}`);
   const handleProcessingClick = () => navigate(`/processing/${id}/${targetFeature}`);
   const handleModelsClick = () => {
     const encodedFiltdate = encodeURIComponent(JSON.stringify(filteredData));
-    navigate(`/models/${id}/${targetFeature}?filtdate=${encodedFiltdate}`);   
+    navigate(`/models/${id}/${targetFeature}?filtdate=${encodedFiltdate}`);
   };
   const handleDBClick = () => navigate(`/importSucc/${id}`);
   const handleDescription = () => navigate(`/description/${id}/${targetFeature}`);
   const handleHistorique = () => navigate(`/historique/${id}/${targetFeature}`);
   const handleDepClick = () => navigate(`/deployment/${id}/${targetFeature}`);
 
-  // Data cleaning helpers
   const cleanData = (data) => (typeof data === 'string' ? data.replace(/NaN/g, 'null') : data);
   const sanitizeJson = (jsonString) => jsonString.replace(/NaN/g, 'null');
 
-  // Fetch target feature from backend
   const fetchTargetFeature = async () => {
     const token = localStorage.getItem('token');
     try {
@@ -97,7 +86,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
         `http://localhost:5000/projects/${id}/target-feature`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
       if (response.data.currentTarget) {
         setTargetFeature(response.data.currentTarget);
         return response.data.currentTarget;
@@ -108,7 +96,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     return null;
   };
 
-  // Main data import function
   const importBD = async () => {
     const token = localStorage.getItem('token');
     try {
@@ -128,13 +115,13 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
       if (Array.isArray(cleanedData)) {
         setData(cleanedData);
         setFilteredData(cleanedData);
-        
+        setHistory([{ data: cleanedData, operationReports: [], selectedColumns: [], selectedColumnsNr: [], selectedColumnsImp: [], selectedColumnsCat: [], normalizedColumns: [] }]);
+        setHistoryIndex(0);
+
         if (cleanedData.length > 0) {
           const availableFeatures = Object.keys(cleanedData[0]);
-          
           if (!targetFeature || !availableFeatures.includes(targetFeature)) {
             const fetchedTarget = await fetchTargetFeature();
-            
             if (fetchedTarget && availableFeatures.includes(fetchedTarget)) {
               setTargetFeature(fetchedTarget);
             } else if (availableFeatures.length > 0) {
@@ -157,10 +144,11 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      
       if (location.state?.isFromHistory) {
         setData(location.state.fileData);
         setFilteredData(location.state.fileData);
+        setHistory([{ data: location.state.fileData, operationReports: [], selectedColumns: [], selectedColumnsNr: [], selectedColumnsImp: [], selectedColumnsCat: [], normalizedColumns: [] }]);
+        setHistoryIndex(0);
         if (location.state.targetFeature) {
           setTargetFeature(location.state.targetFeature);
         }
@@ -170,15 +158,15 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
       const urlParams = new URLSearchParams(location.search);
       const versionId = urlParams.get('versionId');
-      
       if (versionId) {
         try {
           const response = await fetch(`http://localhost:5000/fichier/${versionId}`);
           const result = await response.json();
-          
           if (result.data) {
             setData(result.data);
             setFilteredData(result.data);
+            setHistory([{ data: result.data, operationReports: [], selectedColumns: [], selectedColumnsNr: [], selectedColumnsImp: [], selectedColumnsCat: [], normalizedColumns: [] }]);
+            setHistoryIndex(0);
             if (result.targetFeature) {
               setTargetFeature(result.targetFeature);
             }
@@ -189,26 +177,21 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
       } else {
         await importBD();
       }
-      
       setLoading(false);
     };
 
     loadData();
   }, [id, location.state, location.search]);
 
-  
-
   useEffect(() => {
     if (filteredData.length > 0) {
       const columns = Object.keys(filteredData[0]);
-      
       if (targetFeature && !columns.includes(targetFeature)) {
-        const possibleTargets = columns.filter(col => 
-          col.toLowerCase().includes('target') || 
+        const possibleTargets = columns.filter(col =>
+          col.toLowerCase().includes('target') ||
           col.toLowerCase().includes('class') ||
           col.toLowerCase().includes('label')
         );
-        
         if (possibleTargets.length > 0) {
           setTargetFeature(possibleTargets[0]);
         } else {
@@ -216,7 +199,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
         }
       }
 
-      // Detect column types when data changes
       const types = {};
       columns.forEach(col => {
         types[col] = detectColumnType(col);
@@ -225,27 +207,17 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     }
   }, [filteredData, targetFeature]);
 
-  // Improved column type detection
   const detectColumnType = (column) => {
     if (!filteredData.length) return 'unknown';
-    
     const sample = filteredData.slice(0, 100).map(row => row[column]);
     const nonNullSample = sample.filter(val => val !== null && val !== undefined);
-    
     if (nonNullSample.length === 0) return 'unknown';
-    
-    // Check if all values are numeric
     const allNumeric = nonNullSample.every(val => !isNaN(parseFloat(val)) && isFinite(val));
-    
-    // Check if values look like categorical codes (e.g., "001", "002")
     const looksLikeCode = nonNullSample.some(
       val => typeof val === 'string' && /^[0-9]+$/.test(val) && val.length <= 5
     );
-    
-    // Check cardinality
     const uniqueValues = new Set(nonNullSample);
     const lowCardinality = uniqueValues.size <= Math.min(20, filteredData.length * 0.1);
-    
     if (allNumeric && !looksLikeCode && !lowCardinality) {
       return 'numeric';
     } else if (looksLikeCode || lowCardinality) {
@@ -255,28 +227,98 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     }
   };
 
-  // Operation reporting
+  const saveStateToHistory = () => {
+    const newState = {
+      data: [...filteredData],
+      operationReports: [...operationReports],
+      selectedColumns: [...selectedColumns],
+      selectedColumnsNr: [...selectedColumnsNr],
+      selectedColumnsImp: [...selectedColumnsImp],
+      selectedColumnsCat: [...selectedColumnsCat],
+      normalizedColumns: [...normalizedColumns]
+    };
+
+    setHistory(prev => {
+      // Keep only up to historyIndex, discarding any future states
+      const newHistory = [...prev.slice(0, historyIndex + 1)];
+      newHistory.push(newState);
+      return newHistory.slice(-50); // Keep last 50 states
+    });
+
+    setHistoryIndex(prev => prev + 1);
+  };
+
+  const undoOperation = () => {
+    if (historyIndex <= 0) {
+      alert("No operations to undo");
+      return;
+    }
+
+    // Get the state before the last operation
+    const previousState = history[historyIndex ];
+    
+    // Find the last non-undo operation to display
+    const lastOperation = operationReports.find(op => op.operation !== 'Undo Operation')?.operation || "Unknown operation";
+
+    // Restore the previous state
+    setFilteredData([...previousState.data]);
+    setOperationReports([...previousState.operationReports]);
+    setSelectedColumns([...previousState.selectedColumns]);
+    setSelectedColumnsNr([...previousState.selectedColumnsNr]);
+    setSelectedColumnsImp([...previousState.selectedColumnsImp]);
+    setSelectedColumnsCat([...previousState.selectedColumnsCat]);
+    setNormalizedColumns([...previousState.normalizedColumns]);
+
+    // Update history index
+    setHistoryIndex(prev => prev - 1);
+
+    // Create undo report just for display (not saved in operationReports)
+    const undoReport = {
+      timestamp: new Date().toISOString(),
+      operation: 'Undo Operation',
+      details: `Reverted operation: ${lastOperation}`,
+      affectedColumns: [],
+      stats: {
+        undoneOperation: lastOperation,
+        restoredStateIndex: historyIndex - 1,
+        totalStates: history.length,
+        timestamp: new Date().toISOString()
+      },
+      dataSample: previousState.data.length > 0 ? [...previousState.data.slice(0, 1)] : []
+    };
+
+    // Show the undo report in the modal
+    setCurrentReport(undoReport);
+    setShowReportModal(true);
+  };
+
+  useEffect(() => {
+    console.log('History updated:', { historyIndex, historyLength: history.length });
+  }, [historyIndex, history]);
+
   const addOperationReport = (operation, details, affectedColumns, stats) => {
+    // Skip adding undo operations to the reports
+    if (operation === 'Undo Operation') return null;
+
     const newReport = {
       timestamp: new Date().toISOString(),
       operation,
       details,
       affectedColumns: affectedColumns.filter(col => col !== targetFeature),
       stats,
-      dataSample: filteredData.slice(0, 3)
+      dataSample: filteredData.length > 0 ? [...filteredData.slice(0, 1)] : []
     };
-    
+
     setOperationReports(prev => [newReport, ...prev].slice(0, 50));
     return newReport;
   };
 
-  // Data processing functions
   const handleDataCleaning = async () => {
     if (filteredData.length === 0) {
       alert("No data to clean");
       return;
     }
-
+    saveStateToHistory();
     setIsCleaning(true);
     try {
       const columns = Object.keys(filteredData[0] || {}).filter(col => col !== targetFeature);
@@ -288,9 +330,8 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
         const numericValues = filteredData
           .map(row => parseFloat(row[column]))
           .filter(value => !isNaN(value));
-        
         means[column] = numericValues.length > 0 ? mean(numericValues) : 0;
-        nullStats[column] = filteredData.filter(row => 
+        nullStats[column] = filteredData.filter(row =>
           row[column] === null || row[column] === undefined || isNaN(row[column])
         ).length;
       });
@@ -305,7 +346,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
         });
         return cleanedRow;
       });
-
 
       const report = addOperationReport(
         'Data Cleaning',
@@ -335,12 +375,11 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
       alert("Please select columns to remove");
       return;
     }
-
     if (selectedColumns.includes(targetFeature)) {
       alert(`Cannot remove the target feature: ${targetFeature}`);
       return;
     }
-
+    saveStateToHistory();
     setIsRemoving(true);
     try {
       const cleanedData = filteredData.map(row => {
@@ -379,12 +418,11 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const handleDataTransformation = (type) => {
     const columnsToTransform = selectedColumnsNr.filter(col => col !== targetFeature);
-    
     if (columnsToTransform.length === 0) {
       alert("Please select columns to normalize (excluding the target feature)");
       return;
     }
-
+    saveStateToHistory();
     let normalizedData = filteredData.map(row => ({ ...row }));
     const transformationDetails = {};
 
@@ -416,7 +454,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
             case 'Mean Normalization':
               row[column] = (value - meanVal) / (max - min);
               break;
-            case 'Logarithmic Scaling':
+            case 'Logarithmic':
               row[column] = Math.log(value + 1);
               break;
           }
@@ -444,6 +482,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   };
 
   const handleDatadouble = () => {
+    saveStateToHistory();
     const uniqueRows = new Set();
     const duplicateRows = [];
     const dt = filteredData.filter((row, index) => {
@@ -451,7 +490,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
         .filter(([key]) => key !== targetFeature)
         .map(([_, value]) => value)
         .join('|');
-      
       if (uniqueRows.has(rowValues)) {
         duplicateRows.push({ index, data: row });
         return false;
@@ -478,159 +516,126 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     setShowReportModal(true);
   };
 
-  // Imputation functions
   const imputeByMean = (data, columns) => {
     const updatedData = data.map(row => ({ ...row }));
     const reportDetails = {};
-    
     columns.filter(col => col !== targetFeature).forEach(col => {
       const validValues = updatedData
         .map(row => parseFloat(row[col]))
         .filter(value => !isNaN(value));
-      
       if (validValues.length === 0) return;
-      
       const mean = validValues.reduce((sum, val) => sum + val, 0) / validValues.length;
-      const beforeNullCount = updatedData.filter(row => 
+      const beforeNullCount = updatedData.filter(row =>
         row[col] === null || row[col] === undefined || row[col] === 'N/A' || isNaN(parseFloat(row[col]))).length;
-      
       updatedData.forEach(row => {
         if (row[col] === null || row[col] === undefined || row[col] === 'N/A' || isNaN(parseFloat(row[col]))) {
           row[col] = mean;
         }
       });
-
-      const afterNullCount = updatedData.filter(row => 
+      const afterNullCount = updatedData.filter(row =>
         row[col] === null || row[col] === undefined || row[col] === 'N/A' || isNaN(parseFloat(row[col]))).length;
-
       reportDetails[col] = {
         before: beforeNullCount,
         after: afterNullCount,
         meanUsed: mean
       };
     });
-    
     return { updatedData, reportDetails };
   };
 
   const imputeByMedian = (data, columns) => {
     const updatedData = data.map(row => ({ ...row }));
     const reportDetails = {};
-    
     columns.forEach(col => {
       const validValues = updatedData
         .map(row => parseFloat(row[col]))
         .filter(value => !isNaN(value))
         .sort((a, b) => a - b);
-      
       if (validValues.length === 0) return;
-      
       const mid = Math.floor(validValues.length / 2);
-      const median = validValues.length % 2 !== 0 
-        ? validValues[mid] 
+      const median = validValues.length % 2 !== 0
+        ? validValues[mid]
         : (validValues[mid - 1] + validValues[mid]) / 2;
-
-      const beforeNullCount = updatedData.filter(row => 
+      const beforeNullCount = updatedData.filter(row =>
         row[col] === null || row[col] === undefined || row[col] === 'N/A' || isNaN(parseFloat(row[col]))).length;
-      
       updatedData.forEach(row => {
         if (row[col] === null || row[col] === undefined || row[col] === 'N/A' || isNaN(parseFloat(row[col]))) {
           row[col] = median;
         }
       });
-
-      const afterNullCount = updatedData.filter(row => 
+      const afterNullCount = updatedData.filter(row =>
         row[col] === null || row[col] === undefined || row[col] === 'N/A' || isNaN(parseFloat(row[col]))).length;
-
       reportDetails[col] = {
         before: beforeNullCount,
         after: afterNullCount,
         medianUsed: median
       };
     });
-    
     return { updatedData, reportDetails };
   };
 
   const imputeByMode = (data, columns) => {
     const updatedData = data.map(row => ({ ...row }));
     const reportDetails = {};
-    
     columns.forEach(col => {
       const validValues = updatedData
         .map(row => row[col])
         .filter(value => value !== null && value !== undefined && value !== 'N/A');
-      
       if (validValues.length === 0) return;
-      
       const frequencyMap = {};
       validValues.forEach(val => {
         frequencyMap[val] = (frequencyMap[val] || 0) + 1;
       });
-      
-      const mode = Object.keys(frequencyMap).reduce((a, b) => 
+      const mode = Object.keys(frequencyMap).reduce((a, b) =>
         frequencyMap[a] > frequencyMap[b] ? a : b
       );
-
-      const beforeNullCount = updatedData.filter(row => 
+      const beforeNullCount = updatedData.filter(row =>
         row[col] === null || row[col] === undefined || row[col] === 'N/A').length;
-      
       updatedData.forEach(row => {
         if (row[col] === null || row[col] === undefined || row[col] === 'N/A') {
           row[col] = mode;
         }
       });
-
-      const afterNullCount = updatedData.filter(row => 
+      const afterNullCount = updatedData.filter(row =>
         row[col] === null || row[col] === undefined || row[col] === 'N/A').length;
-
       reportDetails[col] = {
         before: beforeNullCount,
         after: afterNullCount,
         modeUsed: mode
       };
     });
-    
     return { updatedData, reportDetails };
   };
 
   const imputeByKNN = (data, columns, k = 3) => {
     const updatedData = data.map(row => ({ ...row }));
     const reportDetails = {};
-    
-    const validData = data.filter(row => 
+    const validData = data.filter(row =>
       columns.some(col => row[col] !== null && row[col] !== undefined && !isNaN(parseFloat(row[col])))
     );
-    
     if (validData.length < k) {
       console.warn('Not enough data for KNN imputation');
       return { updatedData: data, reportDetails: {} };
     }
-
-    const features = validData.map(row => 
+    const features = validData.map(row =>
       columns.map(col => parseFloat(row[col]) || 0)
     );
     const labels = validData.map((_, idx) => idx);
-
     const knn = new KNN(features, labels, { k });
-
     columns.forEach(col => {
       reportDetails[col] = {
-        before: updatedData.filter(row => 
+        before: updatedData.filter(row =>
           row[col] === null || row[col] === undefined || isNaN(parseFloat(row[col]))).length
       };
     });
-
     updatedData.forEach(row => {
-      const hasMissing = columns.some(col => 
+      const hasMissing = columns.some(col =>
         row[col] === null || row[col] === undefined || isNaN(parseFloat(row[col])));
-      
       if (hasMissing) {
         const features = columns.map(col => {
           const val = parseFloat(row[col]);
           return isNaN(val) ? 0 : val;
         });
-        
         const neighbors = knn.predict([features]);
         neighbors.forEach(neighborIdx => {
           const neighbor = validData[neighborIdx];
@@ -645,54 +650,45 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
         });
       }
     });
-
     columns.forEach(col => {
-      reportDetails[col].after = updatedData.filter(row => 
+      reportDetails[col].after = updatedData.filter(row =>
         row[col] === null || row[col] === undefined || isNaN(parseFloat(row[col]))).length;
       reportDetails[col].method = `KNN (k=${k})`;
     });
-
     return { updatedData, reportDetails };
   };
 
   const imputeByZero = (data, columns) => {
     const updatedData = data.map(row => ({ ...row }));
     const reportDetails = {};
-    
     columns.forEach(col => {
-      const beforeNullCount = updatedData.filter(row => 
+      const beforeNullCount = updatedData.filter(row =>
         row[col] === null || row[col] === undefined || isNaN(parseFloat(row[col]))).length;
-      
       updatedData.forEach(row => {
         if (row[col] === null || row[col] === undefined || isNaN(parseFloat(row[col]))) {
           row[col] = 0;
         }
       });
-
-      const afterNullCount = updatedData.filter(row => 
+      const afterNullCount = updatedData.filter(row =>
         row[col] === null || row[col] === undefined || isNaN(parseFloat(row[col]))).length;
-
       reportDetails[col] = {
         before: beforeNullCount,
         after: afterNullCount,
         method: 'Zero imputation'
       };
     });
-    
     return { updatedData, reportDetails };
   };
 
   const handleImputation = (method) => {
     const columnsToImpute = selectedColumnsImp.filter(col => col !== targetFeature);
-    
     if (columnsToImpute.length === 0) {
       alert("Please select columns for imputation (excluding the target feature)");
       return;
     }
-
+    saveStateToHistory();
     setIsImputing(true);
     let result;
-
     try {
       switch (method) {
         case 'Mean Imputation':
@@ -713,9 +709,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
         default:
           throw new Error("Unknown imputation method");
       }
-
       setFilteredData(result.updatedData);
-
       const report = addOperationReport(
         `Data Imputation - ${method}`,
         `Applied ${method} to selected columns`,
@@ -728,11 +722,9 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
           targetFeatureExcluded: targetFeature
         }
       );
-
       setCurrentReport(report);
       setShowReportModal(true);
       setSelectedColumnsImp(prev => prev.filter(col => col !== targetFeature));
-
     } catch (error) {
       console.error("Imputation error:", error);
       alert(`Error during imputation: ${error.message}`);
@@ -741,13 +733,10 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     }
   };
 
-  // Categorical data functions
   const identifyCategoricalColumns = () => {
     if (filteredData.length === 0) return [];
-    
     return Object.keys(filteredData[0]).filter(column => {
       if (column === targetFeature || normalizedColumns.includes(column)) return false;
-      
       return columnTypes[column] === 'categorical';
     });
   };
@@ -757,7 +746,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
       alert("Veuillez sélectionner des colonnes catégorielles");
       return;
     }
-
+    saveStateToHistory();
     setIsProcessingCat(true);
     try {
       const newColumns = {};
@@ -767,20 +756,16 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
           newColumns[`${col}_${val}`] = filteredData.map(row => row[col] === val ? 1 : 0);
         });
       });
-
       const newData = filteredData.map((row, index) => {
         const newRow = { ...row };
         selectedColumnsCat.forEach(col => {
           delete newRow[col];
         });
-        
         Object.keys(newColumns).forEach(newCol => {
           newRow[newCol] = newColumns[newCol][index];
         });
-        
         return newRow;
       });
-
       const report = addOperationReport(
         'One-Hot Encoding',
         `Encodage one-hot appliqué à ${selectedColumnsCat.length} colonnes`,
@@ -792,7 +777,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
           targetFeaturePreserved: targetFeature
         }
       );
-
       setFilteredData(newData);
       setCurrentReport(report);
       setShowReportModal(true);
@@ -810,25 +794,21 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
       alert("Veuillez sélectionner des colonnes catégorielles");
       return;
     }
-
+    saveStateToHistory();
     setIsProcessingCat(true);
     try {
       const encodingMaps = {};
       const newData = filteredData.map(row => ({ ...row }));
-      
       selectedColumnsCat.forEach(col => {
         const uniqueValues = [...new Set(filteredData.map(row => row[col]))];
         encodingMaps[col] = {};
-        
         uniqueValues.forEach((val, index) => {
           encodingMaps[col][val] = index;
         });
-        
         newData.forEach(row => {
           row[col] = encodingMaps[col][row[col]] || 0;
         });
       });
-
       const report = addOperationReport(
         'Label Encoding',
         `Encodage label appliqué à ${selectedColumnsCat.length} colonnes`,
@@ -839,7 +819,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
           targetFeaturePreserved: targetFeature
         }
       );
-
       setFilteredData(newData);
       setCurrentReport(report);
       setShowReportModal(true);
@@ -857,26 +836,22 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
       alert("Veuillez sélectionner des colonnes catégorielles");
       return;
     }
-
+    saveStateToHistory();
     setIsProcessingCat(true);
     try {
       const frequencyMaps = {};
       const newData = filteredData.map(row => ({ ...row }));
-      
       selectedColumnsCat.forEach(col => {
         const valueCounts = filteredData.reduce((acc, row) => {
           acc[row[col]] = (acc[row[col]] || 0) + 1;
           return acc;
         }, {});
-        
         frequencyMaps[col] = valueCounts;
         const total = filteredData.length;
-        
         newData.forEach(row => {
           row[col] = valueCounts[row[col]] / total;
         });
       });
-
       const report = addOperationReport(
         'Frequency Encoding',
         `Encodage par fréquence appliqué à ${selectedColumnsCat.length} colonnes`,
@@ -887,7 +862,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
           targetFeaturePreserved: targetFeature
         }
       );
-
       setFilteredData(newData);
       setCurrentReport(report);
       setShowReportModal(true);
@@ -905,17 +879,15 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
       alert("Veuillez sélectionner des colonnes textuelles");
       return;
     }
-
+    saveStateToHistory();
     setIsProcessingCat(true);
     try {
       const newData = filteredData.map(row => ({ ...row }));
-      
       selectedColumnsCat.forEach(col => {
         newData.forEach(row => {
           row[`${col}_length`] = String(row[col]).length;
         });
       });
-
       const report = addOperationReport(
         'Text Length Extraction',
         `Extraction de longueur de texte appliquée à ${selectedColumnsCat.length} colonnes`,
@@ -926,7 +898,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
           targetFeaturePreserved: targetFeature
         }
       );
-
       setFilteredData(newData);
       setCurrentReport(report);
       setShowReportModal(true);
@@ -944,7 +915,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
       Object.keys(filteredData[0] || {}).join(','),
       ...filteredData.slice(0, 15).map(row => Object.values(row).join(','))
     ].join('\n');
-
     const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -954,34 +924,49 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     URL.revokeObjectURL(url);
   };
 
- const handleSave = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:5000/save-data/${id}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ 
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const operationDescription = operationReports.length > 0
+        ? operationReports.map(op => {
+            const columns = op.affectedColumns?.length > 0
+              ? `(Colonnes: ${op.affectedColumns.join(', ')})`
+              : '';
+            return `${op.operation}: ${op.details} ${columns}`;
+          }).join(' | ')
+        : "Traitement personnalisé";
+
+      const dataToSend = {
         data: filteredData,
-        preprocessing_steps: operationReports, // Envoyez l'historique
-        modification: "Traitement personnalisé" 
-      })
-    });
+        preprocessing_steps: operationReports,
+        modification: operationDescription
+      };
+
+      const compressedData = pako.gzip(JSON.stringify(dataToSend));
+      
+      const response = await fetch(`http://localhost:5000/save-data/${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'Authorization': `Bearer ${token}`,
+          'Content-Encoding': 'gzip'
+        },
+        body: compressedData
+      });
 
       if (!response.ok) throw new Error('Failed to save data');
-            const report = addOperationReport(
+      saveStateToHistory();
+      const report = addOperationReport(
         'Data Save',
         'Saved processed data to server',
         Object.keys(filteredData[0] || {}),
         {
           rowCount: filteredData.length,
           columnCount: Object.keys(filteredData[0] || {}).length,
-          savedAt: new Date().toISOString()
+          savedAt: new Date().toISOString(),
+          operationDescription: operationDescription
         }
       );
-
       setCurrentReport(report);
       setShowReportModal(true);
       alert("Data saved successfully!");
@@ -991,19 +976,16 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     }
   };
 
-  // UI helpers
   const calculateNullPercentages = () => {
     const columns = Object.keys(filteredData[0] || {}).filter(col => col !== targetFeature);
     const totalRows = filteredData.length;
     const nullPercentages = {};
-
     columns.forEach(column => {
-      const nullCount = filteredData.filter(row => 
+      const nullCount = filteredData.filter(row =>
         row[column] === null || row[column] === undefined || row[column] === 'N/A'
       ).length;
       nullPercentages[column] = (nullCount / totalRows) * 100;
     });
-
     return nullPercentages;
   };
 
@@ -1014,7 +996,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const handleColumnCheckboxChange = (column) => {
     if (column === targetFeature) return;
-    
     setSelectedColumns(prev => {
       const newSelection = new Set(prev);
       if (newSelection.has(column)) {
@@ -1028,7 +1009,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const handleColumnCheckboxChangeNr = (column) => {
     if (column === targetFeature) return;
-    
     setSelectedColumnsNr(prev => {
       const newSelection = new Set(prev);
       if (newSelection.has(column)) {
@@ -1042,7 +1022,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const handleColumnCheckboxChangeImp = (column) => {
     if (column === targetFeature) return;
-    
     setSelectedColumnsImp(prev => {
       const newSelection = new Set(prev);
       if (newSelection.has(column)) {
@@ -1056,7 +1035,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const handleColumnCheckboxChangeCat = (column) => {
     if (column === targetFeature) return;
-    
     setSelectedColumnsCat(prev => {
       const newSelection = new Set(prev);
       if (newSelection.has(column)) {
@@ -1068,27 +1046,19 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     });
   };
 
-  // Dropdown toggles
   const toggleDropdown = () => setShowDropdown(!showDropdown);
   const toggleDropdown1 = () => setIsOpen1(!isOpen1);
   const toggleDropdown2 = () => setIsOpen2(!isOpen2);
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-
-
-
-
-  // Data for rendering
-  const headers = filteredData.length > 0 ? 
+  const headers = filteredData.length > 0 ?
     Object.keys(filteredData[0]).filter(header => header !== targetFeature) : [];
   const availableColumns = headers.filter(header => !normalizedColumns.includes(header));
   const categoricalColumns = identifyCategoricalColumns();
   const rows = filteredData.slice(0, 15);
 
-  // Report Modal Component
   const ReportModal = ({ report, onClose }) => {
     if (!report) return null;
-
     const renderReportDetails = () => {
       switch (report.operation) {
         case 'Data Cleaning':
@@ -1111,7 +1081,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
               </ul>
             </div>
           );
-        
         case 'Data Imputation - Mean Imputation':
         case 'Data Imputation - Median Imputation':
         case 'Data Imputation - Mode Imputation':
@@ -1148,12 +1117,11 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
               </ul>
             </div>
           );
-        
         case 'Data Transformation - Min-Max Normalization':
         case 'Data Transformation - Z-Score Normalization':
         case 'Data Transformation - Decimal Scaling':
         case 'Data Transformation - Mean Normalization':
-        case 'Data Transformation - Logarithmic Scaling':
+        case 'Data Transformation - Logarithmic':
           return (
             <div className="report-section">
               <h3>Transformation Details</h3>
@@ -1175,7 +1143,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
               </ul>
             </div>
           );
-        
         case 'Duplicate Removal':
           return (
             <div className="report-section">
@@ -1200,7 +1167,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
               </div>
             </div>
           );
-        
         case 'Data Save':
           return (
             <div className="report-section">
@@ -1218,7 +1184,16 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
               <p><strong>Saved at:</strong> {new Date(report.stats.savedAt).toLocaleString()}</p>
             </div>
           );
-        
+        case 'Undo Operation':
+          return (
+            <div className="report-section">
+              <h3>Undo Details</h3>
+              <p><strong>Undone Operation:</strong> {report.stats.undoneOperation}</p>
+              <p><strong>Restored State:</strong> {report.stats.restoredStateIndex}</p>
+              <p><strong>Total States Available:</strong> {report.stats.totalStates}</p>
+              <p><strong>Timestamp:</strong> {new Date(report.stats.timestamp).toLocaleString()}</p>
+            </div>
+          );
         case 'Full Operations History':
           return (
             <div className="report-section">
@@ -1230,7 +1205,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
                     <h4>{op.operation}</h4>
                     <p className="timestamp">{new Date(op.timestamp).toLocaleString()}</p>
                     <p className="details">{op.details}</p>
-                    <button 
+                    <button
                       onClick={() => {
                         setCurrentReport(op);
                       }}
@@ -1243,7 +1218,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
               </div>
             </div>
           );
-
         case 'One-Hot Encoding':
         case 'Label Encoding':
         case 'Frequency Encoding':
@@ -1292,7 +1266,6 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
               </ul>
             </div>
           );
-
         default:
           return (
             <div className="report-section">
@@ -1310,16 +1283,14 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
         <div className="report-modal">
           <div className="report-modal-header">
             <h2>{report.operation}</h2>
-            <button onClick={onClose} className="close-btn">&times;</button>
+            <button onClick={onClose} className="close-btn">×</button>
           </div>
           <div className="report-modal-body">
             <div className="report-meta">
               <p><strong>Timestamp:</strong> {new Date(report.timestamp).toLocaleString()}</p>
               <p><strong>Description:</strong> {report.details}</p>
             </div>
-            
             {renderReportDetails()}
-
             <h4>Data Sample (first 3 rows):</h4>
             <div className="data-sample">
               <pre>{JSON.stringify(report.dataSample, null, 2)}</pre>
@@ -1334,101 +1305,56 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   };
 
   return (
-  <div className="processing-modern">
-    {/* Sidebar modernisée avec toggle */}
-    <div className={`app-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
-      <div className="sidebar-header">
-        <button className="sidebar-toggle" onClick={toggleSidebar}>
-          <FontAwesomeIcon 
-            icon={isSidebarOpen ? faChevronLeft : faChevronRight} 
-            className="toggle-icon"
-          />
-        </button>
-        {isSidebarOpen && (
-          <>
-            <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
-            <h2>MedicalVision</h2>
-          </>
-        )}
-      </div>
-      
-      <nav className="sidebar-nav">
-        {[
-          { 
-            icon: faUser,
-            label: "Profile",
-            action: handleProfileClick,
-            active: false
-          },
-          { 
-            icon: faDatabase,
-            label: "Database", 
-            action: handleDBClick,
-            active: false
-          },
-          { 
-            icon: faHistory,
-            label: "History",
-            action: handleHistorique,
-            active: false
-          },
-          { 
-            icon: faFileAlt,
-            label: "Description",
-            action: handleDescription,
-            active: false
-          },
-          { 
-            icon: faChartLine,
-            label: "Graphs",
-            action: handleGraphsClick,
-            active: false
-          },
-          { 
-            icon: faCog,
-            label: "Processing",
-            action: () => {},
-            active: true
-          },
-          { 
-            icon: faBrain,
-            label: "Models",
-            action: handleModelsClick,
-            active: false
-          },
-          { 
-            icon: faRocket,
-            label: "Deployment",
-            action: handleDepClick,
-            active: false
-          }
-        ].map((item, index) => (
-          <button
-            key={index}
-            className={`nav-item ${item.active ? 'active' : ''}`}
-            onClick={item.action}
-            title={!isSidebarOpen ? item.label : ''}
-          >
-            <div className="nav-icon-container">
-              <FontAwesomeIcon icon={item.icon} className="nav-icon" />
-            </div>
-            {isSidebarOpen && <span className="nav-label">{item.label}</span>}
+    <div className="processing-modern">
+      <div className={`app-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
+        <div className="sidebar-header">
+          <button className="sidebar-toggle" onClick={toggleSidebar}>
+            <FontAwesomeIcon
+              icon={isSidebarOpen ? faChevronLeft : faChevronRight}
+              className="toggle-icon"
+            />
           </button>
-        ))}
-      </nav>
-    </div>
-      {/* Main Content */}
+          {isSidebarOpen && (
+            <>
+              <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
+              <h2>MedicalVision</h2>
+            </>
+          )}
+        </div>
+        <nav className="sidebar-nav">
+          {[
+            { icon: faUser, label: "Profile", action: handleProfileClick, active: false },
+            { icon: faDatabase, label: "Database", action: handleDBClick, active: false },
+            { icon: faHistory, label: "History", action: handleHistorique, active: false },
+            { icon: faFileAlt, label: "Description", action: handleDescription, active: false },
+            { icon: faChartLine, label: "Graphs", action: handleGraphsClick, active: false },
+            { icon: faCog, label: "Processing", action: () => {}, active: true },
+            { icon: faBrain, label: "Models", action: handleModelsClick, active: false },
+            { icon: faRocket, label: "Deployment", action: handleDepClick, active: false }
+          ].map((item, index) => (
+            <button
+              key={index}
+              className={`nav-item ${item.active ? 'active' : ''}`}
+              onClick={item.action}
+              title={!isSidebarOpen ? item.label : ''}
+            >
+              <div className="nav-icon-container">
+                <FontAwesomeIcon icon={item.icon} className="nav-icon" />
+              </div>
+              {isSidebarOpen && <span className="nav-label">{item.label}</span>}
+            </button>
+          ))}
+        </nav>
+      </div>
       <main className="content-modern">
-      <div className={`content-modern  ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-
+        <div className={`content-modern ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
           <h1>Data Processing Center</h1>
           <p className="subtitle-modern">Clean, transform and prepare your medical data for analysis</p>
-
           <div className="target-feature-display">
             <span className="target-label">Target Feature:</span>
             <span className="target-value">{targetFeature || 'Not set'}</span>
             {error && error.includes('Target feature') && (
-              <button 
+              <button
                 onClick={fetchTargetFeature}
                 className="refresh-target-btn"
               >
@@ -1437,108 +1363,98 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
             )}
           </div>
           <br/>
-
-        {loading && (
-          <div className="loading-modern">
-            <div className="spinner-modern"></div>
-            <p>Loading your data...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="error-modern">
-            <p>{error}</p>
-          </div>
-        )}
-
-        {/* Action Cards */}
-        <div className="action-grid-modern">
-          {/* Cleaning Card */}
-          <div className="action-card-modern">
-            <div className="card-header-modern">
-              <FontAwesomeIcon icon={faBroom} className="card-icon-modern" />
-              <h3>Data Cleaning</h3>
+          {loading && (
+            <div className="loading-modern">
+              <div className="spinner-modern"></div>
+              <p>Loading your data...</p>
             </div>
-            <div className="card-body-modern">
-              <button 
-                className="action-btn-modern primary"
-                onClick={handleDataCleaning}
-                disabled={loading || isCleaning}
-              >
-                {isCleaning ? (
-                  <>
-                    <FontAwesomeIcon icon={faSpinner} spin />
-                    <span>Cleaning...</span>
-                  </>
-                ) : 'Remove Null Values'}
-              </button>
-              
-              <button 
-                className="action-btn-modern secondary"
-                onClick={handleRemoveSelectedColumns}
-                disabled={selectedColumns.length === 0 || isRemoving}
-              >
-                {isRemoving ? (
-                  <>
-                    <FontAwesomeIcon icon={faSpinner} spin />
-                    <span>Removing...</span>
-                  </>
-                ) : 'Remove Columns'}
-              </button>
-              
-              <div className="dropdown-modern"ref={dropdownRef1}>
-                <button 
-                  className="dropdown-toggle-modern"
-                  onClick={toggleDropdown1}
-                  disabled={columnsWithHighNulls.length === 0}
+          )}
+          {error && (
+            <div className="error-modern">
+              <p>{error}</p>
+            </div>
+          )}
+          <div className="action-grid-modern">
+            <div className="action-card-modern">
+              <div className="card-header-modern">
+                <FontAwesomeIcon icon={faBroom} className="card-icon-modern" />
+                <h3>Data Cleaning</h3>
+              </div>
+              <div className="card-body-modern">
+                <button
+                  className="action-btn-modern primary"
+                  onClick={handleDataCleaning}
+                  disabled={loading || isCleaning}
                 >
-                  <span>Select Columns</span>
-                  <FontAwesomeIcon icon={isOpen1 ? faChevronUp : faChevronDown} className="dropdown-arrow" />
+                  {isCleaning ? (
+                    <>
+                      <FontAwesomeIcon icon={faSpinner} spin />
+                      <span>Cleaning...</span>
+                    </>
+                  ) : 'Remove Null Values'}
                 </button>
-                {isOpen1 && (
-                  <div className="dropdown-menu-modern">
-                    <div className="dropdown-header">
-                      <span>Columns with null values</span>
-                      <button 
-                        onClick={() => {
-                          setSelectedColumns(columnsWithHighNulls);
-                        }}
-                        className="select-all-btn"
-                      >
-                        Select All
-                      </button>
+                <button
+                  className="action-btn-modern secondary"
+                  onClick={handleRemoveSelectedColumns}
+                  disabled={selectedColumns.length === 0 || isRemoving}
+                >
+                  {isRemoving ? (
+                    <>
+                      <FontAwesomeIcon icon={faSpinner} spin />
+                      <span>Removing...</span>
+                    </>
+                  ) : 'Remove Columns'}
+                </button>
+                <div className="dropdown-modern" ref={dropdownRef1}>
+                  <button
+                    className="dropdown-toggle-modern"
+                    onClick={toggleDropdown1}
+                    disabled={columnsWithHighNulls.length === 0}
+                  >
+                    <span>Select Columns</span>
+                    <FontAwesomeIcon icon={isOpen1 ? faChevronUp : faChevronDown} className="dropdown-arrow" />
+                  </button>
+                  {isOpen1 && (
+                    <div className="dropdown-menu-modern">
+                      <div className="dropdown-header">
+                        <span>Columns with null values</span>
+                        <button
+                          onClick={() => {
+                            setSelectedColumns(columnsWithHighNulls);
+                          }}
+                          className="select-all-btn"
+                        >
+                          Select All
+                        </button>
+                      </div>
+                      {columnsWithHighNulls.map(column => (
+                        <label key={column} className="checkbox-modern">
+                          <input
+                            type="checkbox"
+                            checked={selectedColumns.includes(column)}
+                            onChange={() => handleColumnCheckboxChange(column)}
+                            disabled={column === targetFeature}
+                          />
+                          <span className={`column-name ${column === targetFeature ? 'target-feature' : ''}`}>
+                            {column}
+                            {column === targetFeature && <span className="target-badge">Target</span>}
+                          </span>
+                          <span className="null-percentage">({nullPercentages[column].toFixed(1)}% null)</span>
+                        </label>
+                      ))}
                     </div>
-                         {columnsWithHighNulls.map(column => (
-                          <label key={column} className="checkbox-modern">
-                            <input
-                              type="checkbox"
-                              checked={selectedColumns.includes(column)}
-                              onChange={() => handleColumnCheckboxChange(column)}
-                              disabled={column === targetFeature}
-                            />
-                            <span className={`column-name ${column === targetFeature ? 'target-feature' : ''}`}>
-                              {column}
-                              {column === targetFeature && <span className="target-badge">Target</span>}
-                            </span>
-                            <span className="null-percentage">({nullPercentages[column].toFixed(1)}% null)</span>
-                          </label>
-                        ))}
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-
-            {/* Imputation Card */}
             <div className="action-card-modern">
               <div className="card-header-modern">
                 <FontAwesomeIcon icon={faCheckCircle} className="card-icon-modern" />
                 <h3>Data Imputation</h3>
               </div>
               <div className="card-body-modern">
-                    <div className="dropdown-modern dropdown-imputation" ref={imputationDropdownRef}>
-
-                  <button 
+                <div className="dropdown-modern dropdown-imputation" ref={imputationDropdownRef}>
+                  <button
                     className="dropdown-toggle-modern"
                     onClick={toggleImputationDropdown}
                     disabled={isImputing}
@@ -1563,9 +1479,8 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
                     </div>
                   )}
                 </div>
-                
-                    <div className="dropdown-modern dropdown-columns" ref={dropdownRef3}>
-                  <button 
+                <div className="dropdown-modern dropdown-columns" ref={dropdownRef3}>
+                  <button
                     className="dropdown-toggle-modern"
                     onClick={() => setIsOpen3(!isOpen3)}
                     disabled={isImputing}
@@ -1577,7 +1492,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
                     <div className="dropdown-menu-modern">
                       <div className="dropdown-header">
                         <span>Available columns</span>
-                        <button 
+                        <button
                           onClick={() => {
                             setSelectedColumnsImp(availableColumns);
                           }}
@@ -1608,313 +1523,302 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
                 </div>
               </div>
             </div>
-
-          {/* Normalization Card */}
-          <div className="action-card-modern">
-            <div className="card-header-modern">
-              <FontAwesomeIcon icon={faArrowsRotate} className="card-icon-modern" />
-              <h3>Data Normalization</h3>
-            </div>
-            <div className="card-body-modern">
-              <div className= "dropdown-modern dropdown-normalization"   ref={normalizationDropdownRef}>
-                <button 
-                  className="dropdown-toggle-modern"
-                  onClick={toggleDropdown}
-                  disabled={selectedColumnsNr.length === 0}
-                >
-                  <span>Normalization Methods</span>
-                  <FontAwesomeIcon icon={showDropdown ? faChevronUp : faChevronDown} className="dropdown-arrow" />
-                </button>
-                {showDropdown && (
-                  <div className="dropdown-menu-modern">
-                    {['Min-Max', 'Z-Score', 'Decimal Scaling', 'Mean', 'Logarithmic'].map(type => (
-                      <button
-                        key={type}
-                        className="dropdown-item-modern"
-                        onClick={() => {
-                          setShowDropdown(false);
-                          handleDataTransformation(`${type} Normalization`);
-                        }}
-                      >
-                        {type} Normalization
-                      </button>
-                    ))}
-                  </div>
-                )}
+            <div className="action-card-modern">
+              <div className="card-header-modern">
+                <FontAwesomeIcon icon={faArrowsRotate} className="card-icon-modern" />
+                <h3>Data Normalization</h3>
               </div>
-              
-              <div className=  "dropdown-modern dropdown-columns"      ref={dropdownRef2}>
-                <button 
-                  className="dropdown-toggle-modern"
-                  onClick={toggleDropdown2}
-                >
-                  <span>Select Columns</span>
-                  <FontAwesomeIcon icon={isOpen2 ? faChevronUp : faChevronDown} className="dropdown-arrow" />
-                </button>
-                {isOpen2 && (
-                  <div className="dropdown-menu-modern">
-                    <div className="dropdown-header">
-                      <span>Available columns</span>
-                      <button 
-                        onClick={() => {
-                          setSelectedColumnsNr(availableColumns);
-                        }}
-                        className="select-all-btn"
-                      >
-                        Select All
-                      </button>
-                    </div>
-                      {availableColumns.map(header => (
-                              <label key={header} className="checkbox-modern">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedColumnsNr.includes(header)}
-                                  onChange={() => handleColumnCheckboxChangeNr(header)}
-                                  disabled={header === targetFeature}
-                                />
-                                <span className={`column-name ${header === targetFeature ? 'target-feature' : ''}`}>
-                                  {header}
-                                  {header === targetFeature && <span className="target-badge">Target</span>}
-                                </span>
-                              </label>
-                            ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Categorical Data Card */}
-          <div className="action-card-modern">
-            <div className="card-header-modern">
-              <FontAwesomeIcon icon={faTags} className="card-icon-modern" />
-              <h3>Categorical Data</h3>
-            </div>
-            <div className="card-body-modern">
-              <div className= "dropdown-modern dropdown-encoding"    ref={encodingDropdownRef}>
-                <button 
-                  className="dropdown-toggle-modern"
-                  onClick={toggleEncodingDropdown}
-                  disabled={isProcessingCat}
-                >
-                  <span>{encodingMethod || 'Encoding Methods'}</span>
-                  <FontAwesomeIcon icon={showEncodingDropdown ? faChevronUp : faChevronDown} className="dropdown-arrow" />
-                </button>
-                {showEncodingDropdown && (
-                  <div className="dropdown-menu-modern">
-                    <button className="dropdown-item-modern" onClick={() => {
-                      setShowEncodingDropdown(false);
-                      handleOneHotEncoding();
-                      setEncodingMethod('One-Hot Encoding');
-                    }}>
-                      One-Hot Encoding
-                    </button>
-                    <button className="dropdown-item-modern" onClick={() => {
-                      setShowEncodingDropdown(false);
-                      handleLabelEncoding();
-                      setEncodingMethod('Label Encoding');
-                    }}>
-                      Label Encoding
-                    </button>
-                    <button className="dropdown-item-modern" onClick={() => {
-                      setShowEncodingDropdown(false);
-                      handleFrequencyEncoding();
-                      setEncodingMethod('Frequency Encoding');
-                    }}>
-                      Frequency Encoding
-                    </button>
-                    <button className="dropdown-item-modern" onClick={() => {
-                      setShowEncodingDropdown(false);
-                      handleTextLengthExtraction();
-                      setEncodingMethod('Text Length');
-                    }}>
-                      Text Length Extraction
-                    </button>
-                  </div>
-                )}
-              </div>
-              
-              <div className= "dropdown-modern dropdown-columns" ref={dropdownRef4}>
-                <button 
-                  className="dropdown-toggle-modern"
-                  onClick={() => {
-                    const catCols = identifyCategoricalColumns();
-                    setIsOpen4(!isOpen4);
-                    if (catCols.length === 0 && filteredData.length > 0) {
-                      alert("No categorical columns identified in the first 100 rows");
-                    }
-                  }}
-                  disabled={isProcessingCat}
-                >
-                  <span>Select Columns</span>
-                  <FontAwesomeIcon icon={isOpen4 ? faChevronUp : faChevronDown} className="dropdown-arrow" />
-                </button>
-                {isOpen4 && (
-                  <div className="dropdown-menu-modern">
-                    <div className="dropdown-header">
-                      <span>Categorical columns</span>
-                      <button 
-                        onClick={() => {
-                          setSelectedColumnsCat(identifyCategoricalColumns());
-                        }}
-                        className="select-all-btn"
-                      >
-                        Select All
-                      </button>
-                    </div>
-                    {categoricalColumns.map(header => (
-                      <label key={header} className="checkbox-modern">
-                        <input
-                          type="checkbox"
-                          checked={selectedColumnsCat.includes(header)}
-                          onChange={() => handleColumnCheckboxChangeCat(header)}
-                          disabled={header === targetFeature}
-                        />
-                        <span className={`column-name ${header === targetFeature ? 'target-feature' : ''}`}>
-                          {header}
-                          {header === targetFeature && <span className="target-badge">Target</span>}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              {isProcessingCat && (
-                <div className="processing-indicator">
-                  <FontAwesomeIcon icon={faSpinner} spin />
-                  <span>Processing...</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Other Actions Card */}
-          <div className="action-card-modern">
-            <div className="card-header-modern">
-              <FontAwesomeIcon icon={faClone} className="card-icon-modern" />
-              <h3>Other Actions</h3>
-            </div>
-            <div className="card-body-modern">
-              <button 
-                className="action-btn-modern secondary"
-                onClick={handleDatadouble}
-              >
-                Remove Duplicates
-              </button>
-              
-              <button 
-                className="action-btn-modern primary"
-                onClick={handleDownload}
-              >
-                <FontAwesomeIcon icon={faDownload} />
-                Download Data
-              </button>
-              
-              <button 
-                className="action-btn-modern success"
-                onClick={handleSave}
-              >
-                <FontAwesomeIcon icon={faSave} />
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Data Preview */}
-        <div className="data-preview-modern">
-          <div className="preview-header-modern">
-            <h2>Data Preview</h2>
-            <p>Showing {Math.min(rows.length, 15)} of {filteredData.length} rows</p>
-          </div>
-          
-          {rows.length > 0 ? (
-            <div className="table-wrapper-modern">
-              <table className="data-table-modern">
-                <thead>
-                  <tr>
-                    {headers.map(header => {
-                      const columnType = columnTypes[header] || 'unknown';
-                      const isHighNull = nullPercentages[header] > 20;
-                      const isImputed = selectedColumnsImp.includes(header);
-                      
-                      return (
-                        <th 
-                          key={header} 
-                          className={`
-                            ${isHighNull ? 'highlight-column' : ''}
-                            ${isImputed ? 'imputed-column' : ''}
-                            ${columnType === 'categorical' ? 'categorical-column' : ''}
-                            ${columnType === 'numeric' ? 'numeric-column' : ''}
-                          `}
+              <div className="card-body-modern">
+                <div className="dropdown-modern dropdown-normalization" ref={normalizationDropdownRef}>
+                  <button
+                    className="dropdown-toggle-modern"
+                    onClick={toggleDropdown}
+                    disabled={selectedColumnsNr.length === 0}
+                  >
+                    <span>Normalization Methods</span>
+                    <FontAwesomeIcon icon={showDropdown ? faChevronUp : faChevronDown} className="dropdown-arrow" />
+                  </button>
+                  {showDropdown && (
+                    <div className="dropdown-menu-modern">
+                      {['Min-Max', 'Z-Score', 'Decimal Scaling', 'Mean', 'Logarithmic'].map(type => (
+                        <button
+                          key={type}
+                          className="dropdown-item-modern"
+                          onClick={() => {
+                            setShowDropdown(false);
+                            handleDataTransformation(`${type} Normalization`);
+                          }}
                         >
-                          {header}
-                          {isHighNull && (
-                            <span className="null-percentage">
-                              ({nullPercentages[header].toFixed(1)}% null)
-                            </span>
-                          )}
-                          {isImputed && (
-                            <span className="imputed-badge">Imputed</span>
-                          )}
-                       
-                        
-                        </th>
+                          {type} Normalization
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="dropdown-modern dropdown-columns" ref={dropdownRef2}>
+                  <button
+                    className="dropdown-toggle-modern"
+                    onClick={toggleDropdown2}
+                  >
+                    <span>Select Columns</span>
+                    <FontAwesomeIcon icon={isOpen2 ? faChevronUp : faChevronDown} className="dropdown-arrow" />
+                  </button>
+                  {isOpen2 && (
+                    <div className="dropdown-menu-modern">
+                      <div className="dropdown-header">
+                        <span>Available columns</span>
+                        <button
+                          onClick={() => {
+                            setSelectedColumnsNr(availableColumns);
+                          }}
+                          className="select-all-btn"
+                        >
+                          Select All
+                        </button>
+                      </div>
+                      {availableColumns.map(header => (
+                        <label key={header} className="checkbox-modern">
+                          <input
+                            type="checkbox"
+                            checked={selectedColumnsNr.includes(header)}
+                            onChange={() => handleColumnCheckboxChangeNr(header)}
+                            disabled={header === targetFeature}
+                          />
+                          <span className={`column-name ${header === targetFeature ? 'target-feature' : ''}`}>
+                            {header}
+                            {header === targetFeature && <span className="target-badge">Target</span>}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="action-card-modern">
+              <div className="card-header-modern">
+                <FontAwesomeIcon icon={faTags} className="card-icon-modern" />
+                <h3>Categorical Data</h3>
+              </div>
+              <div className="card-body-modern">
+                <div className="dropdown-modern dropdown-encoding" ref={encodingDropdownRef}>
+                  <button
+                    className="dropdown-toggle-modern"
+                    onClick={toggleEncodingDropdown}
+                    disabled={isProcessingCat}
+                  >
+                    <span>{encodingMethod || 'Encoding Methods'}</span>
+                    <FontAwesomeIcon icon={showEncodingDropdown ? faChevronUp : faChevronDown} className="dropdown-arrow" />
+                  </button>
+                  {showEncodingDropdown && (
+                    <div className="dropdown-menu-modern">
+                      <button className="dropdown-item-modern" onClick={() => {
+                        setShowEncodingDropdown(false);
+                        handleOneHotEncoding();
+                        setEncodingMethod('One-Hot Encoding');
+                      }}>
+                        One-Hot Encoding
+                      </button>
+                      <button className="dropdown-item-modern" onClick={() => {
+                        setShowEncodingDropdown(false);
+                        handleLabelEncoding();
+                        setEncodingMethod('Label Encoding');
+                      }}>
+                        Label Encoding
+                      </button>
+                      <button className="dropdown-item-modern" onClick={() => {
+                        setShowEncodingDropdown(false);
+                        handleFrequencyEncoding();
+                        setEncodingMethod('Frequency Encoding');
+                      }}>
+                        Frequency Encoding
+                      </button>
+                      <button className="dropdown-item-modern" onClick={() => {
+                        setShowEncodingDropdown(false);
+                        handleTextLengthExtraction();
+                        setEncodingMethod('Text Length');
+                      }}>
+                        Text Length Extraction
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="dropdown-modern dropdown-columns" ref={dropdownRef4}>
+                  <button
+                    className="dropdown-toggle-modern"
+                    onClick={() => {
+                      const catCols = identifyCategoricalColumns();
+                      setIsOpen4(!isOpen4);
+                      if (catCols.length === 0 && filteredData.length > 0) {
+                        alert("No categorical columns identified in the first 100 rows");
+                      }
+                    }}
+                    disabled={isProcessingCat}
+                  >
+                    <span>Select Columns</span>
+                    <FontAwesomeIcon icon={isOpen4 ? faChevronUp : faChevronDown} className="dropdown-arrow" />
+                  </button>
+                  {isOpen4 && (
+                    <div className="dropdown-menu-modern">
+                      <div className="dropdown-header">
+                        <span>Categorical columns</span>
+                        <button
+                          onClick={() => {
+                            setSelectedColumnsCat(identifyCategoricalColumns());
+                          }}
+                          className="select-all-btn"
+                        >
+                          Select All
+                        </button>
+                      </div>
+                      {categoricalColumns.map(header => (
+                        <label key={header} className="checkbox-modern">
+                          <input
+                            type="checkbox"
+                            checked={selectedColumnsCat.includes(header)}
+                            onChange={() => handleColumnCheckboxChangeCat(header)}
+                            disabled={header === targetFeature}
+                          />
+                          <span className={`column-name ${header === targetFeature ? 'target-feature' : ''}`}>
+                            {header}
+                            {header === targetFeature && <span className="target-badge">Target</span>}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {isProcessingCat && (
+                  <div className="processing-indicator">
+                    <FontAwesomeIcon icon={faSpinner} spin />
+                    <span>Processing...</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="action-card-modern">
+              <div className="card-header-modern">
+                <FontAwesomeIcon icon={faClone} className="card-icon-modern" />
+                <h3>Other Actions</h3>
+              </div>
+              <div className="card-body-modern">
+                <button
+                  className="action-btn-modern secondary"
+                  onClick={handleDatadouble}
+                >
+                  Remove Duplicates
+                </button>
+                <button
+                  className="action-btn-modern warning"
+                  onClick={undoOperation}
+                  disabled={historyIndex <= 0}
+                  title={historyIndex <= 0 ? "No operations to undo" : "Undo the last operation"}
+                >
+                  <FontAwesomeIcon icon={faUndo} />
+                  Undo Last Operation
+                </button>
+                <button
+                  className="action-btn-modern primary"
+                  onClick={handleDownload}
+                >
+                  <FontAwesomeIcon icon={faDownload} />
+                  Download Data
+                </button>
+                <button
+                  className="action-btn-modern success"
+                  onClick={handleSave}
+                >
+                  <FontAwesomeIcon icon={faSave} />
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="data-preview-modern">
+            <div className="preview-header-modern">
+              <h2>Data Preview</h2>
+              <p>Showing {Math.min(rows.length, 15)} of {filteredData.length} rows</p>
+            </div>
+            {rows.length > 0 ? (
+              <div className="table-wrapper-modern">
+                <table className="data-table-modern">
+                  <thead>
+                    <tr>
+                      {headers.map(header => {
+                        const columnType = columnTypes[header] || 'unknown';
+                        const isHighNull = nullPercentages[header] > 20;
+                        const isImputed = selectedColumnsImp.includes(header);
+                        return (
+                          <th
+                            key={header}
+                            className={`
+                              ${isHighNull ? 'highlight-column' : ''}
+                              ${isImputed ? 'imputed-column' : ''}
+                              ${columnType === 'categorical' ? 'categorical-column' : ''}
+                              ${columnType === 'numeric' ? 'numeric-column' : ''}
+                            `}
+                          >
+                            {header}
+                            {isHighNull && (
+                              <span className="null-percentage">
+                                ({nullPercentages[header].toFixed(1)}% null)
+                              </span>
+                            )}
+                            {isImputed && (
+                              <span className="imputed-badge">Imputed</span>
+                            )}
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row, rowIndex) => {
+                      const hasNulls = Object.values(row).some(
+                        val => val === null || val === undefined || val === 'N/A'
+                      );
+                      return (
+                        <tr
+                          key={rowIndex}
+                          className={hasNulls ? 'highlight-row' : ''}
+                        >
+                          {headers.map(column => {
+                            const isNull = row[column] === null || row[column] === undefined || row[column] === 'N/A';
+                            return (
+                              <td
+                                key={column}
+                                className={
+                                  `${isNull ? 'highlight-cell' : ''}
+                                  ${selectedColumnsImp.includes(column) ? 'imputed-cell' : ''}
+                                  ${categoricalColumns.includes(column) ? 'categorical-cell' : ''}`
+                                }
+                              >
+                                {isNull ? 'N/A' :
+                                 normalizedColumns.includes(column) ? row[column].toFixed(4) :
+                                 row[column]}
+                              </td>
+                            );
+                          })}
+                        </tr>
                       );
                     })}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row, rowIndex) => {
-                    const hasNulls = Object.values(row).some(
-                      val => val === null || val === undefined || val === 'N/A'
-                    );
-                    
-                    return (
-                      <tr 
-                        key={rowIndex} 
-                        className={hasNulls ? 'highlight-row' : ''}
-                      >
-                        {headers.map(column => {
-                          const isNull = row[column] === null || row[column] === undefined || row[column] === 'N/A';
-                          return (
-                            <td 
-                              key={column} 
-                              className={
-                                `${isNull ? 'highlight-cell' : ''} 
-                                ${selectedColumnsImp.includes(column) ? 'imputed-cell' : ''}
-                                ${categoricalColumns.includes(column) ? 'categorical-cell' : ''}`
-                              }
-                            >
-                              {isNull ? 'N/A' : 
-                               normalizedColumns.includes(column) ? row[column].toFixed(4) : 
-                               row[column]}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="no-data-modern">
-              <p>No data available for preview</p>
-            </div>
-          )}
-        </div> 
-      </div>
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="no-data-modern">
+                <p>No data available for preview</p>
+              </div>
+            )}
+          </div>
+        </div>
       </main>
-
-      {/* Operations History Panel */}
       <div className="operations-history">
         <h3>Recent Operations</h3>
         <div className="operations-list">
           {operationReports.slice(0, 5).map((report, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="operation-item"
               onClick={() => {
                 setCurrentReport(report);
@@ -1930,7 +1834,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
           ))}
         </div>
         {operationReports.length > 5 && (
-          <button 
+          <button
             className="view-all-btn"
             onClick={() => {
               setCurrentReport({
@@ -1946,12 +1850,10 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
           </button>
         )}
       </div>
-
-      {/* Report Modal */}
       {showReportModal && (
-        <ReportModal 
-          report={currentReport} 
-          onClose={() => setShowReportModal(false)} 
+        <ReportModal
+          report={currentReport}
+          onClose={() => setShowReportModal(false)}
         />
       )}
     </div>
