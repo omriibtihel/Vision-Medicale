@@ -5,6 +5,7 @@ import {faChevronLeft , faChevronRight  ,faCheckCircle , faListOl         } from
 
 import axios from 'axios';
 import './sidebar.css';
+import Sidebar from './Sidebar';
 import { 
   faUser, faChartLine, faCog, faBrain, 
   faDatabase, faFileAlt, faHistory, faRocket,
@@ -222,99 +223,39 @@ const loadFileData = async (fileId) => {
     return 0;
   });
 
-  return (
-    <div className="historique-container">
-      {/* Sidebar modernisée */}
-          <div className={`app-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
-            <div className="sidebar-header">
-              <button className="sidebar-toggle" onClick={toggleSidebar}>
-                <FontAwesomeIcon 
-                  icon={isSidebarOpen ? faChevronLeft : faChevronRight} 
-                  className="toggle-icon"
-                />
-              </button>
-              {isSidebarOpen && (
-                <>
-                  <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
-                  <h2>MedicalVision</h2>
-                </>
-              )}
-            </div>
-      
-            <nav className="sidebar-nav">
-              {[
-                { 
-                  icon: faUser,
-                  label: "Profile",
-                  action: handleProfileClick,
-                  active: false
-                },
-                { 
-                  icon: faDatabase,
-                  label: "Database", 
-                  action: handleDBClick,
-                  active: false
-                },
-                { 
-                  icon: faHistory,
-                  label: "History",
-                  action: () => {},
-                  active: true
-                },
-                { 
-                  icon: faFileAlt,
-                  label: "Description",
-                  action: handleDescription,
-                  active: false
-                },
-                { 
-                  icon: faChartLine,
-                  label: "Graphs",
-                  action: handleGraphsClick,
-                  active: false
-                },
-                { 
-                  icon: faCog,
-                  label: "Processing",
-                  action: handleProcessingClick,
-                  active: false
-                },
-                { 
-                  icon: faBrain,
-                  label: "Models",
-                  action: handleModelsClick,
-                  active: false
-                },
-                { 
-                  icon: faRocket,
-                  label: "Deployment",
-                  action: handleDepClick,
-                  active: false
-                }
-              ].map((item, index) => (
-                        <button
-                          key={index}
-                          className={`nav-item ${item.active ? 'active' : ''}`}
-                          onClick={item.action}
-                          title={!isSidebarOpen ? item.label : ''}
-                        >
-                          <div className="nav-icon-wrapper">
-                            <FontAwesomeIcon icon={item.icon} className="nav-icon" />
-                          </div>
-                          {isSidebarOpen && <span className="nav-label">{item.label}</span>}
-                        </button>
-                      ))}
-                    </nav>
-          </div>
 
-           {/* Overlay mobile */}
-  {isSidebarOpen && window.innerWidth <= 992 && (
-    <div className="sidebar-overlay" onClick={toggleSidebar} />
-  )}
+
+
+const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+useEffect(() => {
+  const handleResize = () => setWindowWidth(window.innerWidth);
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, []);
+
+const isMobile = windowWidth <= 768;
+
+return (
+  <div className={`app-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+    {isMobile && !isSidebarOpen && (
+      <button 
+        className="sidebar-toggle-mobile"
+        onClick={() => setIsSidebarOpen(true)}
+      >
+        ☰
+      </button>
+    )}
+    
+    <Sidebar
+      isOpen={isSidebarOpen}
+      toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+      projectId={id}
+      targetFeature={targetFeature}
+    />
 
       {/* Contenu principal */}
-      <main className="historique-content">
-              <div className={`historique-content ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+      <div className="historique-content">
 
         <header className="content-header">
           <h1>
@@ -506,7 +447,6 @@ const loadFileData = async (fileId) => {
           </section>
         )}
         </div>
-      </main>
     </div>
   );
 };

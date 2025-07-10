@@ -8,7 +8,7 @@ import './importSucc.css';
 import './modal.css';
 import axios from 'axios';
 import { Pie, Bar, Line } from 'react-chartjs-2';
-import'./sidebar.css';
+import Sidebar from './Sidebar';
 import GaugeChart from 'react-gauge-chart';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
@@ -376,90 +376,35 @@ const handleChange = (e) => {
   const featureType = columnTypes[selectedFeature];
   const suggestions = getMedicalSuggestionsForFeature(selectedFeature, featureValues, featureType);
 
-return (
-  <>
-    {/* Sidebar modernisée */}
-    <div className={`app-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
-      <div className="sidebar-header">
-        <button className="sidebar-toggle" onClick={toggleSidebar}>
-          <FontAwesomeIcon 
-            icon={isSidebarOpen ? faChevronLeft : faChevronRight} 
-            className="toggle-icon"
-          />
-        </button>
-        {isSidebarOpen && (
-          <>
-            <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
-            <h2>MedicalVision</h2>
-          </>
-        )}
-      </div>
+const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-      <nav className="sidebar-nav">
-        {[
-          { 
-            icon: faUser,
-            label: "Profile",
-            action: handleProfileClick,
-            active: false
-          },
-          { 
-            icon: faDatabase,
-            label: "Database", 
-            action: () => {},
-            active: true
-          },
-          { 
-            icon: faHistory,
-            label: "History",
-            action: handleHistorique,
-            active: false
-          },
-          { 
-            icon: faFileAlt,
-            label: "Description",
-            action: handleDescription,
-            active: false
-          },
-          { 
-            icon: faChartLine,
-            label: "Graphs",
-            action: handleGraphsClick,
-            active: false
-          },
-          { 
-            icon: faCog,
-            label: "Processing",
-            action: handleProcessingClick,
-            active: false
-          },
-          { 
-            icon: faBrain,
-            label: "Models",
-            action: handleModelsClick,
-            active: false
-          },
-          { 
-            icon: faRocket,
-            label: "Deployment",
-            action: handleDepClick,
-            active: false
-          }
-        ].map((item, index) => (
-          <button
-            key={index}
-            className={`nav-item ${item.active ? 'active' : ''}`}
-            onClick={item.action}
-            title={!isSidebarOpen ? item.label : ''}
-          >
-            <div className="nav-icon-wrapper">
-              <FontAwesomeIcon icon={item.icon} className="nav-icon" />
-            </div>
-            {isSidebarOpen && <span className="nav-label">{item.label}</span>}
-          </button>
-        ))}
-      </nav>
-    </div>
+useEffect(() => {
+  const handleResize = () => setWindowWidth(window.innerWidth);
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, []);
+
+const isMobile = windowWidth <= 768;
+
+return (
+  <div className={`app-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+    {isMobile && !isSidebarOpen && (
+      <button 
+        className="sidebar-toggle-mobile"
+          onClick={() => {
+            setIsSidebarOpen(true);
+          }}
+      >
+        ☰
+      </button>
+    )}
+    
+    <Sidebar
+      isOpen={isSidebarOpen}
+      toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+      projectId={id}
+      targetFeature={targetFeature}
+    />
 
       <div className={`content1 ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
                 <h2>Imported Data Overview</h2>
@@ -791,7 +736,7 @@ return (
           )}
         </Modal>
       </div>
-    </>
+      </div>
   );
 };
 

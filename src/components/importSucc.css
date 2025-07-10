@@ -2,11 +2,57 @@
 
 /* Contenu principal */
 .content1 {
-  margin-left: 260px;
-  padding: 30px;
+  transition: margin-left 0.3s ease;
   background-color: #f8f9fa;
   min-height: 100vh;
 }
+
+-----------------
+
+
+.sidebar-open {
+  margin-left: 250px;
+}
+
+.sidebar-closed {
+  margin-left: 70px;
+}
+
+
+
+
+
+
+
+@media (max-width: 768px) {
+
+  .sidebar-open {
+  margin-left: 0px;
+}
+
+.sidebar-closed {
+  margin-left: 0px;
+}
+  
+  /* Bouton pour ouvrir le sidebar */
+  .sidebar-toggle-mobile {
+    position: fixed;
+    left: 10px;
+    top: 10px;
+    z-index: 900;
+    background: rgba(30, 60, 114, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+}
+----------
 
 .content1 h2 {
   font-size: 28px;

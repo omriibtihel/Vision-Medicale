@@ -7,6 +7,7 @@ import {
   faDownload, faSlidersH
 } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
+import Sidebar from './Sidebar';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, 
   LineElement, BarElement, ArcElement, Title, Tooltip, Legend, 
   RadialLinearScale } from 'chart.js';
@@ -179,90 +180,33 @@ const Graphs = () => {
     const handleDescription = () => navigate(`/description/${id}/${targetFeature}`);
     const handleHistorique = () => {navigate(`/historique/${id}/${targetFeature}`)}
 
-  return (
-    <div className="graphs-container">
-        {/* Sidebar modernisée */}
-     <div className={`app-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
-                            <div className="sidebar-header">
-                              <button className="sidebar-toggle" onClick={toggleSidebar}>
-                                <FontAwesomeIcon 
-                                  icon={isSidebarOpen ? faChevronLeft : faChevronRight} 
-                                  className="toggle-icon"
-                                />
-                              </button>
-                              {isSidebarOpen && (
-                                <>
-                                  <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
-                                  <h2>MedicalVision</h2>
-                                </>
-                              )}
-                            </div>
-      
-      <nav className="sidebar-nav">
-        {[
-          { 
-            icon: faUser,
-            label: "Profile",
-            action: handleProfileClick,
-            active: false
-          },
-          { 
-            icon: faDatabase,
-            label: "Database", 
-            action: handleDBClick,
-            active: false
-          },
-          { 
-            icon: faHistory,
-            label: "History",
-            action: handleHistorique,
-            active: false
-          },
-          { 
-            icon: faFileAlt,
-            label: "Description",
-            action: handleDescription,
-            active: false
-          },
-          { 
-            icon: faChartLine,
-            label: "Graphs",
-            action: () => {}, // Vide car déjà sur cette page
-            active: true
-          },
-          { 
-            icon: faCog,
-            label: "Processing",
-            action: handleProcessingClick,
-            active: false
-          },
-          { 
-            icon: faBrain,
-            label: "Models",
-            action: handleModelsClick,
-            active: false
-          },
-          { 
-            icon: faRocket,
-            label: "Deployment",
-            action: handleDepClick,
-            active: false
-          }
-        ].map((item, index) => (
-            <button
-              key={index}
-              className={`nav-item ${item.active ? 'active' : ''}`}
-              onClick={item.action}
-              title={!isSidebarOpen ? item.label : ''}
-            >
-              <div className="nav-icon-wrapper">
-                <FontAwesomeIcon icon={item.icon} className="nav-icon" />
-              </div>
-              {isSidebarOpen && <span className="nav-label">{item.label}</span>}
-            </button>
-          ))}
-        </nav>
-    </div>
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+useEffect(() => {
+  const handleResize = () => setWindowWidth(window.innerWidth);
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, []);
+
+const isMobile = windowWidth <= 768;
+
+return (
+  <div className={`app-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+    {isMobile && !isSidebarOpen && (
+      <button 
+        className="sidebar-toggle-mobile"
+        onClick={() => setIsSidebarOpen(true)}
+      >
+        ☰
+      </button>
+    )}
+    
+    <Sidebar
+      isOpen={isSidebarOpen}
+      toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+      projectId={id}
+      targetFeature={targetFeature}
+    />
 
       {/* Main Content */}
       <main className="graphs-content">

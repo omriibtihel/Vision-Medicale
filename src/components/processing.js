@@ -8,6 +8,7 @@ import axios from 'axios';
 import pako from 'pako';
 import KNN from 'ml-knn';
 import './Processing.css';
+import Sidebar from './Sidebar'; // Importer le Sidebar
 import '../useOutsideClick.js';
 
 const Processing = () => {
@@ -1304,48 +1305,33 @@ const Processing = () => {
     );
   };
 
-  return (
-    <div className="processing-modern">
-      <div className={`app-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
-        <div className="sidebar-header">
-          <button className="sidebar-toggle" onClick={toggleSidebar}>
-            <FontAwesomeIcon
-              icon={isSidebarOpen ? faChevronLeft : faChevronRight}
-              className="toggle-icon"
-            />
-          </button>
-          {isSidebarOpen && (
-            <>
-              <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
-              <h2>MedicalVision</h2>
-            </>
-          )}
-        </div>
-        <nav className="sidebar-nav">
-          {[
-            { icon: faUser, label: "Profile", action: handleProfileClick, active: false },
-            { icon: faDatabase, label: "Database", action: handleDBClick, active: false },
-            { icon: faHistory, label: "History", action: handleHistorique, active: false },
-            { icon: faFileAlt, label: "Description", action: handleDescription, active: false },
-            { icon: faChartLine, label: "Graphs", action: handleGraphsClick, active: false },
-            { icon: faCog, label: "Processing", action: () => {}, active: true },
-            { icon: faBrain, label: "Models", action: handleModelsClick, active: false },
-            { icon: faRocket, label: "Deployment", action: handleDepClick, active: false }
-          ].map((item, index) => (
-            <button
-              key={index}
-              className={`nav-item ${item.active ? 'active' : ''}`}
-              onClick={item.action}
-              title={!isSidebarOpen ? item.label : ''}
-            >
-              <div className="nav-icon-container">
-                <FontAwesomeIcon icon={item.icon} className="nav-icon" />
-              </div>
-              {isSidebarOpen && <span className="nav-label">{item.label}</span>}
-            </button>
-          ))}
-        </nav>
-      </div>
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+useEffect(() => {
+  const handleResize = () => setWindowWidth(window.innerWidth);
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, []);
+
+const isMobile = windowWidth <= 768;
+
+return (
+  <div className={`app-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+    {isMobile && !isSidebarOpen && (
+      <button 
+        className="sidebar-toggle-mobile"
+        onClick={() => setIsSidebarOpen(true)}
+      >
+        ☰
+      </button>
+    )}
+    
+    <Sidebar
+      isOpen={isSidebarOpen}
+      toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+      projectId={id}
+      targetFeature={targetFeature}
+    />
       <main className="content-modern">
         <div className={`content-modern ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
           <h1>Data Processing Center</h1>

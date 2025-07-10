@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faChartLine, faCog, faBrain, faDatabase,faPlay, faFileAlt,faLightbulb,  faCheck,  faHistory ,faRocket} from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import './models.css';
+import Sidebar from './Sidebar';
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import './sidebar.css'; // Assurez-vous que le chemin est correct
 import FeatureImportanceChart from './FeatureImportanceChart'; // Assurez-vous que le chemin est correct
@@ -18,9 +19,9 @@ const Models = () => {
   const { id,targetFeature,fileData } = useParams();
   const [data, setData] = useState([]);
   const [taskType, setTaskType] = useState('');
-  const [trainingSetSize, setTrainingSetSize] = useState(70);
-  const [validationSetSize, setValidationSetSize] = useState(30);
-  const [testSetSize, setTestSetSize] = useState(0);
+  const [trainingSetSize, setTrainingSetSize] = useState(60);
+  const [validationSetSize, setValidationSetSize] = useState(20);
+  const [testSetSize, setTestSetSize] = useState(20);
   const [error, setError] = useState(null);
   const location = useLocation(); // Pour accéder à l'URL et ses paramètres
   const [crossValidationType, setCrossValidationType] = useState('division'); // État pour les boutons radio
@@ -228,24 +229,34 @@ const regressionMetrics = metrics.filter(metric =>
     });
     return;
   }
+
+  
   setLoading(true); // ⏳ juste avant l’appel
   try {
-    const response = await axios.post(`http://localhost:5000/train/${id}`, {
-      model: models,
-      targ: targetFeature,
-      trainset: trainingSetSize,  // Envoyer 70 au lieu de 0.7
-      testset: testSetSize,
-      valtest: validationSetSize,
-      metrics: selectedMetrics,
-      data: data,
-      k: kSets,
-      task: taskType
-    }, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-      withCredentials: true
-    });
+    const payload = {
+  model: models,
+  targ: targetFeature,
+  metrics: selectedMetrics,
+  data: data,
+  task: taskType,
+  method: crossValidationType // 'kfold' ou 'division'
+};
+
+if (crossValidationType === 'kfold') {
+  payload.k = kSets;
+} else {
+  payload.trainset = trainingSetSize;
+  payload.valtest = validationSetSize;
+  payload.testset = testSetSize;
+}
+
+const response = await axios.post(`http://localhost:5000/train/${id}`, payload, {
+  headers: {
+    'Authorization': `Bearer ${localStorage.getItem('token')}`
+  },
+  withCredentials: true
+});
+
     
     localStorage.setItem('modelResult', JSON.stringify(response.data));
     setError(null);
@@ -320,47 +331,33 @@ useEffect(() => {
 
 const handleDepClick = () => navigate(`/deployment/${id}/${targetFeature}`);
 
-  return (
-        <div className="models-container">
-      {/* Sidebar élégant */}
-      <div className={`app-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
-        <div className="sidebar-header">
-          <button className="sidebar-toggle" onClick={toggleSidebar}>
-            <FontAwesomeIcon icon={isSidebarOpen ? faChevronLeft : faChevronRight} />
-          </button>
-          {isSidebarOpen && (
-            <div className="sidebar-brand">
-              <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
-              <h2>MedicalVision AI</h2>
-            </div>
-          )}
-        </div>
-        
-        <nav className="sidebar-nav">
-          {[
-            { icon: faUser, label: "Profile", action: handleProfileClick },
-            { icon: faDatabase, label: "Database", action: handleDBClick },
-            { icon: faHistory, label: "History", action: handleHistorique },
-            { icon: faFileAlt, label: "Description", action: handleDescription },
-            { icon: faChartLine, label: "Analytics", action: handleGraphsClick },
-            { icon: faCog, label: "Processing", action: handleProcessingClick },
-            { icon: faBrain, label: "Models", action: () => {}, active: true },
-            { icon: faRocket, label: "Deploy", action: handleDepClick }
-          ].map((item, index) => (
-            <button
-              key={index}
-              className={`nav-item ${item.active ? 'active' : ''}`}
-              onClick={item.action}
-              title={!isSidebarOpen ? item.label : ''}
-            >
-              <FontAwesomeIcon icon={item.icon} className="nav-icon" />
-              {isSidebarOpen && <span className="nav-label">{item.label}</span>}
-              {item.active && isSidebarOpen && <div className="active-indicator"></div>}
-            </button>
-          ))}
-        </nav>
-      </div>
+ const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
+useEffect(() => {
+  const handleResize = () => setWindowWidth(window.innerWidth);
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, []);
+
+const isMobile = windowWidth <= 768;
+
+return (
+  <div className={`app-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+    {isMobile && !isSidebarOpen && (
+      <button 
+        className="sidebar-toggle-mobile"
+        onClick={() => setIsSidebarOpen(true)}
+      >
+        ☰
+      </button>
+    )}
+    
+    <Sidebar
+      isOpen={isSidebarOpen}
+      toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+      projectId={id}
+      targetFeature={targetFeature}
+    />
       {/* Contenu principal */}
       <div className="content-wrapper">
         {loading && <LoadingOverlay message={"Training models...\nAnalyzing performance metrics"} />}
