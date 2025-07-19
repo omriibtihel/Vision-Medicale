@@ -386,7 +386,7 @@
 /* DROPDOWN STYLES - Version corrigée */
 .dropdown-modern {
     position: relative;
-  z-index: 10; /* Z-index modéré pour le conteneur */
+  z-index: 99999; /* Z-index modéré pour le conteneur */
   margin-bottom: 0.5rem; /* Espacement entre les dropdowns */
 }
 
@@ -419,7 +419,7 @@
   border-radius: 8px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Ombre plus prononcée */
   padding: 0.5rem;
-  z-index: 1000 ; /* Z-index très élevé pour passer au-dessus de tout */
+  z-index: 9999 ; /* Z-index très élevé pour passer au-dessus de tout */
   margin-top: 0.5rem;
   max-height: 300px;
   overflow-y: auto;
@@ -432,6 +432,7 @@
   bottom: 100%;
   margin-top: 0;
   margin-bottom: 0.5rem;
+  
 }
 
 .dropdown-item-modern {
@@ -489,6 +490,175 @@
   margin: 0;
   z-index: 1003;
 }
+/* 🔲 Formulaire Ajout Colonne */
+.add-column-form {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* 🔤 Champs d'entrée moderne */
+.input-modern {
+  padding: 10px 5px;
+  width: 80%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.input-modern:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+
+/* 🌘 Overlay semi-transparent */
+.popup-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 🧾 Carte principale popup */
+.popup-card {
+  background: #f9fafb;
+  padding: 2rem 2rem 1.5rem;
+  border-radius: 16px;
+  max-width: 460px;
+  width: 95%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.popup-card h2 {
+  margin-bottom: 1rem;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.popup-card .input-modern {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.popup-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 5rem;
+}
+
+/* ⚙️ Labels */
+.input-label {
+  font-weight: 500;
+  color: #374151;
+  font-size: 14px;
+  margin-bottom: 0.25rem;
+}
+
+
+
+/* 🔘 Boutons */
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border: none;
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-cancel {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+.btn-cancel:hover {
+  background-color: #d1d5db;
+}
+
+.btn.small-btn {
+  background-color: #f3f4f6;
+  padding: 6px 12px;
+  font-size: 13px;
+  margin-bottom: 0.75rem;
+  border-radius: 6px;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn.small-btn:hover {
+  background-color: #e5e7eb;
+}
+
+/* 📋 Liste de colonnes scrollable */
+.column-list-scroll {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid #d1d5db;
+  padding: 10px;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  background: #fff;
+}
+
+/* 🔘 Checkbox colonne */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  padding: 4px 12px;
+
+  transition: background 0.2s;
+}
+
+.checkbox-row:hover {
+  background: #e6e9ec;
+}
+
+.checkbox-row input[type="checkbox"] {
+  margin-right: 10px;
+}
+
+/* ⚠️ Indicateur de nulls */
+.null-indicator {
+  color: #b45309;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ✨ Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+
 
 /* Dropdown improvements */
 .dropdown-arrow {

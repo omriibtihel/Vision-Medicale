@@ -178,19 +178,29 @@ const loadFileData = async (fileId) => {
 
   
   // Navigation avec vérification de la target feature
-  const navigateTo = (path) => {
-    if (!fileData) {
-      setError('Sélectionnez des données d\'abord');
-      return;
-    }
+const navigateTo = (path) => {
+  if (!fileData || !selectedFile) {
+    setError("Sélectionnez des données d'abord");
+    return;
+  }
 
-    if (!validateTargetFeature(fileData)) {
-      return;
-    }
+  if (!validateTargetFeature(fileData)) return;
 
-    const encodedData = encodeURIComponent(JSON.stringify(fileData));
-    navigate(`${path}/${id}/${targetFeature}?filtdate=${encodedData}`);
-  };
+navigate(`${path}/${id}/${targetFeature}`, {
+  state: {
+    isFromHistory: true,
+    fileData,
+    targetFeature,
+    versionId: selectedFile.id
+  }
+});
+
+
+
+};
+
+
+
 
   useEffect(() => {
     const initialize = async () => {
@@ -354,6 +364,25 @@ return (
                       <button className="action-btn view-btn" onClick={() => setSelectedFile(file)}>
                         <FontAwesomeIcon icon={faEye} /> Voir
                       </button>
+                      <button
+                        className="action-btn delete-btn"
+                        onClick={async () => {
+                          const confirm = window.confirm("Voulez-vous vraiment supprimer cette version ?");
+                          if (confirm) {
+                            try {
+                              const token = localStorage.getItem('token');
+                              await axios.delete(`http://localhost:5000/delete-version/${file.id}`, {
+                                headers: { Authorization: `Bearer ${token}` }
+                              });
+                              importhist(); // recharger la liste
+                            } catch (err) {
+                              alert("Erreur lors de la suppression");
+                            }
+                          }
+                        }}
+                      >
+                        🗑️ Supprimer
+                      </button>
                       <button className="action-btn download-btn">
                         <FontAwesomeIcon icon={faDownload} /> Télécharger
                       </button>
@@ -384,6 +413,7 @@ return (
                 >
                   <FontAwesomeIcon icon={faCog} /> Traiter ces données
                 </button>
+
                 
                 <button 
                   className="action-btn secondary"

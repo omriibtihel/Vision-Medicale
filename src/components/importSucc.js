@@ -573,7 +573,7 @@ return (
                 cursor: 'pointer'
               }}
             >
-              🎯 Choisir les features à corréler
+               Choisir les features à corréler
             </button>
 
             {isFeaturePopupOpen && (
@@ -581,7 +581,7 @@ return (
                 <button className="feature-popup-close" onClick={() => setIsFeaturePopupOpen(false)}>
                   &times;
                 </button>
-                <h4>📊 Sélectionner les features</h4>
+                <h4>Sélectionner les features</h4>
 
                 <input
                   type="text"

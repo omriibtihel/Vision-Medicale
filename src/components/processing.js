@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft, faChevronRight, faUser, faChartLine, faCog, faDatabase, faClone, faFileAlt, faTrash, faHistory, faBrain, faRocket, faCheckCircle, faSave, faBroom, faArrowsRotate, faDownload, faFileLines, faChevronDown, faChevronUp, faSpinner, faTags, faLanguage, faListOl, faTextWidth, faUndo } from '@fortawesome/free-solid-svg-icons';
 import React, { useState, useEffect, useRef } from 'react';
 import useOutsideClick from '../useOutsideClick';
+
 import { mean } from 'mathjs';
 import axios from 'axios';
 import pako from 'pako';
@@ -14,6 +15,12 @@ import '../useOutsideClick.js';
 const Processing = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const urlParams = new URLSearchParams(location.search);
+  const filtdate = urlParams.get("filtdate");
+  const versionId = urlParams.get("versionId"); 
+
+    const [decodedData, setDecodedData] = useState(null);
+  const [categoricalCols, setCategoricalCols] = useState([]);
   const { id, targetFeature: initialTargetFeature } = useParams();
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -42,6 +49,16 @@ const Processing = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [newColumnName, setNewColumnName] = useState('');
+const [defaultColumnValue, setDefaultColumnValue] = useState('');
+const [isAddingColumn, setIsAddingColumn] = useState(false);
+const [showAddColumnPopup, setShowAddColumnPopup] = useState(false);
+const [generationMode, setGenerationMode] = useState('manual'); // 'manual', 'auto-increment', 'uuid', 'date'
+const [showRemoveColumnPopup, setShowRemoveColumnPopup] = useState(false);
+const [columnsToRemove, setColumnsToRemove] = useState([]);
+
+
+
 
   const toggleImputationDropdown = () => setShowImputationDropdown(!showImputationDropdown);
   const toggleEncodingDropdown = () => setShowEncodingDropdown(!showEncodingDropdown);
@@ -79,6 +96,21 @@ const Processing = () => {
 
   const cleanData = (data) => (typeof data === 'string' ? data.replace(/NaN/g, 'null') : data);
   const sanitizeJson = (jsonString) => jsonString.replace(/NaN/g, 'null');
+
+  useEffect(() => {
+    if (filtdate) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(filtdate));
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setDecodedData(parsed);
+        } else {
+          console.warn("⚠️ Données vides ou mal formatées");
+        }
+      } catch (err) {
+        console.error("Erreur de décodage des données :", err);
+      }
+    }
+  }, [filtdate]);
 
   const fetchTargetFeature = async () => {
     const token = localStorage.getItem('token');
@@ -142,71 +174,191 @@ const Processing = () => {
     }
   };
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      if (location.state?.isFromHistory) {
-        setData(location.state.fileData);
-        setFilteredData(location.state.fileData);
-        setHistory([{ data: location.state.fileData, operationReports: [], selectedColumns: [], selectedColumnsNr: [], selectedColumnsImp: [], selectedColumnsCat: [], normalizedColumns: [] }]);
-        setHistoryIndex(0);
-        if (location.state.targetFeature) {
-          setTargetFeature(location.state.targetFeature);
-        }
-        setLoading(false);
-        return;
-      }
+useEffect(() => {
+  const loadData = async () => {
+    setLoading(true);
 
-      const urlParams = new URLSearchParams(location.search);
-      const versionId = urlParams.get('versionId');
-      if (versionId) {
-        try {
-          const response = await fetch(`http://localhost:5000/fichier/${versionId}`);
-          const result = await response.json();
-          if (result.data) {
-            setData(result.data);
-            setFilteredData(result.data);
-            setHistory([{ data: result.data, operationReports: [], selectedColumns: [], selectedColumnsNr: [], selectedColumnsImp: [], selectedColumnsCat: [], normalizedColumns: [] }]);
-            setHistoryIndex(0);
-            if (result.targetFeature) {
-              setTargetFeature(result.targetFeature);
-            }
-          }
-        } catch (error) {
-          console.error("Error loading version:", error);
-        }
-      } else {
-        await importBD();
+    if (location.state?.isFromHistory && location.state?.fileData) {
+      // ✅ Données envoyées depuis Historique
+      setData(location.state.fileData);
+      setFilteredData(location.state.fileData);
+      setHistory([{
+        data: location.state.fileData,
+        operationReports: [],
+        selectedColumns: [],
+        selectedColumnsNr: [],
+        selectedColumnsImp: [],
+        selectedColumnsCat: [],
+        normalizedColumns: []
+      }]);
+      setHistoryIndex(0);
+      if (location.state.targetFeature) {
+        setTargetFeature(location.state.targetFeature);
       }
       setLoading(false);
-    };
-
-    loadData();
-  }, [id, location.state, location.search]);
-
-  useEffect(() => {
-    if (filteredData.length > 0) {
-      const columns = Object.keys(filteredData[0]);
-      if (targetFeature && !columns.includes(targetFeature)) {
-        const possibleTargets = columns.filter(col =>
-          col.toLowerCase().includes('target') ||
-          col.toLowerCase().includes('class') ||
-          col.toLowerCase().includes('label')
-        );
-        if (possibleTargets.length > 0) {
-          setTargetFeature(possibleTargets[0]);
-        } else {
-          setError(`La target feature "${targetFeature}" est introuvable.`);
-        }
-      }
-
-      const types = {};
-      columns.forEach(col => {
-        types[col] = detectColumnType(col);
-      });
-      setColumnTypes(types);
+      return;
     }
-  }, [filteredData, targetFeature]);
+
+    // 🔁 Sinon, comportement par défaut (via query params comme versionId)
+    const urlParams = new URLSearchParams(location.search);
+    const versionId = urlParams.get('versionId');
+    if (versionId) {
+      try {
+        const response = await fetch(`http://localhost:5000/fichier/${versionId}`);
+        const result = await response.json();
+        if (result.data) {
+          setData(result.data);
+          setFilteredData(result.data);
+          setHistory([{ data: result.data, operationReports: [], selectedColumns: [], selectedColumnsNr: [], selectedColumnsImp: [], selectedColumnsCat: [], normalizedColumns: [] }]);
+          setHistoryIndex(0);
+          if (result.targetFeature) {
+            setTargetFeature(result.targetFeature);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading version:", error);
+      }
+    } else {
+      await importBD();
+    }
+
+    setLoading(false);
+  };
+
+  loadData();
+}, [id, location.state, location.search]);
+
+
+
+
+useEffect(() => {
+  if (Array.isArray(filteredData) && filteredData.length > 0) {
+    const columns = Object.keys(filteredData[0]);
+
+    if (targetFeature && !columns.includes(targetFeature)) {
+      const possibleTargets = columns.filter(col =>
+        col.toLowerCase().includes('target') ||
+        col.toLowerCase().includes('class') ||
+        col.toLowerCase().includes('label')
+      );
+      if (possibleTargets.length > 0) {
+        setTargetFeature(possibleTargets[0]);
+      } else {
+        setError(`La target feature "${targetFeature}" est introuvable.`);
+      }
+    }
+
+    const types = {};
+    columns.forEach(col => {
+      types[col] = detectColumnType(col);
+    });
+    setColumnTypes(types);
+  }
+}, [filteredData, targetFeature]);
+
+
+const getFullyNullColumns = () => {
+  if (!Array.isArray(filteredData) || filteredData.length === 0) return [];
+
+  const allCols = Object.keys(filteredData[0]);
+  return allCols.filter(col =>
+    filteredData.every(row => row[col] == null || row[col] === '')
+  );
+};
+
+
+
+const handleToggleColumnToRemove = (colName) => {
+  setColumnsToRemove(prev =>
+    prev.includes(colName)
+      ? prev.filter(c => c !== colName)
+      : [...prev, colName]
+  );
+};
+
+const handleSelectFullyNullColumns = () => {
+  const fullyNullCols = getFullyNullColumns();
+  setColumnsToRemove(prev => {
+    const updated = new Set(prev);
+    fullyNullCols.forEach(col => updated.add(col));
+    return [...updated];
+  });
+};
+
+
+const handleAddColumn = () => {
+  if (!newColumnName.trim()) {
+    alert("Veuillez entrer un nom de colonne.");
+    return;
+  }
+
+  if (filteredData.length > 0 && Object.keys(filteredData[0]).includes(newColumnName)) {
+    alert("Une colonne avec ce nom existe déjà.");
+    return;
+  }
+
+  saveStateToHistory();
+  setIsAddingColumn(true);
+
+  try {
+    let generatedData;
+    switch (generationMode) {
+      case 'auto-increment':
+        generatedData = filteredData.map((row, index) => ({
+          ...row,
+          [newColumnName]: index + 1,
+        }));
+        break;
+      case 'uuid':
+        generatedData = filteredData.map(row => ({
+          ...row,
+          [newColumnName]: crypto.randomUUID(),
+        }));
+        break;
+      case 'date':
+        const now = new Date().toISOString();
+        generatedData = filteredData.map(row => ({
+          ...row,
+          [newColumnName]: now,
+        }));
+        break;
+      default:
+        generatedData = filteredData.map(row => ({
+          ...row,
+          [newColumnName]: defaultColumnValue,
+        }));
+    }
+
+    const report = addOperationReport(
+      'Add Column',
+      `Ajout de la colonne "${newColumnName}" (${generationMode})`,
+      [newColumnName],
+      {
+        generationMode,
+        defaultValue: generationMode === 'manual' ? defaultColumnValue : undefined,
+        rowCount: generatedData.length,
+        columnCount: Object.keys(generatedData[0]).length,
+      }
+    );
+
+    setFilteredData(generatedData);
+    setCurrentReport(report);
+    setShowReportModal(true);
+
+    // reset
+    setNewColumnName('');
+    setDefaultColumnValue('');
+    setGenerationMode('manual');
+    setShowAddColumnPopup(false);
+  } catch (error) {
+    console.error("Error adding column:", error);
+    alert("Une erreur est survenue.");
+  } finally {
+    setIsAddingColumn(false);
+  }
+};
+
+
 
   const detectColumnType = (column) => {
     if (!filteredData.length) return 'unknown';
@@ -227,6 +379,45 @@ const Processing = () => {
       return 'text';
     }
   };
+
+const getColumnsNeedingNormalization = () => {
+  if (!filteredData.length) return [];
+
+  const columns = Object.keys(filteredData[0]);
+  const validColumns = [];
+
+  for (const col of columns) {
+    if (
+      columnTypes[col] === 'numeric' &&
+      col !== targetFeature &&
+      !normalizedColumns.includes(col)
+    ) {
+      const values = filteredData
+        .map(row => parseFloat(row[col]))
+        .filter(val => !isNaN(val) && isFinite(val));
+
+      if (values.length === 0) continue;
+
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const mean = values.reduce((a, b) => a + b, 0) / values.length;
+      const variance = values.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / values.length;
+      const stdDev = Math.sqrt(variance);
+
+      const isBinary = new Set(values).size === 2 && values.every(v => v === 0 || v === 1);
+      const isConstant = min === max;
+      const lowDispersion = stdDev < 0.01;
+
+      if (!isBinary && !isConstant && !lowDispersion) {
+        validColumns.push(col);
+      }
+    }
+  }
+
+  return validColumns;
+};
+
+
 
   const saveStateToHistory = () => {
     const newState = {
@@ -371,51 +562,37 @@ const Processing = () => {
     }
   };
 
-  const handleRemoveSelectedColumns = async () => {
-    if (selectedColumns.length === 0) {
-      alert("Please select columns to remove");
-      return;
-    }
-    if (selectedColumns.includes(targetFeature)) {
-      alert(`Cannot remove the target feature: ${targetFeature}`);
-      return;
-    }
-    saveStateToHistory();
-    setIsRemoving(true);
-    try {
-      const cleanedData = filteredData.map(row => {
-        const newRow = { ...row };
-        selectedColumns.forEach(col => {
-          if (col !== targetFeature) {
-            delete newRow[col];
-          }
-        });
-        return newRow;
-      });
+  const handleRemoveSelectedColumns = () => {
+  if (columnsToRemove.length === 0) {
+    alert("Aucune colonne sélectionnée.");
+    return;
+  }
 
-      const report = addOperationReport(
-        'Column Removal',
-        `Removed ${selectedColumns.length} columns from dataset`,
-        selectedColumns,
-        {
-          columnsRemoved: selectedColumns.filter(col => col !== targetFeature),
-          remainingColumns: Object.keys(cleanedData[0] || {}),
-          rowCount: cleanedData.length,
-          targetFeaturePreserved: targetFeature
-        }
-      );
+  saveStateToHistory();
 
-      setFilteredData(cleanedData);
-      setSelectedColumns(prev => prev.filter(col => col !== targetFeature));
-      setCurrentReport(report);
-      setShowReportModal(true);
-    } catch (error) {
-      console.error("Error removing columns:", error);
-      alert(`Error removing columns: ${error.message}`);
-    } finally {
-      setIsRemoving(false);
+  const newData = filteredData.map(row => {
+    const newRow = { ...row };
+    columnsToRemove.forEach(col => delete newRow[col]);
+    return newRow;
+  });
+
+  const report = addOperationReport(
+    'Remove Columns',
+    `Colonnes supprimées : ${columnsToRemove.join(', ')}`,
+    columnsToRemove,
+    {
+      removedCount: columnsToRemove.length,
+      remainingColumns: Object.keys(newData[0]).length
     }
-  };
+  );
+
+  setFilteredData(newData);
+  setCurrentReport(report);
+  setShowReportModal(true);
+  setShowRemoveColumnPopup(false);
+  setColumnsToRemove([]);
+};
+
 
   const handleDataTransformation = (type) => {
     const columnsToTransform = selectedColumnsNr.filter(col => col !== targetFeature);
@@ -734,13 +911,25 @@ const Processing = () => {
     }
   };
 
-  const identifyCategoricalColumns = () => {
-    if (filteredData.length === 0) return [];
-    return Object.keys(filteredData[0]).filter(column => {
-      if (column === targetFeature || normalizedColumns.includes(column)) return false;
-      return columnTypes[column] === 'categorical';
+  const identifyCategoricalColumns = (data) => {
+    if (!Array.isArray(data) || data.length === 0 || typeof data[0] !== 'object') {
+      return [];
+    }
+
+    const keys = Object.keys(data[0]);
+    return keys.filter((key) => {
+      const uniqueValues = [...new Set(data.map(row => row[key]))];
+      return uniqueValues.length < 10; // ou ton propre critère
     });
   };
+
+    useEffect(() => {
+    if (decodedData) {
+      const cats = identifyCategoricalColumns(decodedData);
+      setCategoricalCols(cats);
+    }
+  }, [decodedData]);
+
 
   const handleOneHotEncoding = () => {
     if (selectedColumnsCat.length === 0) {
@@ -1054,9 +1243,10 @@ const Processing = () => {
 
   const headers = filteredData.length > 0 ?
     Object.keys(filteredData[0]).filter(header => header !== targetFeature) : [];
-  const availableColumns = headers.filter(header => !normalizedColumns.includes(header));
+const availableColumns = getColumnsNeedingNormalization();
   const categoricalColumns = identifyCategoricalColumns();
-  const rows = filteredData.slice(0, 15);
+const rows = Array.isArray(filteredData) ? filteredData.slice(0, 15) : [];
+
 
   const ReportModal = ({ report, onClose }) => {
     if (!report) return null;
@@ -1380,57 +1570,13 @@ return (
                   ) : 'Remove Null Values'}
                 </button>
                 <button
-                  className="action-btn-modern secondary"
-                  onClick={handleRemoveSelectedColumns}
-                  disabled={selectedColumns.length === 0 || isRemoving}
-                >
-                  {isRemoving ? (
-                    <>
-                      <FontAwesomeIcon icon={faSpinner} spin />
-                      <span>Removing...</span>
-                    </>
-                  ) : 'Remove Columns'}
-                </button>
-                <div className="dropdown-modern" ref={dropdownRef1}>
-                  <button
-                    className="dropdown-toggle-modern"
-                    onClick={toggleDropdown1}
-                    disabled={columnsWithHighNulls.length === 0}
-                  >
-                    <span>Select Columns</span>
-                    <FontAwesomeIcon icon={isOpen1 ? faChevronUp : faChevronDown} className="dropdown-arrow" />
-                  </button>
-                  {isOpen1 && (
-                    <div className="dropdown-menu-modern">
-                      <div className="dropdown-header">
-                        <span>Columns with null values</span>
-                        <button
-                          onClick={() => {
-                            setSelectedColumns(columnsWithHighNulls);
-                          }}
-                          className="select-all-btn"
-                        >
-                          Select All
-                        </button>
-                      </div>
-                      {columnsWithHighNulls.map(column => (
-                        <label key={column} className="checkbox-modern">
-                          <input
-                            type="checkbox"
-                            checked={selectedColumns.includes(column)}
-                            onChange={() => handleColumnCheckboxChange(column)}
-                            disabled={column === targetFeature}
-                          />
-                          <span className={`column-name ${column === targetFeature ? 'target-feature' : ''}`}>
-                            {column}
-                            {column === targetFeature && <span className="target-badge">Target</span>}
-                          </span>
-                          <span className="null-percentage">({nullPercentages[column].toFixed(1)}% null)</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
+  className="action-btn-modern danger"
+  onClick={() => setShowRemoveColumnPopup(true)}
+>
+  Supprimer des colonnes
+</button>
+
+
               </div>
             </div>
             <div className="action-card-modern">
@@ -1694,6 +1840,14 @@ return (
                 >
                   Remove Duplicates
                 </button>
+<button
+  className="action-btn-modern tertiary"
+  onClick={() => setShowAddColumnPopup(true)}
+>
+  Ajouter une colonne
+</button>
+
+
                 <button
                   className="action-btn-modern warning"
                   onClick={undoOperation}
@@ -1721,81 +1875,91 @@ return (
             </div>
           </div>
           <div className="data-preview-modern">
-            <div className="preview-header-modern">
-              <h2>Data Preview</h2>
-              <p>Showing {Math.min(rows.length, 15)} of {filteredData.length} rows</p>
-            </div>
-            {rows.length > 0 ? (
-              <div className="table-wrapper-modern">
-                <table className="data-table-modern">
-                  <thead>
-                    <tr>
-                      {headers.map(header => {
-                        const columnType = columnTypes[header] || 'unknown';
-                        const isHighNull = nullPercentages[header] > 20;
-                        const isImputed = selectedColumnsImp.includes(header);
-                        return (
-                          <th
-                            key={header}
-                            className={`
-                              ${isHighNull ? 'highlight-column' : ''}
-                              ${isImputed ? 'imputed-column' : ''}
-                              ${columnType === 'categorical' ? 'categorical-column' : ''}
-                              ${columnType === 'numeric' ? 'numeric-column' : ''}
-                            `}
-                          >
-                            {header}
-                            {isHighNull && (
-                              <span className="null-percentage">
-                                ({nullPercentages[header].toFixed(1)}% null)
-                              </span>
-                            )}
-                            {isImputed && (
-                              <span className="imputed-badge">Imputed</span>
-                            )}
-                          </th>
-                        );
-                      })}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row, rowIndex) => {
-                      const hasNulls = Object.values(row).some(
-                        val => val === null || val === undefined || val === 'N/A'
-                      );
-                      return (
-                        <tr
-                          key={rowIndex}
-                          className={hasNulls ? 'highlight-row' : ''}
-                        >
-                          {headers.map(column => {
-                            const isNull = row[column] === null || row[column] === undefined || row[column] === 'N/A';
-                            return (
-                              <td
-                                key={column}
-                                className={
-                                  `${isNull ? 'highlight-cell' : ''}
-                                  ${selectedColumnsImp.includes(column) ? 'imputed-cell' : ''}
-                                  ${categoricalColumns.includes(column) ? 'categorical-cell' : ''}`
-                                }
-                              >
-                                {isNull ? 'N/A' :
-                                 normalizedColumns.includes(column) ? row[column].toFixed(4) :
-                                 row[column]}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="no-data-modern">
-                <p>No data available for preview</p>
-              </div>
-            )}
+  <div className="preview-header-modern">
+    <h2>Data Preview</h2>
+<p>
+  Showing {Array.isArray(rows) ? Math.min(rows.length, 15) : 0} of {Array.isArray(filteredData) ? filteredData.length : 0} rows
+</p>
+
+  </div>
+
+  {rows && rows.length > 0 && headers && Array.isArray(headers) ? (
+    <div className="table-wrapper-modern">
+      <table className="data-table-modern">
+        <thead>
+          <tr>
+            {headers.map(header => {
+              const columnType = columnTypes?.[header] || 'unknown';
+              const isHighNull = nullPercentages?.[header] > 20;
+              const isImputed = selectedColumnsImp?.includes(header);
+              return (
+                <th
+                  key={header}
+                  className={`
+                    ${isHighNull ? 'highlight-column' : ''}
+                    ${isImputed ? 'imputed-column' : ''}
+                    ${columnType === 'categorical' ? 'categorical-column' : ''}
+                    ${columnType === 'numeric' ? 'numeric-column' : ''}
+                  `}
+                >
+                  {header}
+                  {isHighNull && (
+                    <span className="null-percentage">
+                      ({nullPercentages?.[header]?.toFixed(1)}% null)
+                    </span>
+                  )}
+                  {isImputed && (
+                    <span className="imputed-badge">Imputed</span>
+                  )}
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, rowIndex) => {
+            const hasNulls = Object.values(row || {}).some(
+              val => val === null || val === undefined || val === 'N/A'
+            );
+
+            return (
+              <tr
+                key={rowIndex}
+                className={hasNulls ? 'highlight-row' : ''}
+              >
+                {headers.map(column => {
+                  const isNull = row[column] === null || row[column] === undefined || row[column] === 'N/A';
+                  const value = row[column];
+                  return (
+                    <td
+                      key={column}
+                      className={`
+                        ${isNull ? 'highlight-cell' : ''}
+                        ${selectedColumnsImp?.includes(column) ? 'imputed-cell' : ''}
+                        ${categoricalColumns?.includes(column) ? 'categorical-cell' : ''}
+                      `}
+                    >
+                      {isNull
+                        ? 'N/A'
+                        : normalizedColumns?.includes(column) && typeof value === 'number'
+                          ? value.toFixed(4)
+                          : value}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <div className="no-data-modern">
+      <p>No data available for preview</p>
+    </div>
+  )}
+
+            
           </div>
         </div>
       </main>
@@ -1842,6 +2006,112 @@ return (
           onClose={() => setShowReportModal(false)}
         />
       )}
+
+      {showRemoveColumnPopup && (
+  <div className="popup-overlay" onClick={() => setShowRemoveColumnPopup(false)}>
+    <div className="popup-card" onClick={(e) => e.stopPropagation()}>
+      <h2>Supprimer des colonnes</h2>
+
+      <button className="btn small-btn" onClick={handleSelectFullyNullColumns}>
+        Sélectionner toutes les colonnes entièrement nulles
+      </button>
+
+      <div className="column-list-scroll">
+{filteredData.length > 0 &&
+  Object.keys(filteredData[0]).map((col) => {
+    const nullCount = filteredData.filter(row => row[col] == null || row[col] === '').length;
+    return (
+      <label key={col} className="checkbox-row">
+        <input
+          type="checkbox"
+          checked={columnsToRemove.includes(col)}
+          onChange={() => handleToggleColumnToRemove(col)}
+        />
+        {col}
+        {nullCount > 0 && (
+          <span className="null-indicator">
+            ⚠️ {nullCount} null
+          </span>
+        )}
+      </label>
+    );
+  })}
+
+      </div>
+
+      <div className="popup-actions">
+        <button
+          className="btn btn-primary"
+          onClick={handleRemoveSelectedColumns}
+        >
+          Supprimer les colonnes sélectionnées
+        </button>
+        <button
+          className="btn btn-cancel"
+          onClick={() => setShowRemoveColumnPopup(false)}
+        >
+          Annuler
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+      {showAddColumnPopup && (
+  <div className="popup-overlay" onClick={() => setShowAddColumnPopup(false)}>
+    <div className="popup-card" onClick={(e) => e.stopPropagation()}>
+<h2>Ajouter une colonne</h2>
+<input
+  type="text"
+  placeholder="Nom de la colonne"
+  value={newColumnName}
+  onChange={e => setNewColumnName(e.target.value)}
+  className="input-modern"
+/>
+
+<label className="input-label">Méthode de génération</label>
+<select
+  className="input-modern"
+  value={generationMode}
+  onChange={e => setGenerationMode(e.target.value)}
+>
+  <option value="manual">Valeur personnalisée</option>
+  <option value="auto-increment">Auto-increment (1,2,3...)</option>
+  <option value="uuid">UUID (identifiant unique)</option>
+  <option value="date">Date/Heure actuelle</option>
+</select>
+
+{generationMode === 'manual' && (
+  <input
+    type="text"
+    placeholder="Valeur par défaut"
+    value={defaultColumnValue}
+    onChange={e => setDefaultColumnValue(e.target.value)}
+    className="input-modern"
+  />
+)}
+
+      <div className="popup-actions">
+        <button
+          className="btn btn-primary"
+          onClick={handleAddColumn}
+          disabled={isAddingColumn}
+        >
+          {isAddingColumn ? "Ajout..." : "Confirmer"}
+        </button>
+        <button
+          className="btn btn-cancel"
+          onClick={() => setShowAddColumnPopup(false)}
+        >
+          Annuler
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };

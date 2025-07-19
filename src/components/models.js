@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faChartLine, faCog, faBrain, faDatabase,faPlay, faFileAlt,faLightbulb,  faCheck,  faHistory ,faRocket} from '@fortawesome/free-solid-svg-icons';
+import { faUser,faBoxArchive, faChartLine, faCog, faBrain, faDatabase,faPlay, faFileAlt,faLightbulb,  faCheck,  faHistory ,faRocket} from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import './models.css';
 import Sidebar from './Sidebar';
@@ -10,6 +10,7 @@ import './sidebar.css'; // Assurez-vous que le chemin est correct
 import FeatureImportanceChart from './FeatureImportanceChart'; // Assurez-vous que le chemin est correct
 import { useLocation } from 'react-router-dom';
 import LoadingOverlay from './LoadingOverlay';
+
 
 
 
@@ -31,6 +32,13 @@ const Models = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false); // Gérer l'état du dropdown
   const [isDropdownOpen1, setIsDropdownOpen1] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [useGridSearch, setUseGridSearch] = useState(false);
+const activeVersionId = location.state?.versionId || null;
+const [savedModels, setSavedModels] = useState([]);
+
+
+
+
 
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -82,11 +90,10 @@ const classificationMetrics = metrics.filter(metric =>
 
 // Métriques pour Régression
 const regressionMetrics = metrics.filter(metric =>
-  ['Mean Absolute Error', 'Mean Squared Error', 'R² Score'].includes(metric)
+  ['R² Score','Mean Absolute Error', 'Mean Squared Error'].includes(metric)
 );
 
-  useEffect(() => {
-  // 1. Essayer de charger depuis l'URL
+useEffect(() => {
   const loadFromURL = () => {
     const urlParams = new URLSearchParams(location.search);
     const encodedFiltdate = urlParams.get('filtdate');
@@ -95,50 +102,49 @@ const regressionMetrics = metrics.filter(metric =>
       try {
         const decodedData = JSON.parse(decodeURIComponent(encodedFiltdate));
         setData(decodedData);
-        console.log("Données chargées depuis URL", decodedData);
+        console.log("✅ Données chargées depuis URL", decodedData);
         return true;
       } catch (error) {
-        console.error("Erreur décodage URL", error);
+        console.error("❌ Erreur décodage URL", error);
         return false;
       }
     }
     return false;
   };
 
-  // 2. Essayer de charger depuis fileData
   const loadFromFileData = () => {
-    if (fileData) {
+    if (location.state?.fileData) {
       try {
-        const parsedData = typeof fileData === 'string' ? JSON.parse(fileData) : fileData;
+        const parsedData = typeof location.state.fileData === 'string'
+          ? JSON.parse(location.state.fileData)
+          : location.state.fileData;
         setData(parsedData);
-        console.log("Données chargées depuis fileData", parsedData);
+        console.log("✅ Données chargées depuis state.fileData", parsedData);
         return true;
       } catch (e) {
-        console.error("Erreur parsing fileData", e);
+        console.error("❌ Erreur parsing fileData", e);
         return false;
       }
     }
     return false;
   };
 
-  // 3. Essayer de charger depuis le localStorage
   const loadFromLocalStorage = () => {
     const savedData = localStorage.getItem(`projectData_${id}`);
     if (savedData) {
       try {
         const parsedData = JSON.parse(savedData);
         setData(parsedData);
-        console.log("Données chargées depuis localStorage", parsedData);
+        console.log("✅ Données chargées depuis localStorage", parsedData);
         return true;
       } catch (e) {
-        console.error("Erreur parsing localStorage", e);
+        console.error("❌ Erreur parsing localStorage", e);
         return false;
       }
     }
     return false;
   };
 
-  // Tentative de chargement dans l'ordre de priorité
   const loaded = loadFromURL() || loadFromFileData() || loadFromLocalStorage();
 
   if (!loaded) {
@@ -153,10 +159,39 @@ const regressionMetrics = metrics.filter(metric =>
     console.log("🔍 Task type détecté :", inferredTask);
   }
 
+}, [id, targetFeature, location.search, location.state]); // ✅ ajoute location.state
 
-}, [id, targetFeature, location.search]); // fileData retiré des dépendances
 
 
+useEffect(() => {
+  if (activeVersionId) {
+    const token = localStorage.getItem("token");
+    
+    fetch(`http://localhost:5000/models/${id}/version/${activeVersionId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+      .then(async res => {
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Failed to fetch saved models');
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (!Array.isArray(data)) {
+          throw new Error('Invalid data format received');
+        }
+        setSavedModels(data);
+      })
+      .catch(err => {
+        console.error("❌ Error fetching saved models:", err);
+        setSavedModels([]);
+        // Optionnel : afficher un message à l'utilisateur
+      });
+  }
+}, [id, activeVersionId]);
 
 
 
@@ -201,27 +236,19 @@ const regressionMetrics = metrics.filter(metric =>
     }
   };
 
-  const handleSubmit = async () => {
-  // Vérification que des modèles sont sélectionnés
+const handleSubmit = async () => {
   if (models.length === 0) {
     alert("Veuillez sélectionner au moins un modèle");
     return;
   }
-  
-  // Vérification que des métriques sont sélectionnées
+
   if (selectedMetrics.length === 0) {
     alert("Veuillez sélectionner au moins une métrique");
     return;
   }
 
-  // Dans votre handleSubmit, vérifiez que data n'est pas vide
-  if (!data || data.length === 0) {
-    alert("Aucune donnée à traiter !");
-    return;
-  }
-
-   if (!data || !Array.isArray(data) || data.length === 0) {
-    alert("Données corrompues. Veuillez recharger les données.");
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    alert("Aucune donnée à traiter ou données corrompues !");
     console.error("Data invalide:", {
       type: typeof data,
       length: data?.length,
@@ -230,44 +257,57 @@ const regressionMetrics = metrics.filter(metric =>
     return;
   }
 
-  
-  setLoading(true); // ⏳ juste avant l’appel
+  setLoading(true);
+
   try {
     const payload = {
-  model: models,
-  targ: targetFeature,
-  metrics: selectedMetrics,
-  data: data,
-  task: taskType,
-  method: crossValidationType // 'kfold' ou 'division'
-};
+      model: models,
+      targ: targetFeature,
+      metrics: selectedMetrics,
+      data: data,
+      task: taskType,
+      method: crossValidationType,
+      use_grid_search: useGridSearch,
+      versionId: activeVersionId  // ✅ Ajout ici
 
-if (crossValidationType === 'kfold') {
-  payload.k = kSets;
-} else {
-  payload.trainset = trainingSetSize;
-  payload.valtest = validationSetSize;
-  payload.testset = testSetSize;
-}
+    };
+console.log("Payload envoyé au backend :", payload);
 
-const response = await axios.post(`http://localhost:5000/train/${id}`, payload, {
-  headers: {
-    'Authorization': `Bearer ${localStorage.getItem('token')}`
-  },
-  withCredentials: true
-});
+    if (crossValidationType === 'kfold') {
+      payload.k = kSets;
+    } else {
+      payload.trainset = trainingSetSize;
+      payload.valtest = validationSetSize;
+      payload.testset = testSetSize;
+    }
 
-    
-    localStorage.setItem('modelResult', JSON.stringify(response.data));
-    setError(null);
-    navigate(`/resultat/${id}`);
+    const response = await axios.post(`http://localhost:5000/train/${id}`, payload, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      withCredentials: true
+    });
+
+    const resultData = response.data;
+
+    // ✅ Vérifie s'il y a des erreurs dans certains modèles
+    const failedModels = resultData.results?.filter(r => r.error);
+
+    if (failedModels.length > 0) {
+      setError(failedModels); // on les affichera dans le JSX
+    } else {
+      setError(null);
+      localStorage.setItem('modelResult', JSON.stringify(resultData));
+      navigate(`/resultat/${id}`);
+    }
   } catch (error) {
-    alert('Erreur lors de l\'entraînement du modèle: ' + error.message);
-    console.error('Error during model training:', error);
+    alert("Erreur lors de l'entraînement du modèle : " + error.message);
+    console.error("Erreur d'entraînement :", error);
   } finally {
-    setLoading(false); // ✅ désactive après réponse ou erreur
+    setLoading(false);
   }
 };
+
 
   const getRemainingSize = (currentSetSize) => Math.max(0, 100 - currentSetSize);
 
@@ -339,6 +379,25 @@ useEffect(() => {
   return () => window.removeEventListener('resize', handleResize);
 }, []);
 
+const handleDeleteModel = async (modelId) => {
+  const confirmed = window.confirm("❗ Voulez-vous vraiment supprimer ce modèle ?");
+  if (!confirmed) return;
+
+  try {
+    const token = localStorage.getItem("token");
+    await axios.delete(`http://localhost:5000/models/${modelId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    // Met à jour l'affichage en supprimant localement
+    setSavedModels(prev => prev.filter(m => m.id !== modelId));
+  } catch (err) {
+    alert("Erreur lors de la suppression du modèle");
+    console.error("Erreur suppression modèle :", err);
+  }
+};
+
+
 const isMobile = windowWidth <= 768;
 
 return (
@@ -365,6 +424,18 @@ return (
         <header className="page-header">
           <h1>Model Training Studio</h1>
           <p className="header-subtitle">Configure and train machine learning models with precision</p>
+                      {error && error.length > 0 && (
+  <div className="train-errors">
+    <h4>🚨 Modèles échoués</h4>
+    <ul>
+      {error.map((e, i) => (
+        <li key={i}>
+          <strong>{e.model}</strong> — {e.error}
+        </li>
+      ))}
+    </ul>
+  </div>
+)}
           <div className="header-divider"></div>
         </header>
 
@@ -457,6 +528,20 @@ return (
               <FontAwesomeIcon icon={faChartLine} className="section-icon" />
               <h2>Training Parameters</h2>
             </div>
+            <div className="gridsearch-toggle">
+  <label>
+    <input 
+      type="checkbox" 
+      checked={useGridSearch} 
+      onChange={() => setUseGridSearch(!useGridSearch)} 
+    />
+    🔍 Optimiser les hyperparamètres (Grid Search)
+  </label>
+  <p className="toggle-description">
+    Active la recherche automatique des meilleurs paramètres pour chaque modèle.
+  </p>
+</div>
+
 
             <div className="params-tabs">
               <button 
@@ -586,7 +671,133 @@ return (
               <span>Train Models</span>
             </button>
           </div>
+
+
         </div>
+        
+          {/* Section Modèles Sauvegardés */}
+{savedModels.length > 0 && (
+  <section className="saved-models-section glass-card">
+    <div className="section-header">
+      <FontAwesomeIcon icon={faBoxArchive} className="section-icon" />
+      <h2>Model Repository</h2>
+      <p className="subtitle">Previously trained models for this dataset version</p>
+    </div>
+
+    <div className="saved-models-grid">
+      {savedModels.map((model) => {
+        // ✅ Conversion sûre de featureimportance
+        let parsedImportance;
+        try {
+          parsedImportance =
+            typeof model.featureimportance === 'string'
+              ? JSON.parse(model.featureimportance)
+              : model.featureimportance;
+        } catch (e) {
+          console.error("Erreur de parsing de featureimportance :", e);
+          parsedImportance = {};
+        }
+
+        return (
+          <div key={model.id} className="model-card">
+            {/* En-tête modèle */}
+            <div className="model-header">
+              <h3>{model.modelname}</h3>
+              <span className={`model-type-badge ${model.RScore ? 'regression' : 'classification'}`}>
+                {model.RScore ? 'Regression' : 'Classification'}
+              </span>
+            </div>
+
+            {/* Infos générales */}
+            <div className="model-info">
+              <p><strong>Validation:</strong> {model.k ? `${model.k}-Fold` : `${model.trainingset}% Train / ${model.testset}% Test`}</p>
+              <p><strong>Dataset:</strong> {model.file?.filename || 'N/A'}</p>
+            </div>
+
+            {/* Mini métriques */}
+            <div className="model-metrics-preview">
+              {model.Accuracy !== undefined && (
+                <div className="metric">
+                  <span className="metric-label">Accuracy</span>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{ width: `${model.Accuracy * 100}%` }} />
+                    <span className="metric-value">{(model.Accuracy * 100).toFixed(1)}%</span>
+                  </div>
+                </div>
+              )}
+
+              {model.RScore !== undefined && (
+                <div className="metric">
+                  <span className="metric-label">R² Score</span>
+                  <div className="progress-bar">
+                    <div
+                      className="progress-fill"
+                      style={{
+                        width: `${Math.max(0, model.RScore) * 100}%`,
+                        backgroundColor:
+                          model.RScore > 0.7 ? '#4ade80' :
+                          model.RScore > 0.4 ? '#fbbf24' : '#f87171'
+                      }}
+                    />
+                    <span className="metric-value">{model.RScore.toFixed(3)}</span>
+                  </div>
+                </div>
+              )}
+
+              {model.F1_Score !== undefined && (
+                <div className="metric">
+                  <span className="metric-label">F1 Score</span>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{ width: `${model.F1_Score * 100}%` }} />
+                    <span className="metric-value">{(model.F1_Score * 100).toFixed(1)}%</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Features les plus importantes */}
+            {parsedImportance && Object.keys(parsedImportance).length > 0 && (
+              <div className="feature-importance-preview">
+                <h4>Top Features</h4>
+                <div className="features-list">
+                  {Object.entries(parsedImportance)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 3)
+                    .map(([feature, importance]) => (
+                      <div key={feature} className="feature-item">
+                        <span className="feature-name">{feature}</span>
+                        <span className="feature-value">{(importance * 100).toFixed(1)}%</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="model-actions">
+              <button 
+                className="action-btn view-btn" 
+                onClick={() => navigate(`/resultat/${id}?modelId=${model.id}`)}
+              >
+                <FontAwesomeIcon icon={faChartLine} /> Details
+              </button>
+              <button className="action-btn deploy-btn" onClick={() => navigate(`/deployment/${id}?model=${model.id}`)}>
+                <FontAwesomeIcon icon={faRocket} /> Deploy
+              </button>
+              <button 
+  className="action-btn delete-btn"
+  onClick={() => handleDeleteModel(model.id)}
+>
+  🗑️ Delete
+</button>
+
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </section>
+)}
       </div>
     </div>
   );

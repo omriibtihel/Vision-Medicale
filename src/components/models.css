@@ -396,6 +396,209 @@
 .model-tag button:hover, .metric-tag button:hover {
   opacity: 1;
 }
+/* Conteneur général */
+.saved-models-section {
+  padding: 20px;
+  background-color: #f9fafb;
+  border-radius: 16px;
+  margin-top: 30px;
+}
+
+/* Titre de section */
+.saved-models-section .section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.saved-models-section .section-header h2 {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.saved-models-section .subtitle {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin-left: auto;
+}
+
+/* Grille responsive des cartes */
+.saved-models-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 450px));
+  gap: 20px;
+}
+
+
+/* Carte modèle */
+.model-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+}
+
+.model-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+}
+
+/* En-tête */
+.model-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.model-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.model-type-badge {
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.model-type-badge.classification {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.model-type-badge.regression {
+  background-color: #10b981;
+  color: white;
+}
+
+/* Infos générales */
+.model-info {
+  font-size: 0.85rem;
+  color: #4b5563;
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+/* Preview métriques */
+.model-metrics-preview {
+  margin-top: 12px;
+}
+
+.metric {
+  margin-bottom: 8px;
+}
+
+.metric-label {
+  display: block;
+  font-size: 0.85rem;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.progress-bar {
+  background-color: #e5e7eb;
+  height: 8px;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #3b82f6;
+  border-radius: 8px;
+}
+
+.metric-value {
+  display: block;
+  font-size: 0.75rem;
+  margin-top: 4px;
+  color: #1f2937;
+  text-align: right;
+}
+
+/* Top Features */
+.feature-importance-preview {
+  margin-top: 16px;
+}
+
+.feature-importance-preview h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 6px;
+}
+
+.features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.feature-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #374151;
+}
+
+/* Boutons */
+.model-actions {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.action-btn.view-btn {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.action-btn.view-btn:hover {
+  background-color: #2563eb;
+}
+
+.action-btn.deploy-btn {
+  background-color: #10b981;
+  color: white;
+}
+
+.action-btn.deploy-btn:hover {
+  background-color: #059669;
+}
+
+.action-btn.delete-btn {
+  background-color: #ef4444;
+  color: white;
+}
+
+.action-btn.delete-btn:hover {
+  background-color: #dc2626;
+}
 
 /* Paramètres d'entraînement */
 .params-tabs {
@@ -516,6 +719,48 @@
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
+}
+
+.gridsearch-toggle {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #f0f4f8;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #2c3e50;
+}
+
+.gridsearch-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+}
+
+.toggle-description {
+  font-size: 12px;
+  color: #7b8794;
+  margin-top: 5px;
+  padding-left: 24px;
+}
+
+.train-errors {
+  background-color: #ffe5e5;
+  border-left: 5px solid #e53e3e;
+  padding: 14px 18px;
+  border-radius: 6px;
+  margin-top: 20px;
+  color: #991b1b;
+  font-size: 14px;
+}
+
+.train-errors h4 {
+  margin-bottom: 8px;
+}
+
+.train-errors ul {
+  list-style-type: disc;
+  padding-left: 20px;
 }
 
 

@@ -80,7 +80,7 @@ useEffect(() => {
 
   const generateStandardFileName = (originalName) => {
     const extension = originalName.split('.').pop();
-    return `MedicalVision_${name.replace(/\s+/g, '_')}_${new Date().getTime()}.${extension}`;
+    return `MedicalVision_${name.replace(/\s+/g, '_')}_${id}.${extension}`;
   };
 
 const handleFileChange = (e) => {
