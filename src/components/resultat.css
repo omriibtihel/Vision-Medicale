@@ -147,7 +147,7 @@
 .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1.5rem;
+  gap: 5rem;
 }
 
 .info-grid div {
@@ -165,6 +165,16 @@
   margin: 0;
   font-weight: 500;
 }
+
+.dataset-name {
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.2;
+  max-height: 2.4em; /* ≈ 2 lignes */
+  min-width: 20em;
+  overflow: hidden;
+}
+
 
 /* Model Cards */
 .results-main {
@@ -249,6 +259,49 @@
 .toggle-graph:hover {
   background-color: rgba(67, 97, 238, 0.1);
 }
+
+.download-graph-btn {
+  display: inline-flex;
+  align-items: center;
+
+  margin-top: 12px;
+  margin-left: 30%;
+  padding: 8px 14px;
+  width: 45%;
+
+background-color: #e6f0fa; /* bleu très clair */
+  color: #1e3a8a; /* bleu foncé médical */
+
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+
+  border: 1px solid #cbd5e1; /* gris clair */
+  border-radius: 8px;
+
+
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease-in-out;
+
+  cursor: pointer;
+}
+
+.download-graph-btn:hover {
+  background-color: #dbeafe; /* bleu un peu plus fort */
+  border-color: #93c5fd;
+  color: #1e40af;
+  box-shadow: 0 4px 8px rgba(30, 64, 175, 0.1);
+}
+
+.download-graph-btn:active {
+  background-color: #bfdbfe;
+  border-color: #60a5fa;
+  box-shadow: none;
+  transform: scale(0.98);
+}
+
+
+
 
 /* Tables */
 .styled-table {
@@ -500,8 +553,8 @@
 
 .chart-box, .gauge-box {
   flex: 1;
-  min-width: 260px;
-  max-width: 500px;
+  min-width: 200px;
+  max-width: 380px;
   background: white;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -509,11 +562,20 @@
   box-shadow: var(--shadow-sm);
 }
 
-
-
 .gauge-box {
-  text-align: center;
+  flex: 1;
+  min-width: 260px;
+  max-width: 380px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+    text-align: center;
+
 }
+
+
 
 .gauge-box h5, .chart-box h5 {
   font-size: 1rem;

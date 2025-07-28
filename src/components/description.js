@@ -163,17 +163,17 @@ return (
 
             <div className="content1">
                 <h2>Data Description</h2>
-                <p className="header-subtitle">Detailed Descriptions and Analysis for Better Understanding</p> 
+                <p className="header-subtitle">Descriptions détaillées et analyses pour une meilleure compréhension</p> 
                 <div className="data-description">
                     <table className="description-table">
                         <thead>
                             <tr>
-                                <th>Column</th>
-                                <th>Mean</th>
-                                <th>Standard Deviation</th>
+                                <th>Colonne</th>
+                                <th>Moyenne</th>
+                                <th>Écart type</th>
                                 <th>Min</th>
                                 <th>Max</th>
-                                <th>Unique Values</th>
+                                <th>Valeurs uniques</th>
                                 <th>Total Count</th>
                                 <th>Null Count</th> 
                                 <th>Null Count(%)</th> 

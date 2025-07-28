@@ -1,37 +1,73 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faUser, faChartLine, faCog, faBrain, 
-  faDatabase, faFileAlt, faHistory, faRocket,
-  faDownload, faSlidersH
-} from '@fortawesome/free-solid-svg-icons';
-import axios from 'axios';
-import Sidebar from './Sidebar';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, 
-  LineElement, BarElement, ArcElement, Title, Tooltip, Legend, 
-  RadialLinearScale } from 'chart.js';
-import { Line, Bar, Pie, Radar, Doughnut, PolarArea, Bubble, Scatter } from 'react-chartjs-2';
-import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
-import './graphs.css';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUser,
+  faChartLine,
+  faCog,
+  faBrain,
+  faDatabase,
+  faFileAlt,
+  faHistory,
+  faRocket,
+  faDownload,
+  faSlidersH,
+} from "@fortawesome/free-solid-svg-icons";
+import axios from "axios";
+import Sidebar from "./Sidebar";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  RadialLinearScale,
+} from "chart.js";
+import {
+  Line,
+  Bar,
+  Pie,
+  Radar,
+  Doughnut,
+  PolarArea,
+  Bubble,
+  Scatter,
+} from "react-chartjs-2";
+import {
+  faChevronLeft,
+  faChevronRight,
+} from "@fortawesome/free-solid-svg-icons";
+import "./graphs.css";
 
 ChartJS.register(
-  CategoryScale, LinearScale, PointElement, LineElement, 
-  BarElement, ArcElement, Title, Tooltip, Legend, RadialLinearScale
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  RadialLinearScale
 );
 
 const Graphs = () => {
   const navigate = useNavigate();
   const { id, targetFeature } = useParams();
   const [data, setData] = useState([]);
-  const [chartType, setChartType] = useState('line');
-  const [xAttribute, setXAttribute] = useState('');
-  const [yAttribute, setYAttribute] = useState('');
+  const [chartType, setChartType] = useState("line");
+  const [xAttribute, setXAttribute] = useState("");
+  const [yAttribute, setYAttribute] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-
 
   // Navigation handlers
   const navigateTo = (path) => navigate(`/${path}/${id}/${targetFeature}`);
@@ -39,20 +75,24 @@ const Graphs = () => {
 
   // Data fetching
   const fetchData = async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(`http://localhost:5000/projects/${id}/imported-files`, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      });
-      
-      const responseData = typeof response.data === 'string' ? 
-        JSON.parse(response.data.replace(/NaN/g, 'null')) : 
-        response.data;
-      
+      const response = await axios.get(
+        `http://localhost:5000/projects/${id}/imported-files`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        }
+      );
+
+      const responseData =
+        typeof response.data === "string"
+          ? JSON.parse(response.data.replace(/NaN/g, "null"))
+          : response.data;
+
       setData(Array.isArray(responseData.data) ? responseData.data : []);
     } catch (error) {
-      console.error('Fetch error:', error);
+      console.error("Fetch error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -64,47 +104,49 @@ const Graphs = () => {
 
   // Chart data preparation
   const prepareChartData = () => {
-    const labels = data.map(item => item[xAttribute] || '');
-    const values = data.map(item => parseFloat(item[yAttribute]) || 0);
+    const labels = data.map((item) => item[xAttribute] || "");
+    const values = data.map((item) => parseFloat(item[yAttribute]) || 0);
 
     return {
       labels,
-      datasets: [{
-        label: yAttribute,
-        data: values,
-        backgroundColor: getBackgroundColor(),
-        borderColor: getBorderColor(),
-        borderWidth: 2,
-        tension: 0.1,
-        fill: chartType === 'line'
-      }]
+      datasets: [
+        {
+          label: yAttribute,
+          data: values,
+          backgroundColor: getBackgroundColor(),
+          borderColor: getBorderColor(),
+          borderWidth: 2,
+          tension: 0.1,
+          fill: chartType === "line",
+        },
+      ],
     };
   };
 
   const getBackgroundColor = () => {
     const colors = {
-      line: 'rgba(75, 192, 192, 0.2)',
-      bar: 'rgba(54, 162, 235, 0.7)',
-      pie: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
-      radar: 'rgba(255, 99, 132, 0.2)',
-      doughnut: ['#FF6384', '#36A2EB', '#FFCE56'],
-      polarArea: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
-      bubble: 'rgba(255, 99, 132, 0.6)',
-      scatter: 'rgba(75, 192, 192, 0.6)'
+      line: "rgba(75, 192, 192, 0.2)",
+      bar: "rgba(54, 162, 235, 0.7)",
+      pie: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"],
+      radar: "rgba(255, 99, 132, 0.2)",
+      doughnut: ["#FF6384", "#36A2EB", "#FFCE56"],
+      polarArea: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"],
+      bubble: "rgba(255, 99, 132, 0.6)",
+      scatter: "rgba(75, 192, 192, 0.6)",
     };
     return colors[chartType] || colors.line;
   };
 
   const getBorderColor = () => {
     const colors = {
-      line: 'rgba(75, 192, 192, 1)',
-      bar: 'rgba(54, 162, 235, 1)',
-      pie: '#ffffff',
-      radar: 'rgba(255, 99, 132, 1)',
-      doughnut: '#ffffff',
-      polarArea: '#ffffff',
-      bubble: 'rgba(255, 99, 132, 1)',
-      scatter: 'rgba(75, 192, 192, 1)'
+      line: "rgba(75, 192, 192, 1)",
+      bar: "rgba(54, 162, 235, 1)",
+      pie: "#ffffff",
+      radar: "rgba(255, 99, 132, 1)",
+      doughnut: "#ffffff",
+      polarArea: "#ffffff",
+      bubble: "rgba(255, 99, 132, 1)",
+      scatter: "rgba(75, 192, 192, 1)",
     };
     return colors[chartType] || colors.line;
   };
@@ -115,22 +157,22 @@ const Graphs = () => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
+        position: "top",
         labels: {
           font: {
-            size: 14
-          }
-        }
+            size: 14,
+          },
+        },
       },
       tooltip: {
         callbacks: {
           label: (context) => {
-            const label = context.dataset.label || '';
+            const label = context.dataset.label || "";
             const value = context.raw || 0;
             return `${label}: ${value}`;
-          }
-        }
-      }
+          },
+        },
+      },
     },
     scales: {
       x: {
@@ -139,9 +181,9 @@ const Graphs = () => {
           text: xAttribute,
           font: {
             size: 14,
-            weight: 'bold'
-          }
-        }
+            weight: "bold",
+          },
+        },
       },
       y: {
         title: {
@@ -149,19 +191,19 @@ const Graphs = () => {
           text: yAttribute,
           font: {
             size: 14,
-            weight: 'bold'
-          }
-        }
-      }
-    }
+            weight: "bold",
+          },
+        },
+      },
+    },
   };
 
   // Download chart as image
   const downloadChart = () => {
-    const canvas = document.querySelector('canvas');
+    const canvas = document.querySelector("canvas");
     if (canvas) {
-      const image = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
+      const image = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
       link.href = image;
       link.download = `${chartType}-chart.png`;
       link.click();
@@ -171,42 +213,49 @@ const Graphs = () => {
   // Available attributes
   const attributes = data.length > 0 ? Object.keys(data[0]) : [];
 
+  const handleProfileClick = () => navigate("/profile");
+  const handleProcessingClick = () =>
+    navigate(`/processing/${id}/${targetFeature}`);
+  const handleModelsClick = () => navigate(`/models/${id}/${targetFeature}`);
+  const handleDepClick = () => navigate(`/deployment/${id}/${targetFeature}`);
 
-    const handleProfileClick = () => navigate('/profile');
-    const handleProcessingClick = () => navigate(`/processing/${id}/${targetFeature}`);
-    const handleModelsClick = () => navigate(`/models/${id}/${targetFeature}`);
-    const handleDepClick = () => navigate(`/deployment/${id}/${targetFeature}`);
-
-    const handleDescription = () => navigate(`/description/${id}/${targetFeature}`);
-    const handleHistorique = () => {navigate(`/historique/${id}/${targetFeature}`)}
+  const handleDescription = () =>
+    navigate(`/description/${id}/${targetFeature}`);
+  const handleHistorique = () => {
+    navigate(`/historique/${id}/${targetFeature}`);
+  };
 
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-useEffect(() => {
-  const handleResize = () => setWindowWidth(window.innerWidth);
-  window.addEventListener('resize', handleResize);
-  return () => window.removeEventListener('resize', handleResize);
-}, []);
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
-const isMobile = windowWidth <= 768;
+  const isMobile = windowWidth <= 768;
 
-return (
-  <div className={`app-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-    {isMobile && !isSidebarOpen && (
-      <button 
-        className="sidebar-toggle-mobile"
-        onClick={() => setIsSidebarOpen(true)}
-      >
-        ☰
-      </button>
-    )}
-    
-    <Sidebar
-      isOpen={isSidebarOpen}
-      toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-      projectId={id}
-      targetFeature={targetFeature}
-    />
+  return (
+    <div
+      className={`app-container ${
+        isSidebarOpen ? "sidebar-open" : "sidebar-closed"
+      }`}
+    >
+      {isMobile && !isSidebarOpen && (
+        <button
+          className="sidebar-toggle-mobile"
+          onClick={() => setIsSidebarOpen(true)}
+        >
+          ☰
+        </button>
+      )}
+
+      <Sidebar
+        isOpen={isSidebarOpen}
+        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        projectId={id}
+        targetFeature={targetFeature}
+      />
 
       {/* Main Content */}
       <main className="graphs-content">
@@ -215,7 +264,9 @@ return (
             <FontAwesomeIcon icon={faChartLine} />
             Data Visualization
           </h1>
-          <p className="subtitle">Transform your data into actionable insights</p>
+          <p className="subtitle">
+            Transform your data into actionable insights
+          </p>
         </header>
 
         {isLoading ? (
@@ -255,41 +306,69 @@ return (
                   onChange={(e) => setXAttribute(e.target.value)}
                 >
                   <option value="">Select attribute</option>
-                  {attributes.map(attr => (
-                    <option key={attr} value={attr}>{attr}</option>
+                  {attributes.map((attr) => (
+                    <option key={attr} value={attr}>
+                      {attr}
+                    </option>
                   ))}
                 </select>
               </div>
 
-              {chartType !== 'pie' && chartType !== 'doughnut' && chartType !== 'polarArea' && (
-                <div className="control-group">
-                  <label>Y-Axis Attribute</label>
-                  <select
-                    value={yAttribute}
-                    onChange={(e) => setYAttribute(e.target.value)}
-                  >
-                    <option value="">Select attribute</option>
-                    {attributes.map(attr => (
-                      <option key={attr} value={attr}>{attr}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              {chartType !== "pie" &&
+                chartType !== "doughnut" &&
+                chartType !== "polarArea" && (
+                  <div className="control-group">
+                    <label>Y-Axis Attribute</label>
+                    <select
+                      value={yAttribute}
+                      onChange={(e) => setYAttribute(e.target.value)}
+                    >
+                      <option value="">Select attribute</option>
+                      {attributes.map((attr) => (
+                        <option key={attr} value={attr}>
+                          {attr}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
             </div>
 
             {/* Chart Display Area */}
             <div className="chart-display">
               {xAttribute ? (
                 <div className="chart-wrapper">
-                  {chartType === 'line' && <Line data={prepareChartData()} options={chartOptions} />}
-                  {chartType === 'bar' && <Bar data={prepareChartData()} options={chartOptions} />}
-                  {chartType === 'pie' && <Pie data={prepareChartData()} options={chartOptions} />}
-                  {chartType === 'radar' && <Radar data={prepareChartData()} options={chartOptions} />}
-                  {chartType === 'doughnut' && <Doughnut data={prepareChartData()} options={chartOptions} />}
-                  {chartType === 'polarArea' && <PolarArea data={prepareChartData()} options={chartOptions} />}
-                  {chartType === 'bubble' && <Bubble data={prepareChartData()} options={chartOptions} />}
-                  {chartType === 'scatter' && <Scatter data={prepareChartData()} options={chartOptions} />}
-                  
+                  {chartType === "line" && (
+                    <Line data={prepareChartData()} options={chartOptions} />
+                  )}
+                  {chartType === "bar" && (
+                    <Bar data={prepareChartData()} options={chartOptions} />
+                  )}
+                  {chartType === "pie" && (
+                    <Pie data={prepareChartData()} options={chartOptions} />
+                  )}
+                  {chartType === "radar" && (
+                    <Radar data={prepareChartData()} options={chartOptions} />
+                  )}
+                  {chartType === "doughnut" && (
+                    <Doughnut
+                      data={prepareChartData()}
+                      options={chartOptions}
+                    />
+                  )}
+                  {chartType === "polarArea" && (
+                    <PolarArea
+                      data={prepareChartData()}
+                      options={chartOptions}
+                    />
+                  )}
+                  {chartType === "bubble" && (
+                    <Bubble data={prepareChartData()} options={chartOptions} />
+                  )}
+                  {chartType === "scatter" && (
+                    <Scatter data={prepareChartData()} options={chartOptions} />
+                  )}
+
                   <button className="download-btn" onClick={downloadChart}>
                     <FontAwesomeIcon icon={faDownload} />
                     Export Chart
@@ -297,7 +376,9 @@ return (
                 </div>
               ) : (
                 <div className="empty-state">
-                  <p>Please select at least one attribute to display the chart</p>
+                  <p>
+                    Please select at least one attribute to display the chart
+                  </p>
                 </div>
               )}
             </div>

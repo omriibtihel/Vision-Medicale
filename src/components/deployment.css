@@ -1,0 +1,71 @@
+.menu-bar {
+  display: flex;
+  gap: 20px;
+  background-color: #1e293b;
+  color: white;
+  padding: 10px;
+  font-size: 15px;
+}
+
+.menu-item {
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.menu-item:hover {
+  background-color: #334155;
+}
+
+.app-name2 {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  font-size: 18px;
+  margin-right: auto;
+}
+
+.app-icon {
+  width: 28px;
+  height: 28px;
+  margin-right: 8px;
+}
+
+.content1 {
+  padding: 25px;
+}
+
+.model-details {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 20px;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.test-button {
+  background-color: #10b981;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  margin-top: 8px;
+  cursor: pointer;
+}
+
+.test-button:hover {
+  background-color: #059669;
+}
+
+.feature-importance table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.feature-importance th,
+.feature-importance td {
+  padding: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}

@@ -1,9 +1,19 @@
-import React, { useState } from 'react';
-import { useEffect } from 'react';
-import styled, { keyframes } from 'styled-components';
-import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
-import { FaUser, FaEnvelope, FaLock, FaExclamationCircle, FaUserPlus, FaPhone, FaBriefcaseMedical, FaHospital, FaCamera } from 'react-icons/fa';
+import React, { useState } from "react";
+import { useEffect } from "react";
+import styled, { keyframes } from "styled-components";
+import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  FaUser,
+  FaEnvelope,
+  FaLock,
+  FaExclamationCircle,
+  FaUserPlus,
+  FaPhone,
+  FaBriefcaseMedical,
+  FaHospital,
+  FaCamera,
+} from "react-icons/fa";
 
 // Animations
 const fadeIn = keyframes`
@@ -37,7 +47,7 @@ const Header = styled.div`
 `;
 
 const LogoIcon = styled.div`
-  background: linear-gradient(135deg, #3B3BFD, #6366F1);
+  background: linear-gradient(135deg, #3b3bfd, #6366f1);
   width: 80px;
   height: 80px;
   border-radius: 50%;
@@ -52,10 +62,10 @@ const LogoIcon = styled.div`
 
 const Title = styled.h1`
   font-size: 2.2rem;
-  background: linear-gradient(to right, #3B3BFD, #6366F1);
+  background: linear-gradient(to right, #3b3bfd, #6366f1);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-weight: 600;
 `;
 
@@ -63,7 +73,7 @@ const Subtitle = styled.p`
   color: #7f8c8d;
   font-size: 1rem;
   margin-bottom: 0;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
 `;
 
 const Form = styled.form`
@@ -100,14 +110,14 @@ const Panel = styled.div`
 const LeftPanel = styled(Panel)`
   background: white;
   max-width: 50%;
-  
+
   @media (max-width: 1024px) {
     max-width: 100%;
   }
 `;
 
 const RightPanel = styled(Panel)`
-  background: linear-gradient(135deg, #3B3BFD, #6366F1);
+  background: linear-gradient(135deg, #3b3bfd, #6366f1);
   color: white;
   max-width: 50%;
 
@@ -119,20 +129,20 @@ const RightPanel = styled(Panel)`
 const ColumnTitle = styled.h3`
   margin-bottom: 1.8rem;
   font-size: 1.4rem;
-  color: ${props => props.theme === 'dark' ? 'white' : '#2c3e50'};
+  color: ${(props) => (props.theme === "dark" ? "white" : "#2c3e50")};
   font-weight: 600;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   position: relative;
   display: inline-block;
 
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -8px;
     left: 0;
     width: 50px;
     height: 3px;
-    background: ${props => props.theme === 'dark' ? 'white' : '#3B3BFD'};
+    background: ${(props) => (props.theme === "dark" ? "white" : "#3B3BFD")};
     border-radius: 3px;
   }
 `;
@@ -146,7 +156,7 @@ const Input = styled.input`
   width: 80%;
   padding: 1.1rem 1.1rem 1.1rem 3.5rem;
   font-size: 0.95rem;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   background: rgba(245, 248, 250, 0.8);
@@ -154,7 +164,7 @@ const Input = styled.input`
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
   &:focus {
-    border-color: #3B3BFD;
+    border-color: #3b3bfd;
     outline: none;
     background: white;
     box-shadow: 0 0 0 3px rgba(59, 59, 253, 0.1);
@@ -186,7 +196,7 @@ const Icon = styled.div`
   left: 1.2rem;
   top: 50%;
   transform: translateY(-50%);
-  color: ${props => props.theme === 'dark' ? 'white' : '#3B3BFD'};
+  color: ${(props) => (props.theme === "dark" ? "white" : "#3B3BFD")};
   font-size: 1.1rem;
 `;
 
@@ -197,8 +207,8 @@ const PasswordRequirements = styled.div`
   border-radius: 10px;
   color: #666;
   font-size: 0.85rem;
-  font-family: 'Montserrat', sans-serif;
-  border-left: 4px solid #3B3BFD;
+  font-family: "Montserrat", sans-serif;
+  border-left: 4px solid #3b3bfd;
 `;
 
 const FileInputWrapper = styled.div`
@@ -208,18 +218,24 @@ const FileInputWrapper = styled.div`
 const UploadLabel = styled.label`
   display: inline-flex;
   align-items: center;
-  background: ${props => props.theme === 'dark' ? 'rgba(255,255,255,0.2)' : '#f0f4f8'};
-  color: ${props => props.theme === 'dark' ? 'white' : '#3B3BFD'};
+  background: ${(props) =>
+    props.theme === "dark" ? "rgba(255,255,255,0.2)" : "#f0f4f8"};
+  color: ${(props) => (props.theme === "dark" ? "white" : "#3B3BFD")};
   padding: 0.8rem 1.5rem;
   border-radius: 12px;
   cursor: pointer;
   font-size: 0.95rem;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   transition: all 0.3s ease;
-  border: 1px dashed ${props => props.theme === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(59, 59, 253, 0.3)'};
+  border: 1px dashed
+    ${(props) =>
+      props.theme === "dark"
+        ? "rgba(255,255,255,0.3)"
+        : "rgba(59, 59, 253, 0.3)"};
 
   &:hover {
-    background: ${props => props.theme === 'dark' ? 'rgba(255,255,255,0.3)' : '#e6f0ff'};
+    background: ${(props) =>
+      props.theme === "dark" ? "rgba(255,255,255,0.3)" : "#e6f0ff"};
   }
 
   svg {
@@ -236,8 +252,9 @@ const ImagePreview = styled.div`
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: ${props => props.src ? `url(${props.src}) center/cover` : '#f0f4f8'};
-  border: 3px solid #3B3BFD;
+  background: ${(props) =>
+    props.src ? `url(${props.src}) center/cover` : "#f0f4f8"};
+  border: 3px solid #3b3bfd;
   position: relative;
   overflow: hidden;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
@@ -248,12 +265,12 @@ const Button = styled.button`
   padding: 1.1rem 2.5rem;
   font-size: 1rem;
   color: white;
-  background: linear-gradient(to right, #3B3BFD, #6366F1);
+  background: linear-gradient(to right, #3b3bfd, #6366f1);
   border: none;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-weight: 600;
   letter-spacing: 0.5px;
   box-shadow: 0 5px 20px rgba(59, 59, 253, 0.3);
@@ -277,7 +294,7 @@ const ErrorMessage = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   padding: 0.8rem 1rem;
   background: rgba(255, 107, 107, 0.1);
   border-radius: 8px;
@@ -289,31 +306,31 @@ const ErrorMessage = styled.div`
 `;
 
 const StyledLink = styled(Link)`
-  color: #3B3BFD;
+  color: #3b3bfd;
   text-decoration: none;
   margin: 1.5rem auto 0;
   display: block;
   text-align: center;
   font-size: 0.95rem;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-weight: 500;
   transition: all 0.3s ease;
   position: relative;
 
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     width: 0;
     height: 2px;
     bottom: -2px;
     left: 0;
-    background-color: #3B3BFD;
+    background-color: #3b3bfd;
     transition: width 0.3s ease;
   }
 
   &:hover {
-    color: #6366F1;
-    
+    color: #6366f1;
+
     &::after {
       width: 100%;
     }
@@ -325,40 +342,40 @@ const CheckboxContainer = styled.label`
   align-items: center;
   cursor: pointer;
   font-size: 0.95rem;
-  color: ${props => props.theme === 'dark' ? 'white' : '#666'};
-  font-family: 'Montserrat', sans-serif;
+  color: ${(props) => (props.theme === "dark" ? "white" : "#666")};
+  font-family: "Montserrat", sans-serif;
   margin-top: 1rem;
 
   input {
     margin-right: 0.8rem;
     width: 18px;
     height: 18px;
-    accent-color: #3B3BFD;
+    accent-color: #3b3bfd;
     cursor: pointer;
   }
 `;
 
 function SignupForm() {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    phoneNumber: '',
-    specialty: '',
-    hospital: '',
-    rememberMe: false
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phoneNumber: "",
+    speciality: "",
+    hospital: "",
+    rememberMe: false,
   });
   const [profileImage, setProfileImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -366,7 +383,7 @@ function SignupForm() {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
 
@@ -375,15 +392,15 @@ function SignupForm() {
       for (const key in formData) {
         data.append(key, formData[key]);
       }
-      if (profileImage) data.append('profileImage', profileImage);
+      if (profileImage) data.append("profileImage", profileImage);
 
-      await axios.post('http://localhost:5000/signup', data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      await axios.post("http://localhost:5000/signup", data, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      navigate('/login');
+      navigate("/login");
     } catch (error) {
-      setError(error.response?.data?.message || 'Error creating account');
+      setError(error.response?.data?.message || "Error creating account");
     }
   };
 
@@ -393,89 +410,92 @@ function SignupForm() {
         <LogoIcon>
           <FaUserPlus size={24} />
         </LogoIcon>
-        <Title>Create Account</Title>
-        <Subtitle>Join our medical platform today</Subtitle>
+        <Title>Créer un compte</Title>
+        <Subtitle>Rejoignez notre plateforme médicale dès aujourd'hui</Subtitle>
       </Header>
-      
+
       <Form onSubmit={handleSubmit}>
         <PageContainer>
           <LeftPanel>
-            <ColumnTitle>General Information</ColumnTitle>
-            
+            <ColumnTitle>Informations Générales</ColumnTitle>
+
             <InputGroup>
-              <Icon><FaUser /></Icon>
+              <Icon>
+                <FaUser />
+              </Icon>
               <Input
                 name="name"
                 type="text"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Full Name"
+                placeholder="Nom et Prénom"
                 required
               />
             </InputGroup>
 
             <InputGroup>
-              <Icon><FaEnvelope /></Icon>
+              <Icon>
+                <FaEnvelope />
+              </Icon>
               <Input
                 name="email"
                 type="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Email"
+                placeholder="Adresse Email"
                 required
               />
             </InputGroup>
 
             <InputGroup>
-              <Icon><FaLock /></Icon>
+              <Icon>
+                <FaLock />
+              </Icon>
               <Input
                 name="password"
                 type="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Password"
+                placeholder="Mot de passe"
                 required
                 minLength="8"
               />
             </InputGroup>
 
-            <PasswordRequirements>
-              Password must contain:
-              <ul style={{ margin: '0.5rem 0 0 1rem', paddingLeft: '1rem' }}>
-                <li>At least 8 characters</li>
-                <li>1 uppercase letter</li>
-                <li>1 number</li>
-              </ul>
-            </PasswordRequirements>
-
             <InputGroup>
-              <Icon><FaLock /></Icon>
+              <Icon>
+                <FaLock />
+              </Icon>
               <Input
                 name="confirmPassword"
                 type="password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Confirm Password"
+                placeholder="Confirmer le mot de passe"
                 required
               />
             </InputGroup>
 
             <InputGroup>
-              <Icon><FaBriefcaseMedical /></Icon>
+              <Icon>
+                <FaBriefcaseMedical />
+              </Icon>
               <Input
-                name="specialty"
-                placeholder="Specialty"
-                value={formData.specialty}
+                name="speciality"
+                placeholder="Spécialité"
+                value={formData.speciality}
                 onChange={handleChange}
               />
             </InputGroup>
           </LeftPanel>
 
           <RightPanel>
-            <ColumnTitle theme="dark">Contact Details</ColumnTitle>
+            <ColumnTitle theme="dark">Coordonnées</ColumnTitle>
 
             <InputGroup>
-              <Icon theme="dark"><FaPhone /></Icon>
+              <Icon theme="dark">
+                <FaPhone />
+              </Icon>
               <DarkInput
                 name="phoneNumber"
                 type="tel"
@@ -488,10 +508,12 @@ function SignupForm() {
             </InputGroup>
 
             <InputGroup>
-              <Icon theme="dark"><FaHospital /></Icon>
+              <Icon theme="dark">
+                <FaHospital />
+              </Icon>
               <DarkInput
                 name="hospital"
-                placeholder="Affiliated Hospital"
+                placeholder="Établissement de santé"
                 value={formData.hospital}
                 onChange={handleChange}
                 theme="dark"
@@ -500,7 +522,7 @@ function SignupForm() {
 
             <FileInputWrapper>
               <UploadLabel htmlFor="profileImage" theme="dark">
-                <FaCamera /> Upload Profile Picture
+                <FaCamera /> Télécharger une photo de profil
               </UploadLabel>
               <FileInput
                 type="file"
@@ -522,7 +544,7 @@ function SignupForm() {
                 checked={formData.rememberMe}
                 onChange={handleChange}
               />
-              Remember me
+              Se souvenir de moi
             </CheckboxContainer>
           </RightPanel>
         </PageContainer>
@@ -533,8 +555,8 @@ function SignupForm() {
           </ErrorMessage>
         )}
 
-        <Button type="submit">Create Account</Button>
-        <StyledLink to="/login">Already have an account? Sign In</StyledLink>
+        <Button type="submit">Créer un compte</Button>
+        <StyledLink to="/login">Vous avez déjà un compte ? Se connecter</StyledLink>
       </Form>
     </FormContainer>
   );

@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import { FaEnvelope, FaLock, FaExclamationCircle, FaArrowRight, FaUserShield } from 'react-icons/fa';
+import React, { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import {
+  FaEnvelope,
+  FaLock,
+  FaExclamationCircle,
+  FaArrowRight,
+  FaUserShield,
+} from "react-icons/fa";
 import {
   Container,
   GlassForm,
@@ -16,45 +22,46 @@ import {
   SubmitButton,
   FormFooter,
   FormLink,
-  ErrorMessage
-} from './LoginComponents';
+  ErrorMessage,
+} from "./LoginComponents";
 
 function LoginForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
-    
+    setError("");
+
     try {
-      const response = await axios.post('http://localhost:5000/login', {
+      const response = await axios.post("http://localhost:5000/login", {
         email,
         password,
       });
 
       const { access_token } = response.data;
-      localStorage.setItem('token', access_token);
+      localStorage.setItem("token", access_token);
 
-      const profileResponse = await axios.get('http://localhost:5000/profile', {
+      const profileResponse = await axios.get("http://localhost:5000/profile", {
         headers: { Authorization: `Bearer ${access_token}` },
       });
 
       const userData = profileResponse.data;
-      localStorage.setItem('userId', userData.id);
+      localStorage.setItem("userId", userData.id);
 
       if (userData.isAdmin) {
-        navigate('/admin-dashboard');
+        navigate("/admin-dashboard");
       } else {
-        navigate('/profile');
+        navigate("/profile");
       }
-
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(
+        err.response?.data?.message || "Échec de la connexion. Veuillez réessayer."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -67,23 +74,25 @@ function LoginForm() {
           <LogoWrapper>
             <FaUserShield />
           </LogoWrapper>
-          <FormTitle>Welcome Back</FormTitle>
-          <FormSubtitle>Sign in to access your dashboard</FormSubtitle>
+          <FormTitle>Bienvenue</FormTitle>
+          <FormSubtitle>Connectez-vous pour accéder à votre tableau de bord</FormSubtitle>
         </FormHeader>
 
         <FormGroup onSubmit={handleSubmit}>
           {error && (
             <ErrorMessage>
-              <FaExclamationCircle style={{ marginRight: '10px' }} />
+              <FaExclamationCircle style={{ marginRight: "10px" }} />
               {error}
             </ErrorMessage>
           )}
 
           <InputField>
-            <InputIcon><FaEnvelope /></InputIcon>
+            <InputIcon>
+              <FaEnvelope />
+            </InputIcon>
             <Input
               type="email"
-              placeholder="Email address"
+              placeholder="Adresse email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -91,10 +100,12 @@ function LoginForm() {
           </InputField>
 
           <InputField>
-            <InputIcon><FaLock /></InputIcon>
+            <InputIcon>
+              <FaLock />
+            </InputIcon>
             <Input
               type="password"
-              placeholder="Password"
+              placeholder="Mot de passe"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -102,14 +113,14 @@ function LoginForm() {
           </InputField>
 
           <SubmitButton type="submit" disabled={isLoading}>
-            {isLoading ? 'Signing In...' : 'Sign In'}
-            {!isLoading && <FaArrowRight style={{ marginLeft: '10px' }} />}
+            {isLoading ? "Connexion..." : "Se connecter"}
+            {!isLoading && <FaArrowRight style={{ marginLeft: "10px" }} />}
           </SubmitButton>
 
           <FormFooter>
-            <FormLink to="/signup">Create account</FormLink>
-            <span style={{ color: 'rgba(255,255,255,0.5)' }}>•</span>
-            <FormLink to="/reset-password">Forgot password?</FormLink>
+            <FormLink to="/signup">Créer un compte</FormLink>
+            <span style={{ color: "rgba(255,255,255,0.5)" }}>•</span>
+            <FormLink to="/reset-password">Mot de passe oublié?</FormLink>
           </FormFooter>
         </FormGroup>
       </GlassForm>
