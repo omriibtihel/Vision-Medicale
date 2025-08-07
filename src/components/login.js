@@ -1,19 +1,12 @@
-// src/Login.js
 import React from 'react';
 import styled from 'styled-components';
+import { Container, Wrapper, Illustration, FormWrapper } from './LoginComponents';
 import LoginForm from './LoginForm';
-import { Container, LeftColumn, RightColumn, Image } from './LoginComponents';
 
 function Login() {
   return (
     <Container>
-      <LeftColumn>
-        <LoginForm />
-       
-      </LeftColumn>
-      <RightColumn>
-        <Image src="/image/log.jpg" alt="Background Image" />
-      </RightColumn>
+          <LoginForm />
     </Container>
   );
 }

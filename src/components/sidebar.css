@@ -1,0 +1,84 @@
+/* ========== Base sidebar ========== */
+.app-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  color: white;
+  overflow-y: auto;
+  z-index: 1000;
+  transition: transform 0.3s ease, width 0.3s ease;
+}
+
+/* État ouvert et fermé (desktop) */
+.app-sidebar.open {
+  width: 250px;
+}
+
+.app-sidebar.closed {
+  width: 70px;
+}
+
+/* ========== Responsive mobile (< 768px) ========== */
+@media (max-width: 768px) {
+  .app-sidebar {
+    width: 100%;
+    transform: translateX(-100%); /* caché par défaut */
+    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .app-sidebar.open {
+    transform: translateX(0); /* visible */
+  }
+
+  .app-sidebar.closed {
+    transform: translateX(-100%); /* forcer invisible */
+  }
+
+  .mobile-close-btn {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
+  .sidebar-overlay {
+    position: relative;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+}
+
+
+.app-sidebar.mobile {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 80vw;
+  max-width: 300px;
+  height: 100vh;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  color: white;
+  z-index: 1001;
+  overflow-y: auto;
+  padding-top: 20px;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}

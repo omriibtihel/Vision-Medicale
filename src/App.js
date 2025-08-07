@@ -1,5 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import 'country-flag-icons/react/3x2'; // 🇫🇷, 🇹🇳 etc.
+
 import './App.css';
 import Login from './components/login';
 import Signup from './components/Signup';
@@ -15,15 +17,16 @@ import Test from './components/test';
 import Historique from './components/historique';
 import Result from './components/resultat';
 import Deployment from './components/deployment';
+import AdminDashboard from './components/AdminDashboard';
 function App() {
   return (
-    <Router>
       <div className="App">
         <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-          <Route element={<PrivateRoute />}>
+            <Route path="/" element={<Login />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route element={<PrivateRoute />}>
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/project/:id/:name" element={<ProjectDetails />} />
             <Route path="/importSucc/:id" element={<ImportSuccess />} />
@@ -47,7 +50,6 @@ function App() {
           </Route>
         </Routes>
       </div>
-    </Router>
   );
 }
 

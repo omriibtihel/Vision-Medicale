@@ -1,228 +1,630 @@
-import { useNavigate, useParams } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { faUser, faChartLine, faCog, faBrain, faDatabase, faFileAlt, faHistory ,faRocket} from '@fortawesome/free-solid-svg-icons';
+import { faCheckCircle, faListOl } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
+import {
+  faBrain,
+  faCog,
+  faDownload,
+  faEye,
+  faFilter,
+  faHistory,
+  faRocket,
+  faSearch,
+  faSyncAlt,
+} from "@fortawesome/free-solid-svg-icons";
+import axios from "axios";
+import "./Historique.css";
+import Sidebar from "./Sidebar";
+import "./sidebar.css";
 
 const Historique = () => {
-    const navigate = useNavigate();
-    const { id, targetFeature} = useParams();
-    const [hist, setHist] = useState([]);
-    const [selectedFile, setSelectedFile] = useState('');
-    const [fileData, setFileData] = useState(null);
+  const navigate = useNavigate();
+  const { id, targetFeature: initialTargetFeature } = useParams();
+  const [hist, setHist] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileData, setFileData] = useState(null);
+  const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState({
+    key: "created_at",
+    direction: "desc",
+  });
+  const [targetFeature, setTargetFeature] = useState(
+    initialTargetFeature || ""
+  );
+  const [loadingTarget, setLoadingTarget] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [filterType, setFilterType] = useState("all"); // all | classic | prediction
 
-    const importhist = async () => {
-        const token = localStorage.getItem('token');
-        try {
-            const response = await axios.get(`http://localhost:5000/historique/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-                withCredentials: true,
-            });
-            const rep = response.data;
-            console.log('Historique des fichiers modifiés :', rep);
-            setHist(rep);
-        } catch (error) {
-            alert( error)
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-            console.error('Erreur lors de la récupération des fichiers modifiés :', error);
+  const handleProfileClick = () => navigate("/profile");
+  const handleDBClick = () => navigate(`/importSucc/${id}`);
+  const handleDescription = () =>
+    navigate(`/description/${id}/${targetFeature}`);
+  const handleGraphsClick = () => navigate(`/graphs/${id}/${targetFeature}`);
+  const handleProcessingClick = () =>
+    navigate(`/processing/${id}/${targetFeature}`);
+  const handleModelsClick = () => navigate(`/models/${id}/${targetFeature}`);
+  const handleDepClick = () => navigate(`/deployment/${id}/${targetFeature}`);
+  const filteredData = fileData
+    ? fileData.filter((row) => row[targetFeature] !== undefined)
+    : [];
+
+  // Fonction pour récupérer la target feature depuis le backend
+  const fetchTargetFeature = async () => {
+    setLoadingTarget(true);
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/projects/${id}/target-feature`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.currentTarget) {
+        setTargetFeature(response.data.currentTarget);
+        return response.data.currentTarget;
+      }
+    } catch (error) {
+      console.error("Error fetching target feature:", error);
+    } finally {
+      setLoadingTarget(false);
+    }
+    return null;
+  };
+
+  // Vérifie que la target feature existe dans les données
+  const validateTargetFeature = (data) => {
+    if (!data) return false;
+
+    let availableFeatures = [];
+
+    if (Array.isArray(data) && data.length > 0) {
+      availableFeatures = Object.keys(data[0]);
+    } else if (typeof data === "object") {
+      availableFeatures = Object.keys(data);
+    }
+
+    if (!targetFeature || !availableFeatures.includes(targetFeature)) {
+      setError(
+        `La target feature "${targetFeature}" n'existe pas dans ces données.`
+      );
+      return false;
+    }
+
+    return true;
+  };
+
+  // Chargement de l'historique
+  const importhist = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/historique/${id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
         }
-    };
+      );
 
-    useEffect(() => {
-        console.log("aaaaaaaaaa:",targetFeature); // Debug to check targetFeature
-        console.log("bb:", id);
-        importhist();
-        console.log("filterdata:",fileData)
-    }, [id, targetFeature,fileData]);
+      if (Array.isArray(response.data)) {
+        setHist(
+          response.data.map((item) => ({
+            ...item,
+            created_at: item.created_at || new Date().toISOString(),
+          }))
+        );
+      }
+    } catch (error) {
+      setError(`Erreur: ${error.response?.data?.error || error.message}`);
+    }
+  };
 
-    const handleSelectChange = async (event) => {
-        const fileId = event.target.value;
-        setSelectedFile(fileId);
-
-        if (fileId) {
-            try {
-                const token = localStorage.getItem('token');
-                const response = await axios.get(`http://localhost:5000/fichier/${fileId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    withCredentials: true,
-                });
-
-                let rawData = response.data.data;
-
-                // Log the raw data for inspection
-                console.log('Raw Data:', rawData);
-
-                // Clean the raw data if it contains unwanted text
-                rawData = rawData.replace(/filteredData/g, '').trim();
-
-                // Handle encoding issues
-                rawData = rawData.replace(/\\n/g, '').replace(/\r\n/g, '\n');
-
-                // Separate JSON objects if they are concatenated
-                const jsonStrings = rawData.split('\n').filter(Boolean);
-
-                const parsedDataArray = [];
-                
-                for (const jsonString of jsonStrings) {
-                    try {
-                        // Ensure proper JSON formatting
-                        let cleanedString = jsonString.replace(/'/g, '"').trim();
-                        cleanedString = cleanedString.replace(/\bNone\b/g, 'null');
-
-                        // Remove any non-JSON text at the start or end
-                        if (cleanedString.startsWith('"')) cleanedString = cleanedString.slice(1);
-                        if (cleanedString.endsWith('"')) cleanedString = cleanedString.slice(0, -1);
-
-                        // Ensure JSON is properly formatted
-                        cleanedString = cleanedString.replace(/\\\//g, '/');
-                        
-                        const parsedData = JSON.parse(cleanedString);
-
-                        // Handle cases where data is an array
-                        if (Array.isArray(parsedData)) {
-                            parsedDataArray.push(...parsedData);
-                        } else {
-                            parsedDataArray.push(parsedData);
-                        }
-                    } catch (error) {
-                        console.error('Error parsing JSON string:', jsonString, error);
-                    }
-                }
-
-                console.log('Parsed Data:', parsedDataArray);
-
-                // Update state with parsed data
-                setFileData(parsedDataArray);
-
-                
-            } catch (error) {
-                alert( error)
-
-                console.error('Error retrieving file data:', error);
-            }
+  const handleDownload = async (fileId, fileName) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/download-version/${fileId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: "blob",
         }
-    };
+      );
 
-    const handleProfileClick = () => navigate('/profile');
-    const handleGraphsClick = () => navigate(`/graphs/${id}/${targetFeature}`);
-    const handleProcessingClick = () => navigate(`/processing/${id}/${targetFeature}`);
-    const handleModelsClick = () =>  {
-        const encodedFiltdate = encodeURIComponent(JSON.stringify(fileData)); // encodage du tableau en JSON
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", fileName || "fichier.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Erreur lors du téléchargement :", error);
+      alert("Échec du téléchargement.");
+    }
+  };
 
-        navigate(`/models/${id}/${targetFeature}/${encodedFiltdate}`);   
-    };
-    const handleDBClick = () => navigate(`/importSucc/${id}`);
-    const handleDescription = () =>  navigate(`/description/${id}/${targetFeature}`);
-    const handleHistorique = () => navigate(`/historique/${id}/${targetFeature}`);
-    const goToModel = () => {
-        const encodedFiltdate = encodeURIComponent(JSON.stringify(fileData)); // encodage du tableau en JSON
+  // Chargement des données d'un fichier spécifique
+  const loadFileData = async (fileId) => {
+    if (!fileId) return;
 
-        navigate(`/models/${id}/${targetFeature}/${fileData}?filtdate=${encodedFiltdate}`);   
-    };
-    const handleDepClick = () => navigate(`/deployment/${id}/${targetFeature}`);
-
-    const goToProcessing = () => {
-        const encodedFiltdate = encodeURIComponent(JSON.stringify(fileData)); // encodage du tableau en JSON
-
-        navigate(`/processing/${id}/${targetFeature}/${fileData}?filtdate=${encodedFiltdate}`);   
-    };
-    const getTableHeaders = () => {
-        if (fileData && fileData.length > 0) {
-            return Object.keys(fileData[0]);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `http://localhost:5000/fichier/${fileId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
         }
-        return [];
+      );
+
+      let rawData = response.data?.data || response.data;
+
+      // Parse si c'est une string
+      let parsedData =
+        typeof rawData === "string" ? JSON.parse(rawData) : rawData;
+
+      // ⚠️ Extraire le champ "data" si présent
+      if (parsedData && parsedData.data && Array.isArray(parsedData.data)) {
+        parsedData = parsedData.data;
+      }
+
+      // Si ce n'est toujours pas un tableau, on le met dans un tableau
+      if (!Array.isArray(parsedData)) {
+        parsedData = [parsedData];
+      }
+
+      // Récupération des features disponibles
+      let availableFeatures = [];
+      if (parsedData.length > 0 && typeof parsedData[0] === "object") {
+        availableFeatures = Object.keys(parsedData[0]);
+      }
+
+      console.log("✅ Clés détectées dans les données :", availableFeatures);
+
+      // Vérification de la target feature
+      // Vérification de la target feature sauf si c'est un fichier de prédiction
+      if (
+        selectedFile?.is_for_prediction !== true &&
+        availableFeatures.length > 0 &&
+        !availableFeatures.includes(targetFeature)
+      ) {
+        const fetchedTarget = await fetchTargetFeature();
+
+        if (fetchedTarget && availableFeatures.includes(fetchedTarget)) {
+          setTargetFeature(fetchedTarget);
+        } else {
+          setError(
+            `La target feature "${
+              fetchedTarget || targetFeature
+            }" est introuvable dans les données.`
+          );
+          return;
+        }
+      }
+
+      setFileData(parsedData);
+    } catch (error) {
+      setError(`Erreur de chargement: ${error.message}`);
+      console.error("❌ Erreur loadFileData:", error);
+    }
+  };
+
+  // Tri des colonnes
+  const requestSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Formatage des valeurs
+  const formatValue = (value) => {
+    if (value === null || value === undefined)
+      return <span className="null-value">NULL</span>;
+    if (typeof value === "object")
+      return <span className="json-value">[OBJET]</span>;
+    return value.toString();
+  };
+
+  // Navigation avec vérification de la target feature
+  const navigateTo = (path) => {
+    if (!fileData || !selectedFile) {
+      setError("Sélectionnez des données d'abord");
+      return;
+    }
+
+    if (!validateTargetFeature(fileData)) {
+      if (selectedFile?.is_for_prediction) {
+        navigate(`${path}/${id}/none`, {
+          state: {
+            isFromHistory: true,
+            fileData,
+            targetFeature: "", // pas de target pour les fichiers de prédiction
+            versionId: selectedFile.id,
+          },
+        });
+        return;
+      }
+
+      if (path.includes("models")) {
+        navigate(`${path}/${id}/none`, {
+          state: {
+            isFromHistory: true,
+            fileData,
+            targetFeature: "",
+            versionId: selectedFile.id,
+          },
+        });
+        return;
+      }
+
+      return;
+    }
+
+    navigate(`${path}/${id}/${targetFeature}`, {
+      state: {
+        isFromHistory: true,
+        fileData,
+        targetFeature,
+        versionId: selectedFile.id,
+      },
+    });
+  };
+
+  useEffect(() => {
+    const initialize = async () => {
+      await importhist();
+
+      // Si pas de target feature, on essaie de la récupérer
+      if (!targetFeature) {
+        await fetchTargetFeature();
+      }
     };
 
-    return (
-        <>
-            <div className="menu-bar">
-                <div className="app-name2">
-                    <img src="/lg.png" alt="App Icon" className="app-icon" />
-                    <span>MedicalVision</span>
-                </div>
-                <div className="menu-item" onClick={handleProfileClick}>
-                    <FontAwesomeIcon icon={faUser} className="menu-icon" /> Profile
-                </div>
-                <div className="menu-item" onClick={handleDBClick}>
-                    <FontAwesomeIcon icon={faDatabase} className="menu-icon" /> Database
-                </div>
-                <div className="menu-item" onClick={handleHistorique}>
-                    <FontAwesomeIcon icon={faHistory} className="menu-icon" /> History
-                </div>
-                <div className="menu-item" onClick={handleDescription}>
-                    <FontAwesomeIcon icon={faFileAlt} className="menu-icon" /> Description
-                </div>
-                <div className="menu-item" onClick={handleGraphsClick}>
-                    <FontAwesomeIcon icon={faChartLine} className="menu-icon" /> Graphs
-                </div>
-                <div className="menu-item" onClick={handleProcessingClick}>
-                    <FontAwesomeIcon icon={faCog} className="menu-icon" /> Processing
-                </div>
-                <div className="menu-item" onClick={handleModelsClick}>
-                    <FontAwesomeIcon icon={faBrain} className="menu-icon" /> Models
-                </div>
-                <div className="menu-item" onClick={handleDepClick}>
-                <FontAwesomeIcon icon={faRocket} className="menu-icon" /> Deployment
-                </div>
-            </div>
+    initialize();
+  }, [id]);
 
-            <div className="content1">
-                <h2>History</h2>
-                <p className="header-subtitle">A Detailed Overview of Your File Modifications</p>
+  useEffect(() => {
+    if (selectedFile) loadFileData(selectedFile.id);
+  }, [selectedFile, targetFeature]);
 
-                {/* Affichage de la valeur de targetFeature */}
-                <p><strong>Target Feature:</strong> {targetFeature || 'Not available'}</p>
-                {hist.length > 0 ? (
-                    <select onChange={handleSelectChange} value={selectedFile}>
-                        <option value="">Select a file</option>
-                        {hist.map((file) => (
-                            <option key={file.id} value={file.id}>{file.name}</option>
-                        ))}
-                    </select>
-                ) : (
-                    <p>No history available.</p>
+  // Filtrage et tri
+  const filteredHistory = hist
+    .filter((item) => {
+      const matchesSearch =
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.modification?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesFilter =
+        filterType === "all"
+          ? true
+          : filterType === "prediction"
+          ? item.is_for_prediction
+          : !item.is_for_prediction;
+
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      if (a[sortConfig.key] < b[sortConfig.key])
+        return sortConfig.direction === "asc" ? -1 : 1;
+      if (a[sortConfig.key] > b[sortConfig.key])
+        return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const isMobile = windowWidth <= 768;
+
+  return (
+    <div
+      className={`app-container ${
+        isSidebarOpen ? "sidebar-open" : "sidebar-closed"
+      }`}
+    >
+      {isMobile && !isSidebarOpen && (
+        <button
+          className="sidebar-toggle-mobile"
+          onClick={() => setIsSidebarOpen(true)}
+        >
+          ☰
+        </button>
+      )}
+
+      <Sidebar
+        isOpen={isSidebarOpen}
+        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        projectId={id}
+        targetFeature={targetFeature}
+      />
+
+      {/* Contenu principal */}
+      <div className="historique-content">
+        <header className="content-header">
+          <h1>
+            <FontAwesomeIcon icon={faHistory} />
+            Historique des Versions
+          </h1>
+
+          <div className="target-feature-display">
+            <span className="target-label">Target Feature:</span>
+            {loadingTarget ? (
+              <FontAwesomeIcon icon={faSyncAlt} spin />
+            ) : (
+              <>
+                <span className="target-value">
+                  {targetFeature || "Non définie"}
+                </span>
+                {error && error.includes("target feature") && (
+                  <button
+                    onClick={fetchTargetFeature}
+                    className="refresh-target-btn"
+                    title="Rafraîchir la target feature"
+                  >
+                    <FontAwesomeIcon icon={faSyncAlt} />
+                  </button>
                 )}
+              </>
+            )}
+          </div>
 
-                {fileData && (
-                    <div className="file-data">
-                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3>
-                                Data for {hist.find(file => file.id === parseInt(selectedFile))?.name}
-                            </h3>
-                            <button onClick={goToModel} style={{ marginLeft: '10px' }}>
-                                Go to Model
-                            </button>
-                            <button onClick={goToProcessing} style={{ marginLeft: '10px' }}>
-                                Go to Processing
-                            </button>
+          <p className="subtitle">Suivi des modifications de vos données</p>
+        </header>
+
+        {error && <div className="error-banner">{error}</div>}
+
+        {/* Barre de recherche et filtres */}
+        <div className="controls-bar">
+          <div className="search-box">
+            <FontAwesomeIcon icon={faSearch} />
+            <input
+              type="text"
+              placeholder="Rechercher une version..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="filter-options">
+            <FontAwesomeIcon icon={faFilter} />
+            <select
+              className="filter-select"
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+            >
+              <option value="all">Tous les fichiers</option>
+              <option value="classic">Fichiers modifiés</option>
+              <option value="prediction">Fichiers de prédiction</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Liste des versions */}
+        <div className="version-list">
+          {filteredHistory.length > 0 ? (
+            filteredHistory.map((file) => (
+              <div
+                key={file.id}
+                className={`version-card ${
+                  selectedFile?.id === file.id ? "selected" : ""
+                } ${file.is_for_prediction ? "prediction-version" : ""}`}
+              >
+                <div className="card-header">
+                  <h3>
+                    {file.name}
+                    {file.is_for_prediction && (
+                      <span className="prediction-badge">Prédiction</span>
+                    )}
+                  </h3>
+                  <span className="version-date">
+                    {new Date(file.created_at).toLocaleDateString("fr-FR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+
+                <div className="card-body">
+                  <div className="modification-details">
+                    {file.modification.split("|").map((mod, i) => {
+                      // Extraire les colonnes entre parenthèses si présentes
+                      const [mainText, columnsText] = mod.split("(Colonnes:");
+                      const columns = columnsText
+                        ? columnsText.replace(")", "").trim()
+                        : null;
+
+                      return (
+                        <div key={i} className="modification-step">
+                          <div className="step-main">
+                            <FontAwesomeIcon
+                              icon={faCheckCircle}
+                              className="step-icon"
+                            />
+                            <span>{mainText.trim()}</span>
                           </div>
-                        {fileData.length > 0 ? (
-                            <table border="1">
-                                <thead>
-                                    <tr>
-                                        {getTableHeaders().map(header => (
-                                            <th key={header}>{header}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {fileData.map((row, index) => (
-                                        <tr key={index}>
-                                            {getTableHeaders().map(header => (
-                                                <td key={header}>{row[header] != null ? JSON.stringify(row[header]) : ''}</td>
-                                            ))}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        ) : (
-                            <p>No data available for the selected file.</p>
-                        )}
-                    </div>
-                )}
+                          {columns && (
+                            <div className="step-columns">
+                              <FontAwesomeIcon
+                                icon={faListOl}
+                                className="column-icon"
+                              />
+                              <span>{columns}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="card-actions">
+                    <button
+                      className="action-btn view-btn"
+                      onClick={() => setSelectedFile(file)}
+                    >
+                      <FontAwesomeIcon icon={faEye} /> Voir
+                    </button>
+                    {file.is_for_prediction && (
+                      <button
+                        className="action-btn predict-btn"
+                        onClick={() =>
+                          navigate(`/deployment/${id}/none`, {
+                            state: {
+                              isFromHistory: true,
+                              fileData,
+                              targetFeature: "", // aucune target dans les données de prédiction
+                              versionId: file.id,
+                            },
+                          })
+                        }
+                      >
+                        <FontAwesomeIcon icon={faRocket} /> Prédire
+                      </button>
+                    )}
+                    <button
+                      className="action-btn delete-btn"
+                      onClick={async () => {
+                        const confirm = window.confirm(
+                          "Voulez-vous vraiment supprimer cette version ?"
+                        );
+                        if (confirm) {
+                          try {
+                            const token = localStorage.getItem("token");
+                            await axios.delete(
+                              `http://localhost:5000/delete-version/${file.id}`,
+                              {
+                                headers: { Authorization: `Bearer ${token}` },
+                              }
+                            );
+                            importhist(); // recharger la liste
+                          } catch (err) {
+                            alert("Erreur lors de la suppression");
+                          }
+                        }
+                      }}
+                    >
+                      🗑️ Supprimer
+                    </button>
+                    <button
+                      className="action-btn download-btn"
+                      onClick={() => handleDownload(file.id, file.name)}
+                    >
+                      <FontAwesomeIcon icon={faDownload} /> Télécharger
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="empty-state">
+              <p>Aucune version historique trouvée</p>
             </div>
-        </>
-    );
+          )}
+        </div>
+
+        {/* Aperçu des données */}
+        {selectedFile && fileData && (
+          <section className="data-preview">
+            <div className="preview-header">
+              <h2>
+                Aperçu des données: <span>{selectedFile.name}</span>
+              </h2>
+
+              <div className="preview-actions">
+                <button
+                  className="action-btn primary"
+                  onClick={() => navigateTo("/processing")}
+                  disabled={
+                    !selectedFile ||
+                    (!targetFeature && !selectedFile.is_for_prediction)
+                  }
+                >
+                  <FontAwesomeIcon icon={faCog} /> Traiter ces données
+                </button>
+
+                <button
+                  className="action-btn secondary"
+                  onClick={() => navigateTo("/models")}
+                  disabled={!targetFeature}
+                >
+                  <FontAwesomeIcon icon={faBrain} /> Modéliser
+                </button>
+              </div>
+            </div>
+
+            {/* Tableau de données */}
+            <div className="data-table-container">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    {Object.keys(fileData[0] || {}).map((key) => (
+                      <th
+                        key={key}
+                        onClick={() => requestSort(key)}
+                        className={
+                          key === targetFeature ? "target-feature" : ""
+                        }
+                      >
+                        {key}
+                        {key === targetFeature && (
+                          <span className="target-badge">Target</span>
+                        )}
+                        {sortConfig.key === key && (
+                          <span className="sort-indicator">
+                            {sortConfig.direction === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {fileData.slice(0, 50).map((row, index) => (
+                    <tr key={index}>
+                      {Object.entries(row).map(([key, value]) => (
+                        <td
+                          key={key}
+                          className={`
+                            ${value === null ? "null-cell" : ""}
+                            ${key === targetFeature ? "target-cell" : ""}
+                          `}
+                        >
+                          {formatValue(value)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="table-footer">
+                <p>
+                  Affiche 1-{Math.min(fileData.length, 50)} sur{" "}
+                  {fileData.length} lignes
+                </p>
+                {fileData.length > 50 && (
+                  <button className="load-more">Charger plus...</button>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default Historique;

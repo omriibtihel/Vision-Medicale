@@ -1,0 +1,132 @@
+/* AdminDashboard.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+.admin-dashboard {
+  font-family: 'Poppins', sans-serif;
+  padding: 2rem;
+  background: #FAFAFA;
+  min-height: 100vh;
+  color: #2C3E50;
+}
+
+
+.dashboard-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #2C3E50;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.chart-box h4 {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #2C3E50;
+}
+
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.chart-box {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: column;
+  height: 350px; /* <= FIXE ET SUFFISANT POUR TOUS LES CHARTS */
+  position: relative;
+}
+
+.chart-box canvas {
+  flex-grow: 1;
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 100%;
+}
+
+.chart-wrapper canvas {
+  position: relative;
+  top: -5px;
+  left: 20px;
+  width: 85% !important;
+  height: 85% !important;
+}
+
+
+.table-container {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+  min-width: 700px;
+}
+
+.user-table thead {
+  background: #F4F6F8;
+  color: #2C3E50;
+  font-weight: 600;
+}
+
+
+.user-table th,
+.user-table td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-approve,
+.btn-reject {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  color: white;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-approve {
+  background-color: #27AE60;
+}
+.btn-reject {
+  background-color: #eb2d18;
+}
+.btn-approve:hover {
+  background-color: #219150;
+  box-shadow: 0 6px 12px rgba(39, 174, 96, 0.4);
+}
+.btn-reject:hover {
+  background-color: #eb2d18;
+  box-shadow: 0 6px 12px rgba(124, 42, 33, 0.4);
+}
+
+.chart-box {
+  height: 300px; /* ou min-height: 300px */
+}

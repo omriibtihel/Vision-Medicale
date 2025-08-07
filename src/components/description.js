@@ -2,7 +2,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import'./sidebar.css';
+import Sidebar from './Sidebar';
 import { faUser, faChartLine, faCog, faBrain, faDatabase,  faFileAlt,faHistory ,faRocket} from '@fortawesome/free-solid-svg-icons';
+import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { mean, std, min, max } from 'mathjs';
 import './Description.css'; // Assurez-vous d'avoir un fichier CSS pour le style
 
@@ -125,53 +128,52 @@ const nullCountpr = (values.length === 0 ? 0 : (nullCount / values.length) * 100
     const handleDescription = () => navigate(`/description/${id}/${targetFeature}`);
     const handleHistorique = () => {navigate(`/historique/${id}/${targetFeature}`)}
 
-    return (
-        <>
-            <div className="menu-bar">
-                <div className="app-name2">
-                    <img src="/lg.png" alt="App Icon" className="app-icon" />
-                    <span>MedicalVision</span>
-                </div>
-                <div className="menu-item" onClick={handleProfileClick}>
-                    <FontAwesomeIcon icon={faUser} className="menu-icon" /> Profile
-                </div>
-                <div className="menu-item" onClick={handleDBClick}>
-                    <FontAwesomeIcon icon={faDatabase} className="menu-icon" /> Database
-                </div>
-                <div className="menu-item" onClick={handleHistorique}>
-                     <FontAwesomeIcon icon={faHistory} className="menu-icon" /> History
-                </div>
-                <div className="menu-item" onClick={handleDescription}>
-                    <FontAwesomeIcon icon={faFileAlt} className="menu-icon" /> Description
-                </div>
-                <div className="menu-item" onClick={handleGraphsClick}>
-                    <FontAwesomeIcon icon={faChartLine} className="menu-icon" /> Graphs
-                </div>
-                <div className="menu-item" onClick={handleProcessingClick}>
-                    <FontAwesomeIcon icon={faCog} className="menu-icon" /> Processing
-                </div>
-                <div className="menu-item" onClick={handleModelsClick}>
-                    <FontAwesomeIcon icon={faBrain} className="menu-icon" /> Models
-                </div>
-                <div className="menu-item" onClick={handleDepClick}>
-                <FontAwesomeIcon icon={faRocket} className="menu-icon" /> Deployment
-               </div>
-               
-            </div>
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+
+
+const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+useEffect(() => {
+  const handleResize = () => setWindowWidth(window.innerWidth);
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, []);
+
+const isMobile = windowWidth <= 768;
+
+return (
+  <div className={`app-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+    {isMobile && !isSidebarOpen && (
+      <button 
+        className="sidebar-toggle-mobile"
+        onClick={() => setIsSidebarOpen(true)}
+      >
+        ☰
+      </button>
+    )}
+    
+    <Sidebar
+      isOpen={isSidebarOpen}
+      toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+      projectId={id}
+      targetFeature={targetFeature}
+    />
 
             <div className="content1">
                 <h2>Data Description</h2>
-                <p className="header-subtitle">Detailed Descriptions and Analysis for Better Understanding</p> 
+                <p className="header-subtitle">Descriptions détaillées et analyses pour une meilleure compréhension</p> 
                 <div className="data-description">
                     <table className="description-table">
                         <thead>
                             <tr>
-                                <th>Column</th>
-                                <th>Mean</th>
-                                <th>Standard Deviation</th>
+                                <th>Colonne</th>
+                                <th>Moyenne</th>
+                                <th>Écart type</th>
                                 <th>Min</th>
                                 <th>Max</th>
-                                <th>Unique Values</th>
+                                <th>Valeurs uniques</th>
                                 <th>Total Count</th>
                                 <th>Null Count</th> 
                                 <th>Null Count(%)</th> 
@@ -181,8 +183,17 @@ const nullCountpr = (values.length === 0 ? 0 : (nullCount / values.length) * 100
     {Object.keys(description).map(column => {
         const isHighNullPercentage = description[column].nullCountpr > 20;
         return (
-            <tr key={column} className={isHighNullPercentage ? 'high-null-percentage' : ''}>
-                <td>{column}</td>
+                <tr
+                key={column}
+                className={isHighNullPercentage ? 'high-null-percentage' : ''}
+                title={isHighNullPercentage ? 'Plus de 20% de valeurs manquantes dans cette colonne' : ''}
+                >
+                <td>
+                    {column}
+                    {isHighNullPercentage && (
+                        <span className="warning-badge" title="Plus de 20% de valeurs manquantes">⚠️</span>
+                    )}
+                    </td>
                 <td>
                     {description[column].mean === 'N/A' ? 'N/A' : description[column].mean.toFixed(2)}
                 </td>
@@ -209,7 +220,7 @@ const nullCountpr = (values.length === 0 ? 0 : (nullCount / values.length) * 100
                     </table>
                 </div>
             </div>
-        </>
+        </div>
     );
 };
 

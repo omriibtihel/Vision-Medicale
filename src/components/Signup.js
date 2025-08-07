@@ -1,21 +1,15 @@
-// src/Signup.js
-import React, { useState } from 'react';
-import styled from 'styled-components';
-import axios from 'axios';
-import { Container, LeftColumn, RightColumn, Image } from './LoginComponents'; // Utilise les exports corrects
-import SignupForm from './SignupForm';
-
+import React from "react";
+import styled from "styled-components";
+import SignupForm from "./SignupForm";
+import { SignupContainer, SignupFormWrapper } from "./SignupComponents";
 
 function Signup() {
   return (
-    <Container>
-      <LeftColumn>
-      <Image src="/image/log.jpg" alt="Background Image" />
-      </LeftColumn>
-      <RightColumn>
+    <SignupContainer>
+      <SignupFormWrapper style={{ maxWidth: "1500px", width: "65%" }}>
         <SignupForm />
-      </RightColumn>
-    </Container>
+      </SignupFormWrapper>
+    </SignupContainer>
   );
 }
 

@@ -2,87 +2,55 @@ import React from 'react';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
-  BarElement,
   CategoryScale,
   LinearScale,
+  BarElement,
+  Tooltip,
+  Legend,
 } from 'chart.js';
 
-ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
-const FeatureImportanceChart = ({ featureImportances }) => {
-  // Log to debug the type and content of featureImportances
-  console.log('featureImportances:', featureImportances);
-
-  // Convert featureImportances to an array if it's an object
-  let dataArray;
-  if (Array.isArray(featureImportances)) {
-    dataArray = featureImportances;
-  } else if (typeof featureImportances === 'object' && featureImportances !== null) {
-    dataArray = Object.entries(featureImportances).map(([feature, importance]) => ({
-      feature,
-      importance,
-    }));
-  } else {
-    return <p>Error: Invalid featureImportances data format</p>;
+const FeatureImportanceChart = ({ importances }) => {
+  if (!importances || Object.keys(importances).length === 0) {
+    return <p className="text-gray-500 italic">Aucune importance extraite pour ce modèle.</p>;
   }
 
-  const labels = dataArray.map(item => item.feature);
-  const data = dataArray.map(item => item.importance);
+  const labels = Object.keys(importances);
+  const values = Object.values(importances);
 
-  const chartData = {
-    labels: labels,
+  const data = {
+    labels,
     datasets: [
       {
-        label: 'Feature Importances',
-        data: data,
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        borderColor: 'rgba(75, 192, 192, 1)',
-        borderWidth: 1.5,
+        label: 'Importance',
+        data: values,
+        backgroundColor: 'rgba(56, 189, 248, 0.6)',
+        borderColor: 'rgba(56, 189, 248, 1)',
+        borderWidth: 1,
       },
     ],
   };
 
   const options = {
+    indexAxis: 'y',
     responsive: true,
-    indexAxis: 'x', // Horizontal bars
     plugins: {
-      legend: {
-        position: 'top',
-      },
-      tooltip: {
-        callbacks: {
-          label: function (context) {
-            return `${context.label}: ${context.raw.toFixed(2)}`;
-          },
-        },
-      },
+      legend: { display: false },
+      tooltip: { mode: 'index' },
     },
     scales: {
       x: {
-        title: {
-          display: true,
-          text: 'Importance',
-        },
-      },
-      y: {
-        ticks: {
-          autoSkip: false,
-        },
-        title: {
-          display: true,
-          text: 'Features',
-        },
+        beginAtZero: true,
+        ticks: { stepSize: 0.1 },
       },
     },
   };
 
   return (
-    <div>
-      
-      <Bar data={chartData} options={options} />
+    <div className="p-4 rounded-lg bg-white shadow">
+      <h3 className="text-lg font-semibold mb-2 text-sky-700">Feature Importances</h3>
+      <Bar data={data} options={options} />
     </div>
   );
 };
