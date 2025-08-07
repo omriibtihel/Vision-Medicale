@@ -1,32 +1,23 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { faCheckCircle, faListOl } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { useState, useEffect } from "react";
-import {
-  faChevronLeft,
-  faChevronRight,
-  faCheckCircle,
-  faListOl,
-} from "@fortawesome/free-solid-svg-icons";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
-import axios from "axios";
-import "./sidebar.css";
-import Sidebar from "./Sidebar";
 import {
-  faUser,
-  faChartLine,
-  faCog,
   faBrain,
-  faDatabase,
-  faFileAlt,
+  faCog,
+  faDownload,
+  faEye,
+  faFilter,
   faHistory,
   faRocket,
   faSearch,
-  faFilter,
-  faDownload,
-  faEye,
   faSyncAlt,
 } from "@fortawesome/free-solid-svg-icons";
+import axios from "axios";
 import "./Historique.css";
+import Sidebar from "./Sidebar";
+import "./sidebar.css";
 
 const Historique = () => {
   const navigate = useNavigate();
@@ -45,6 +36,7 @@ const Historique = () => {
   );
   const [loadingTarget, setLoadingTarget] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [filterType, setFilterType] = useState("all"); // all | classic | prediction
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
@@ -193,20 +185,23 @@ const Historique = () => {
       console.log("✅ Clés détectées dans les données :", availableFeatures);
 
       // Vérification de la target feature
-      if (availableFeatures.length > 0) {
-        if (!availableFeatures.includes(targetFeature)) {
-          const fetchedTarget = await fetchTargetFeature();
+      // Vérification de la target feature sauf si c'est un fichier de prédiction
+      if (
+        selectedFile?.is_for_prediction !== true &&
+        availableFeatures.length > 0 &&
+        !availableFeatures.includes(targetFeature)
+      ) {
+        const fetchedTarget = await fetchTargetFeature();
 
-          if (fetchedTarget && availableFeatures.includes(fetchedTarget)) {
-            setTargetFeature(fetchedTarget);
-          } else {
-            setError(
-              `La target feature "${
-                fetchedTarget || targetFeature
-              }" est introuvable dans les données.`
-            );
-            return;
-          }
+        if (fetchedTarget && availableFeatures.includes(fetchedTarget)) {
+          setTargetFeature(fetchedTarget);
+        } else {
+          setError(
+            `La target feature "${
+              fetchedTarget || targetFeature
+            }" est introuvable dans les données.`
+          );
+          return;
         }
       }
 
@@ -242,7 +237,33 @@ const Historique = () => {
       return;
     }
 
-    if (!validateTargetFeature(fileData)) return;
+    if (!validateTargetFeature(fileData)) {
+      if (selectedFile?.is_for_prediction) {
+        navigate(`${path}/${id}/none`, {
+          state: {
+            isFromHistory: true,
+            fileData,
+            targetFeature: "", // pas de target pour les fichiers de prédiction
+            versionId: selectedFile.id,
+          },
+        });
+        return;
+      }
+
+      if (path.includes("models")) {
+        navigate(`${path}/${id}/none`, {
+          state: {
+            isFromHistory: true,
+            fileData,
+            targetFeature: "",
+            versionId: selectedFile.id,
+          },
+        });
+        return;
+      }
+
+      return;
+    }
 
     navigate(`${path}/${id}/${targetFeature}`, {
       state: {
@@ -273,18 +294,25 @@ const Historique = () => {
 
   // Filtrage et tri
   const filteredHistory = hist
-    .filter(
-      (item) =>
+    .filter((item) => {
+      const matchesSearch =
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.modification?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+        item.modification?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesFilter =
+        filterType === "all"
+          ? true
+          : filterType === "prediction"
+          ? item.is_for_prediction
+          : !item.is_for_prediction;
+
+      return matchesSearch && matchesFilter;
+    })
     .sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) {
+      if (a[sortConfig.key] < b[sortConfig.key])
         return sortConfig.direction === "asc" ? -1 : 1;
-      }
-      if (a[sortConfig.key] > b[sortConfig.key]) {
+      if (a[sortConfig.key] > b[sortConfig.key])
         return sortConfig.direction === "asc" ? 1 : -1;
-      }
       return 0;
     });
 
@@ -368,10 +396,16 @@ const Historique = () => {
           </div>
 
           <div className="filter-options">
-            <button className="filter-btn">
-              <FontAwesomeIcon icon={faFilter} />
-              Filtrer
-            </button>
+            <FontAwesomeIcon icon={faFilter} />
+            <select
+              className="filter-select"
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+            >
+              <option value="all">Tous les fichiers</option>
+              <option value="classic">Fichiers modifiés</option>
+              <option value="prediction">Fichiers de prédiction</option>
+            </select>
           </div>
         </div>
 
@@ -383,10 +417,15 @@ const Historique = () => {
                 key={file.id}
                 className={`version-card ${
                   selectedFile?.id === file.id ? "selected" : ""
-                }`}
+                } ${file.is_for_prediction ? "prediction-version" : ""}`}
               >
                 <div className="card-header">
-                  <h3>{file.name}</h3>
+                  <h3>
+                    {file.name}
+                    {file.is_for_prediction && (
+                      <span className="prediction-badge">Prédiction</span>
+                    )}
+                  </h3>
                   <span className="version-date">
                     {new Date(file.created_at).toLocaleDateString("fr-FR", {
                       day: "2-digit",
@@ -437,6 +476,23 @@ const Historique = () => {
                     >
                       <FontAwesomeIcon icon={faEye} /> Voir
                     </button>
+                    {file.is_for_prediction && (
+                      <button
+                        className="action-btn predict-btn"
+                        onClick={() =>
+                          navigate(`/deployment/${id}/none`, {
+                            state: {
+                              isFromHistory: true,
+                              fileData,
+                              targetFeature: "", // aucune target dans les données de prédiction
+                              versionId: file.id,
+                            },
+                          })
+                        }
+                      >
+                        <FontAwesomeIcon icon={faRocket} /> Prédire
+                      </button>
+                    )}
                     <button
                       className="action-btn delete-btn"
                       onClick={async () => {
@@ -490,7 +546,10 @@ const Historique = () => {
                 <button
                   className="action-btn primary"
                   onClick={() => navigateTo("/processing")}
-                  disabled={!targetFeature}
+                  disabled={
+                    !selectedFile ||
+                    (!targetFeature && !selectedFile.is_for_prediction)
+                  }
                 >
                   <FontAwesomeIcon icon={faCog} /> Traiter ces données
                 </button>

@@ -212,7 +212,8 @@ const Processing = () => {
     const loadData = async () => {
       setLoading(true);
 
-      if (location.state?.isFromHistory && location.state?.fileData) {
+if ((location.state?.isFromHistory || location.state?.isFromTestPage) && location.state?.fileData) {
+
         // ✅ Données envoyées depuis Historique
         setData(location.state.fileData);
         setFilteredData(location.state.fileData);
@@ -281,18 +282,27 @@ const Processing = () => {
       const columns = Object.keys(filteredData[0]);
 
       if (targetFeature && !columns.includes(targetFeature)) {
-        const possibleTargets = columns.filter(
-          (col) =>
-            col.toLowerCase().includes("target") ||
-            col.toLowerCase().includes("class") ||
-            col.toLowerCase().includes("label")
-        );
-        if (possibleTargets.length > 0) {
-          setTargetFeature(possibleTargets[0]);
-        } else {
-          setError(`La target feature "${targetFeature}" est introuvable.`);
-        }
-      }
+  const fromTestPage = location.state?.isFromTestPage;
+
+  if (!fromTestPage) {
+    const possibleTargets = columns.filter(
+      (col) =>
+        col.toLowerCase().includes("target") ||
+        col.toLowerCase().includes("class") ||
+        col.toLowerCase().includes("label")
+    );
+
+    if (possibleTargets.length > 0) {
+      setTargetFeature(possibleTargets[0]);
+    } else {
+      setError(`La target feature "${targetFeature}" est introuvable.`);
+    }
+  } else {
+    // Si on vient de la page de test, pas d’erreur à afficher
+    setError("");
+  }
+}
+
 
       const types = {};
       columns.forEach((col) => {
@@ -1343,10 +1353,16 @@ const Processing = () => {
               .join(" | ")
           : "Traitement personnalisé";
 
+          const isForPrediction =
+  !targetFeature || location.state?.isFromTestPage || location.state?.isPredictionOnly;
+
+
       const dataToSend = {
         data: filteredData,
         preprocessing_steps: operationReports,
         modification: operationDescription,
+          isForPrediction: isForPrediction,
+
       };
 
       const compressedData = pako.gzip(JSON.stringify(dataToSend));

@@ -1,71 +1,196 @@
-.menu-bar {
-  display: flex;
-  gap: 20px;
-  background-color: #1e293b;
-  color: white;
-  padding: 10px;
-  font-size: 15px;
+.content1 {
+  transition: margin-left 0.3s ease;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  padding: 2rem;
 }
 
-.menu-item {
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 6px;
-  transition: background-color 0.3s ease;
+.sidebar-open {
+  margin-left: 250px;
 }
 
-.menu-item:hover {
-  background-color: #334155;
+.sidebar-closed {
+  margin-left: 70px;
 }
 
-.app-name2 {
+@media (max-width: 768px) {
+  .sidebar-open, .sidebar-closed {
+    margin-left: 0;
+  }
+  
+  .sidebar-toggle-mobile {
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+    z-index: 900;
+    background: rgba(30, 60, 114, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Titres */
+.content1 h2 {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: #1e3c72;
+  text-align: center;
+  font-weight: 600;
+  padding-bottom: 0.5rem;
+  position: relative;
+}
+
+.content1 h2:after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, #1e3c72, #2a5298);
+}
+
+.header-subtitle {
+  text-align: center;
+  color: #64748b;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+/* Sélecteur de modèle */
+.model-selector {
+  margin: 2rem 0;
+}
+
+.model-selector select {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background-color: white;
+  font-size: 1rem;
+  color: #334155;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.model-selector select:focus {
+  outline: none;
+  border-color: #1e3c72;
+  box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
+}
+
+/* Détails du modèle */
+.model-details {
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-top: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.model-details h3 {
+  color: #1e3c72;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
   display: flex;
   align-items: center;
-  font-weight: bold;
-  font-size: 18px;
-  margin-right: auto;
+  justify-content: space-between;
 }
 
-.app-icon {
-  width: 28px;
-  height: 28px;
-  margin-right: 8px;
+.model-details h4 {
+  color: #334155;
+  margin: 1.5rem 0 1rem;
+  font-size: 1.2rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.5rem;
 }
 
-.content1 {
-  padding: 25px;
-}
-
-.model-details {
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
-  padding: 20px;
-  border-radius: 10px;
-  margin-top: 20px;
-}
-
+/* Boutons */
 .test-button {
-  background-color: #10b981;
+  background: linear-gradient(135deg, #10b981, #059669);
   color: white;
-  padding: 8px 16px;
+  padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 6px;
-  margin-top: 8px;
+  border-radius: 8px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(16, 185, 129, 0.3);
 }
 
 .test-button:hover {
-  background-color: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+}
+
+/* Tableaux */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+th, td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+th {
+  background-color: #f8fafc;
+  color: #334155;
+  font-weight: 600;
+}
+
+tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Feature Importance */
+.feature-importance {
+  margin-top: 2rem;
 }
 
 .feature-importance table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
+  margin-top: 1rem;
 }
 
-.feature-importance th,
-.feature-importance td {
-  padding: 8px;
-  border-bottom: 1px solid #e2e8f0;
+/* Target Feature */
+.target-feature {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #1e3c72;
+}
+
+.target-feature strong {
+  color: #1e3c72;
+}
+
+/* Message d'absence de modèle */
+.no-model {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+  color: #64748b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }

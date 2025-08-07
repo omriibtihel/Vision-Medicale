@@ -311,21 +311,15 @@
   outline: none;
 }
 
-.filter-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: white;
-  border: 2px solid transparent;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 500;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  width: 100%;
+
+.filter-select {
+  padding: 6px 10px;
+  border-radius: 5px;
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  margin-left: 8px;
 }
+
 
 /* Version tablette et desktop */
 @media (min-width: 768px) {
@@ -371,6 +365,44 @@
   overflow: hidden;
 }
 
+.version-card.prediction-version {
+  border-left: 6px solid #f39c12; /* Orange vif */
+  background: linear-gradient(135deg, #fffaf0, #fff3e0); /* dégradé doux */
+  box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+  position: relative;
+}
+
+.version-card.prediction-version::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 6px;
+  width: 100%;
+  background: linear-gradient(90deg, #f39c12, #f1c40f); /* bande orange en haut */
+  z-index: 1;
+}
+
+.prediction-badge {
+  background-color: #f39c12;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.version-card.prediction-version:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px rgba(243, 156, 18, 0.3);
+  border-color: rgba(243, 156, 18, 0.5);
+}
+
+
 .version-card::before {
   content: '';
   position: absolute;
@@ -402,6 +434,18 @@
 .version-card.selected::before {
   height: 6px;
   background: linear-gradient(90deg, #3a7bd5, #00d2ff);
+}
+
+.version-card.selected.prediction-version {
+  border: 2px solid #f39c12;
+  background: linear-gradient(135deg, #fff3e0, #ffe9c4); /* dégradé orange doux */
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(243, 156, 18, 0.3); /* ombre orange */
+}
+
+.version-card.selected.prediction-version::before {
+  height: 6px;
+  background: linear-gradient(90deg, #f39c12, #f1c40f); /* bande orange */
 }
 
 .card-header {
@@ -535,7 +579,12 @@
 .action-btn:hover::after {
   opacity: 1;
 }
-
+.predict-btn {
+  background-color: #ffc219;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
 .view-btn {
   background-color: var(--primary-color);
   color: white;

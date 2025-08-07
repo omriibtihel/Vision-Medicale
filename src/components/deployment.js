@@ -14,6 +14,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { faChartBar } from "@fortawesome/free-solid-svg-icons";
 import "./deployment.css";
+import Sidebar from "./Sidebar";
 
 import { Chart } from "react-chartjs-2";
 import {
@@ -26,7 +27,6 @@ import {
   Legend,
 } from "chart.js";
 
-// Enregistrement des composants Chart.js nécessaires
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -35,6 +35,7 @@ ChartJS.register(
   Tooltip,
   Legend
 );
+
 const Deployment = () => {
   const navigate = useNavigate();
   const { id, targetFeature } = useParams();
@@ -43,11 +44,19 @@ const Deployment = () => {
   const [selectedModelData, setSelectedModelData] = useState(null);
   const [showChart, setShowChart] = useState(false);
   const [featureImportanceData, setFeatureImportanceData] = useState({});
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-  // Fonction pour afficher ou masquer le graphique
-  const toggleChart = () => {
-    setShowChart(!showChart);
-  };
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const isMobile = windowWidth <= 768;
+
   const importhist = async () => {
     const token = localStorage.getItem("token");
     try {
@@ -55,10 +64,8 @@ const Deployment = () => {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
-      const rep = response.data;
-      setHist(rep);
+      setHist(response.data);
     } catch (error) {
-      alert(error);
       console.error(
         "Erreur lors de la récupération des fichiers modifiés :",
         error
@@ -84,10 +91,8 @@ const Deployment = () => {
             withCredentials: true,
           }
         );
-        const modelData = response.data;
-        setSelectedModelData(modelData);
+        setSelectedModelData(response.data);
       } catch (error) {
-        alert(error);
         console.error(
           "Erreur lors de la récupération des détails du modèle :",
           error
@@ -95,119 +100,111 @@ const Deployment = () => {
       }
     }
   };
+
   const handleTestClick = (modelName) => {
     navigate(`/test/${id}/${modelName}`);
   };
-  const handleProfileClick = () => navigate("/profile");
-  const handleGraphsClick = () => navigate(`/graphs/${id}/${targetFeature}`);
-  const handleProcessingClick = () =>
-    navigate(`/processing/${id}/${targetFeature}`);
-  const handleModelsClick = () => navigate(`/models/${id}/${targetFeature}`);
-  const handleDBClick = () => navigate(`/importSucc/${id}`);
-  const handleDescription = () =>
-    navigate(`/description/${id}/${targetFeature}`);
-  const handleHistorique = () => navigate(`/historique/${id}/${targetFeature}`);
-  const handleDepClick = () => navigate(`/deployment/${id}/${targetFeature}`);
 
   return (
-    <>
-      <div className="menu-bar">
-        <div className="app-name2">
-          <img src="/lg.png" alt="App Icon" className="app-icon" />
-          <span>MedicalVision</span>
-        </div>
-        <div className="menu-item" onClick={handleProfileClick}>
-          <FontAwesomeIcon icon={faUser} className="menu-icon" /> Profile
-        </div>
-        <div className="menu-item" onClick={handleDBClick}>
-          <FontAwesomeIcon icon={faDatabase} className="menu-icon" /> Database
-        </div>
-        <div className="menu-item" onClick={handleHistorique}>
-          <FontAwesomeIcon icon={faHistory} className="menu-icon" /> History
-        </div>
-        <div className="menu-item" onClick={handleDescription}>
-          <FontAwesomeIcon icon={faFileAlt} className="menu-icon" /> Description
-        </div>
-        <div className="menu-item" onClick={handleGraphsClick}>
-          <FontAwesomeIcon icon={faChartLine} className="menu-icon" /> Graphs
-        </div>
-        <div className="menu-item" onClick={handleProcessingClick}>
-          <FontAwesomeIcon icon={faCog} className="menu-icon" /> Processing
-        </div>
-        <div className="menu-item" onClick={handleModelsClick}>
-          <FontAwesomeIcon icon={faBrain} className="menu-icon" /> Models
-        </div>
-        <div className="menu-item" onClick={handleDepClick}>
-          <FontAwesomeIcon icon={faRocket} className="menu-icon" /> Deployment
-        </div>
-      </div>
+    <div
+      className={`app-container ${
+        isSidebarOpen ? "sidebar-open" : "sidebar-closed"
+      }`}
+    >
+      {isMobile && !isSidebarOpen && (
+        <button
+          className="sidebar-toggle-mobile"
+          onClick={() => setIsSidebarOpen(true)}
+        >
+          ☰
+        </button>
+      )}
 
-      <div className="content1">
-        <h2>Deployment</h2>
-        <p className="header-subtitle">A Detailed Overview of Your Model</p>
+      <Sidebar
+        isOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+        projectId={id}
+        targetFeature={targetFeature}
+      />
 
-        {/* Affichage de la valeur de targetFeature */}
-        <p>
-          <strong>Target Feature:</strong> {targetFeature || "Not available"}
-        </p>
+      <div
+        className={`content1 ${
+          isSidebarOpen ? "sidebar-open" : "sidebar-closed"
+        }`}
+      >
+        <h2>Model Deployment</h2>
+        <p className="header-subtitle">Deploy and test your trained models</p>
 
-        {/* Sélection du modèle */}
-        {hist.length > 0 ? (
-          <select onChange={handleSelectChange} value={selectedFile}>
-            <option value="">Select Model</option>
-            {hist.map((file) => (
-              <option key={file.id} value={file.id}>
-                {file.name}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <p>No Model available.</p>
-        )}
+        <div className="target-feature">
+          <p>
+            <strong>Target Feature:</strong> {targetFeature || "Not available"}
+          </p>
+        </div>
 
-        {/* Affichage des détails du modèle sélectionné */}
+        <div className="model-selector">
+          {hist.length > 0 ? (
+            <select onChange={handleSelectChange} value={selectedFile}>
+              <option value="">Select a Model to Deploy</option>
+              {hist.map((file) => (
+                <option key={file.id} value={file.id}>
+                  {file.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="no-model">
+              <p>No trained models available. Please train a model first.</p>
+            </div>
+          )}
+        </div>
+
         {selectedModelData && (
           <div className="model-details">
-            <h3>Model: {selectedModelData.name}</h3>
-            <button
-              className="test-button"
-              onClick={() => handleTestClick(selectedModelData.name)}
-            >
-              Test
-            </button>
+            <h3>
+              {selectedModelData.name}
+              <button
+                className="test-button"
+                onClick={() => handleTestClick(selectedModelData.name)}
+              >
+                Test Model
+              </button>
+            </h3>
 
-            {/* Affichage du training set et test set, sinon k */}
             <h4>Model Parameters</h4>
-
             {selectedModelData?.trainingset != null &&
             selectedModelData?.testset != null ? (
-              <>
-                <tr>
-                  <td>
-                    <strong>Training Set</strong>
-                  </td>
-                  <td>{selectedModelData.trainingset}</td>
-                </tr>
-                <tr>
-                  <td>
-                    <strong>Test Set</strong>
-                  </td>
-                  <td>{selectedModelData.testset}</td>
-                </tr>
-              </>
+              <table>
+                <tbody>
+                  <tr>
+                    <td>
+                      <strong>Training Set</strong>
+                    </td>
+                    <td>{selectedModelData.trainingset}</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <strong>Test Set</strong>
+                    </td>
+                    <td>{selectedModelData.testset}</td>
+                  </tr>
+                </tbody>
+              </table>
             ) : (
-              <tr>
-                <td>
-                  <strong>k-folds</strong>
-                </td>
-                <td>{selectedModelData.k}</td>
-              </tr>
+              <table>
+                <tbody>
+                  <tr>
+                    <td>
+                      <strong>k-folds</strong>
+                    </td>
+                    <td>{selectedModelData.k}</td>
+                  </tr>
+                </tbody>
+              </table>
             )}
 
-            {/* Affichage des métriques si > 1 */}
-            <div className="metrics" style={{ marginBottom: "20px" }}>
+            <div className="metrics">
               <h4>Evaluation Metrics</h4>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <table>
                 <tbody>
                   {selectedModelData.Accuracy > 0 && (
                     <tr>
@@ -277,30 +274,23 @@ const Deployment = () => {
               </table>
             </div>
 
-            {/* Affichage de feature importance sous forme de tableau */}
             <div className="feature-importance">
               <h4>Feature Importance</h4>
               {selectedModelData.featureimportance ? (
                 (() => {
                   try {
-                    // Correction : Remplacer les guillemets simples par des guillemets doubles
                     const correctedFeatureImportance =
                       selectedModelData.featureimportance.replace(/'/g, '"');
-
-                    // Parser la chaîne corrigée
                     const featureImportanceData = JSON.parse(
                       correctedFeatureImportance
                     );
-
-                    // Trier les caractéristiques par ordre croissant d'importance
                     const sortedFeatureImportance = Object.entries(
                       featureImportanceData
                     ).sort(
-                      ([featureA, importanceA], [featureB, importanceB]) =>
-                        importanceA - importanceB
+                      ([, importanceA], [, importanceB]) =>
+                        importanceB - importanceA
                     );
 
-                    // Retourner un tableau HTML pour afficher les caractéristiques et leurs importances
                     return (
                       <table>
                         <thead>
@@ -314,7 +304,7 @@ const Deployment = () => {
                             ([feature, importance]) => (
                               <tr key={feature}>
                                 <td>{feature}</td>
-                                <td>{importance}</td>
+                                <td>{importance.toFixed(4)}</td>
                               </tr>
                             )
                           )}
@@ -326,22 +316,17 @@ const Deployment = () => {
                       "Erreur de parsing JSON pour featureimportance:",
                       error
                     );
-                    return (
-                      <p>
-                        Impossible de parser les importances des
-                        caractéristiques.
-                      </p>
-                    );
+                    return <p>Unable to parse feature importance data.</p>;
                   }
                 })()
               ) : (
-                <p>Aucune importance des caractéristiques disponible.</p>
+                <p>No feature importance data available.</p>
               )}
             </div>
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 };
 
