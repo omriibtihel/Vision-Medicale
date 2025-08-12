@@ -190,6 +190,7 @@
   border: 1px solid var(--border);
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+
 }
 
 .model-card:hover {
@@ -223,6 +224,7 @@
 
 .model-content {
   padding: 1.5rem;
+  margin-bottom: 20px;
 }
 
 .metrics-section, .features-section {
@@ -267,7 +269,7 @@
   margin-top: 12px;
   margin-left: 30%;
   padding: 8px 14px;
-  width: 45%;
+  width: fit-content;
 
 background-color: #e6f0fa; /* bleu très clair */
   color: #1e3a8a; /* bleu foncé médical */

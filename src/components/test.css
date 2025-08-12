@@ -444,6 +444,7 @@ h1::after {
 .bb {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: white;
+    margin-top: 20px;
   padding: 1rem 2rem;
   font-size: 1.1rem;
   font-weight: 500;
@@ -734,6 +735,7 @@ button, input, select {
 /* 6. Variante bouton secondaire */
 .bb.secondary {
   background: #6b7280;
+  margin-top: 20px;
 }
 
 .bb.secondary:hover {
@@ -1024,6 +1026,49 @@ button, input, select {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.25rem;
+}
+
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(250px, 1fr)); /* 📌 s’adapte */
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+
+}
+
+.metric-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 0.8rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  max-width: 100%; /* 📌 empêche de dépasser la colonne */
+
+
+}
+
+.metric-card h4 {
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  color: #333;
+}
+
+.metric-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-plotly {
+  width: 70% !important;
+  height: 50% !important;
 }
 
 

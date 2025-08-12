@@ -18,6 +18,10 @@ import {
 import axios from "axios";
 import "./test.css";
 import Sidebar from "./Sidebar";
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
+import Plot from "react-plotly.js";
+import Plotly from "plotly.js-dist-min";
 
 const Test = () => {
   const navigate = useNavigate();
@@ -37,6 +41,10 @@ const Test = () => {
   const [fileSource, setFileSource] = useState("local"); // "local" ou "saved"
   const [selectedVersionContent, setSelectedVersionContent] = useState(null);
   const [showVersionModal, setShowVersionModal] = useState(false);
+
+  const [metrics, setMetrics] = useState(null);
+  const [confusionMatrix, setConfusionMatrix] = useState(null);
+  const [confusionLabels, setConfusionLabels] = useState(null);
 
   // Nouvelle fonction pour charger les versions de prédiction
   const fetchPredictionVersions = async () => {
@@ -233,6 +241,10 @@ const Test = () => {
       );
 
       setPrediction(response.data.predictions);
+      setMetrics(response.data.metrics || null);
+      setConfusionMatrix(response.data.confusion_matrix || null);
+      setConfusionLabels(response.data.confusion_labels || null);
+
       setPredictionError(null);
     } catch (error) {
       console.error("Erreur prédiction avec version :", error);
@@ -372,6 +384,10 @@ const Test = () => {
         );
       }
       setPrediction(response.data.predictions);
+      setMetrics(response.data.metrics || null);
+      setConfusionMatrix(response.data.confusion_matrix || null);
+      setConfusionLabels(response.data.confusion_labels || null);
+
       setPredictionError(null);
     } catch (error) {
       console.error("Prediction error:", error);
@@ -381,6 +397,60 @@ const Test = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const renderConfusionHeatmap = () => {
+    if (!confusionMatrix || !confusionLabels) return null;
+    return (
+      <Plot
+        data={[
+          {
+            z: confusionMatrix,
+            x: confusionLabels,
+            y: confusionLabels,
+            type: "heatmap",
+            colorscale: "Blues",
+            showscale: true,
+          },
+        ]}
+        layout={{
+          width: 500,
+          height: 450,
+          xaxis: { title: "Prédit" },
+          yaxis: { title: "Réel" },
+          margin: { t: 40, l: 80, r: 80, b: 50 },
+        }}
+        config={{ responsive: true }}
+      />
+    );
+  };
+
+  const renderMetricsChart = () => {
+    if (!metrics) return null;
+
+    // Récupérer toutes les métriques sauf la matrice de confusion
+    const metricNames = Object.keys(metrics);
+    const metricValues = Object.values(metrics).map((v) => v * 100); // en %
+
+    return (
+      <Plot
+        data={[
+          {
+            x: metricNames,
+            y: metricValues,
+            type: "bar",
+            marker: { color: "#4cafef" },
+          },
+        ]}
+        layout={{
+          width: 500,
+          height: 500,
+          yaxis: { title: "Pourcentage", range: [0, 100] },
+          margin: { t: 50, l: 50, r: 50, b: 50 },
+        }}
+        config={{ responsive: true }}
+      />
+    );
   };
 
   const handleProfileClick = () => navigate("/profile");
@@ -656,6 +726,72 @@ const Test = () => {
                 </p>
               )}
 
+              <div className="metrics-grid">
+                {/* Jauge Accuracy */}
+                {metrics?.accuracy !== undefined && (
+                  <div className="metric-card">
+                    <h4>Accuracy</h4>
+                    <div className="metric-chart">
+                      <div style={{ width: "400px", height: "400px" }}>
+                        {" "}
+                        {/* 📌 taille réduite */}
+                        <CircularProgressbar
+                          value={metrics.accuracy * 100}
+                          text={`${(metrics.accuracy * 100).toFixed(2)}%`}
+                          styles={buildStyles({
+                            pathColor: "#4cafef",
+                            textColor: "#333",
+                            trailColor: "#ddd",
+                          })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Bar chart des métriques */}
+                <div className="metric-card">
+                  <h4>Comparaison des métriques</h4>
+                  <div className="metric-chart">{renderMetricsChart()}</div>
+                </div>
+
+                {/* Radar chart des métriques */}
+                {metrics && (
+                  <div className="metric-card">
+                    <h4>Radar des performences</h4>
+                    <div className="metric-chart">
+                      <Plot
+                        data={[
+                          {
+                            type: "scatterpolar",
+                            r: Object.values(metrics).map((v) => v * 100),
+                            theta: Object.keys(metrics),
+                            fill: "toself",
+                            name: "Scores",
+                            marker: { color: "#4cafef" },
+                          },
+                        ]}
+                        layout={{
+                          width: 500,
+                          height: 500,
+                          polar: {
+                            radialaxis: { visible: true, range: [0, 100] },
+                          },
+                          showlegend: false,
+                          margin: { t: 30, l: 80, r: 80, b: 20 },
+                        }}
+                        config={{ responsive: true }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Matrice de confusion */}
+                <div className="metric-card">
+                  <h4>Matrice de confusion</h4>
+                  <div className="metric-chart">{renderConfusionHeatmap()}</div>
+                </div>
+              </div>
               {prediction && (
                 <button
                   className="bb secondary"
@@ -667,6 +803,9 @@ const Test = () => {
                         {
                           model: model,
                           predictions: prediction,
+                          metrics: metrics,
+                          confusion_matrix: confusionMatrix,
+                          confusion_labels: confusionLabels,
                         },
                         {
                           responseType: "blob",

@@ -34,7 +34,9 @@ import { Chart as ChartJS } from "chart.js";
 import Plot from "react-plotly.js";
 import Plotly from "plotly.js-dist-min";
 import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { jsPDF } from 'jspdf';
+import "jspdf-autotable";
+
 
 Chart.register(
   RadialLinearScale,
@@ -144,6 +146,7 @@ const Result = () => {
         modelname: model.model,
         modelpath: model.model_path || "placeholder_model.pkl",
         validpath: model.valid_path || "placeholder_valid.csv",
+        target_feature: result?.target_feature || null,
         Accuracy: model.metrics?.Accuracy || 0.0,
         Precisionn: model.metrics?.Precision || 0.0,
         Recall: model.metrics?.Recall || 0.0,
@@ -774,6 +777,46 @@ const Result = () => {
         await captureCard(modelCards[i], i, modelCards.length);
       }
 
+      // === COMPARATIF DES MODÈLES ===
+pdf.addPage("landscape"); // paysage pour plus de largeur
+pdf.setFont("helvetica", "bold");
+pdf.setFontSize(18);
+pdf.text("Comparatif des modèles entraînés", 40, 40);
+
+// Préparer les entêtes
+const headers = [
+  ["Modèle", ...Array.from(
+    new Set(
+      result.results.flatMap((model) =>
+        Object.keys(model.metrics || {})
+      )
+    )
+  )],
+];
+
+// Préparer les lignes
+const rows = result.results.map((model) => [
+  model.model,
+  ...headers[0]
+    .slice(1)
+    .map((metric) =>
+      typeof model.metrics?.[metric] === "number"
+        ? (model.metrics[metric] * 100).toFixed(2) + "%"
+        : model.metrics?.[metric] || "N/A"
+    ),
+]);
+
+// Ajouter le tableau
+pdf.autoTable({
+  head: headers,
+  body: rows,
+  startY: 60,
+  styles: { fontSize: 10, cellPadding: 4 },
+  headStyles: { fillColor: [66, 139, 202], textColor: 255, halign: "center" },
+  alternateRowStyles: { fillColor: [245, 245, 245] },
+  tableWidth: "wrap",
+});
+
       pdf.save(`rapport_models_${Date.now()}.pdf`);
     };
   };
@@ -792,7 +835,7 @@ const Result = () => {
 
     // 📸 Capturer le graphique
     const canvas = await html2canvas(element, {
-      scale: 2,
+      scale: 4,
       backgroundColor: "#ffffff",
     }); // force fond blanc
     const imgData = canvas.toDataURL("image/png");
@@ -1649,6 +1692,118 @@ const Result = () => {
           <div className="no-results">
             <p>No results to display. Please train some models first.</p>
           </div>
+        )}
+
+        {result?.results?.length > 1 && (
+          <section className="comparison-section" style={{ marginTop: "2rem" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <h2>Comparatif des modèles entraînés</h2>
+<button
+  onClick={() => {
+    const doc = new jsPDF({
+      orientation: "landscape", // paysage pour les tableaux larges
+      unit: "pt",
+      format: "a4",
+    });
+
+    doc.setFontSize(16);
+    doc.text("Comparatif des modèles entraînés", 40, 40);
+
+    // Préparer les données du tableau
+    const headers = [
+      ["Modèle", ...Array.from(
+        new Set(
+          result.results.flatMap((model) =>
+            Object.keys(model.metrics || {})
+          )
+        )
+      )],
+    ];
+
+    const rows = result.results.map((model) => [
+      model.model,
+      ...headers[0]
+        .slice(1)
+        .map((metric) =>
+          typeof model.metrics?.[metric] === "number"
+            ? (model.metrics[metric] * 100).toFixed(2) + "%"
+            : model.metrics?.[metric] || "N/A"
+        ),
+    ]);
+
+    // Ajouter le tableau au PDF
+    doc.autoTable({
+      head: headers,
+      body: rows,
+      startY: 60,
+      styles: { fontSize: 10, cellPadding: 4 },
+      headStyles: { fillColor: [66, 139, 202], textColor: 255, halign: "center" },
+      alternateRowStyles: { fillColor: [240, 240, 240] },
+    });
+
+    doc.save("comparatif_modeles.pdf");
+  }}
+  style={{
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "1.2rem",
+    color: "#007bff",
+  }}
+  title="Télécharger le tableau en PDF"
+>
+  <FontAwesomeIcon icon={faDownload} />
+</button>
+            </div>
+
+            <div style={{ overflowX: "auto" }} id="comparison-table">
+              <table className="styled-table">
+                <thead>
+                  <tr>
+                    <th>Modèle</th>
+                    {Array.from(
+                      new Set(
+                        result.results.flatMap((model) =>
+                          Object.keys(model.metrics || {})
+                        )
+                      )
+                    ).map((metric) => (
+                      <th key={metric}>{metric}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.results.map((model, idx) => (
+                    <tr key={idx}>
+                      <td>{model.model}</td>
+                      {Array.from(
+                        new Set(
+                          result.results.flatMap((m) =>
+                            Object.keys(m.metrics || {})
+                          )
+                        )
+                      ).map((metric) => {
+                        const value = model.metrics?.[metric];
+                        return (
+                          <td key={metric}>
+                            {typeof value === "number"
+                              ? (value * 100).toFixed(2) + "%"
+                              : value || "N/A"}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
         )}
       </main>
       {overlayInfo && (

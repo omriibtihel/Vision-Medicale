@@ -72,6 +72,14 @@ const Processing = () => {
   const [showRemoveColumnPopup, setShowRemoveColumnPopup] = useState(false);
   const [columnsToRemove, setColumnsToRemove] = useState([]);
 
+  const [searchImp, setSearchImp] = useState("");
+  const [searchNorm, setSearchNorm] = useState("");
+  const [searchCat, setSearchCat] = useState("");
+
+  const [showOnlyNeedingImp, setShowOnlyNeedingImp] = useState(false);
+  const [showOnlyNeedingNorm, setShowOnlyNeedingNorm] = useState(false);
+  const [showOnlyCat, setShowOnlyCat] = useState(false);
+
   const toggleImputationDropdown = () =>
     setShowImputationDropdown(!showImputationDropdown);
   const toggleEncodingDropdown = () =>
@@ -212,8 +220,10 @@ const Processing = () => {
     const loadData = async () => {
       setLoading(true);
 
-if ((location.state?.isFromHistory || location.state?.isFromTestPage) && location.state?.fileData) {
-
+      if (
+        (location.state?.isFromHistory || location.state?.isFromTestPage) &&
+        location.state?.fileData
+      ) {
         // ✅ Données envoyées depuis Historique
         setData(location.state.fileData);
         setFilteredData(location.state.fileData);
@@ -282,27 +292,26 @@ if ((location.state?.isFromHistory || location.state?.isFromTestPage) && locatio
       const columns = Object.keys(filteredData[0]);
 
       if (targetFeature && !columns.includes(targetFeature)) {
-  const fromTestPage = location.state?.isFromTestPage;
+        const fromTestPage = location.state?.isFromTestPage;
 
-  if (!fromTestPage) {
-    const possibleTargets = columns.filter(
-      (col) =>
-        col.toLowerCase().includes("target") ||
-        col.toLowerCase().includes("class") ||
-        col.toLowerCase().includes("label")
-    );
+        if (!fromTestPage) {
+          const possibleTargets = columns.filter(
+            (col) =>
+              col.toLowerCase().includes("target") ||
+              col.toLowerCase().includes("class") ||
+              col.toLowerCase().includes("label")
+          );
 
-    if (possibleTargets.length > 0) {
-      setTargetFeature(possibleTargets[0]);
-    } else {
-      setError(`La target feature "${targetFeature}" est introuvable.`);
-    }
-  } else {
-    // Si on vient de la page de test, pas d’erreur à afficher
-    setError("");
-  }
-}
-
+          if (possibleTargets.length > 0) {
+            setTargetFeature(possibleTargets[0]);
+          } else {
+            setError(`La target feature "${targetFeature}" est introuvable.`);
+          }
+        } else {
+          // Si on vient de la page de test, pas d’erreur à afficher
+          setError("");
+        }
+      }
 
       const types = {};
       columns.forEach((col) => {
@@ -438,41 +447,6 @@ if ((location.state?.isFromHistory || location.state?.isFromTestPage) && locatio
     } else {
       return "text";
     }
-  };
-
-  const getColumnsNeedingNormalization = () => {
-    if (!filteredData.length) return [];
-
-    const columns = Object.keys(filteredData[0]);
-    const validColumns = [];
-
-    for (const col of columns) {
-      if (
-        columnTypes[col] === "numeric" &&
-        col !== targetFeature &&
-        !normalizedColumns.includes(col)
-      ) {
-        const values = filteredData
-          .map((row) => parseFloat(row[col]))
-          .filter((val) => !isNaN(val) && isFinite(val));
-
-        if (values.length === 0) continue;
-
-        const min = Math.min(...values);
-        const max = Math.max(...values);
-        const range = max - min;
-
-        const isConstant = range === 0;
-        const isBinary = new Set(values).size === 2;
-        const hasLargeRange = max > 100 || range > 50;
-
-        if (!isConstant && !isBinary && hasLargeRange) {
-          validColumns.push(col);
-        }
-      }
-    }
-
-    return validColumns;
   };
 
   const saveStateToHistory = () => {
@@ -664,6 +638,69 @@ if ((location.state?.isFromHistory || location.state?.isFromTestPage) && locatio
     setShowReportModal(true);
     setShowRemoveColumnPopup(false);
     setColumnsToRemove([]);
+  };
+
+  const getColumnsNeedingNormalization = () => {
+    if (!filteredData.length) return [];
+
+    const columns = Object.keys(filteredData[0]);
+    const validColumns = [];
+
+    for (const col of columns) {
+      if (
+        columnTypes[col] === "numeric" &&
+        col !== targetFeature &&
+        !normalizedColumns.includes(col)
+      ) {
+        const values = filteredData
+          .map((row) => parseFloat(row[col]))
+          .filter((val) => !isNaN(val) && isFinite(val));
+
+        if (values.length === 0) continue;
+
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const range = max - min;
+
+        const isConstant = range === 0;
+        const isBinary = new Set(values).size === 2;
+        const hasLargeRange = max > 100 || range > 50;
+
+        if (!isConstant && !isBinary && hasLargeRange) {
+          validColumns.push(col);
+        }
+      }
+    }
+
+    return validColumns;
+  };
+
+  // Colonnes pour imputation (celles qui contiennent au moins une valeur nulle)
+  const getColumnsNeedingImputation = () => {
+    if (!filteredData || filteredData.length === 0) return [];
+    return Object.keys(filteredData[0] || {}).filter((col) => {
+      if (col === targetFeature) return false;
+      const values = filteredData.map((row) => row[col]);
+      return values.some(
+        (val) => val === null || val === undefined || val === ""
+      );
+    });
+  };
+
+  // Colonnes catégorielles (textes ou faibles cardinalités)
+  const getCategoricalColumns = () => {
+    if (!filteredData || filteredData.length === 0) return [];
+    return Object.keys(filteredData[0] || {}).filter((col) => {
+      if (col === targetFeature) return false;
+      const values = filteredData.map((row) => row[col]);
+      const uniqueValues = new Set(
+        values.filter((v) => v !== null && v !== undefined)
+      );
+      return (
+        typeof values.find((v) => v !== null && v !== undefined) === "string" ||
+        uniqueValues.size <= 20
+      );
+    });
   };
 
   const handleDataTransformation = (type) => {
@@ -1353,16 +1390,16 @@ if ((location.state?.isFromHistory || location.state?.isFromTestPage) && locatio
               .join(" | ")
           : "Traitement personnalisé";
 
-          const isForPrediction =
-  !targetFeature || location.state?.isFromTestPage || location.state?.isPredictionOnly;
-
+      const isForPrediction =
+        !targetFeature ||
+        location.state?.isFromTestPage ||
+        location.state?.isPredictionOnly;
 
       const dataToSend = {
         data: filteredData,
         preprocessing_steps: operationReports,
         modification: operationDescription,
-          isForPrediction: isForPrediction,
-
+        isForPrediction: isForPrediction,
       };
 
       const compressedData = pako.gzip(JSON.stringify(dataToSend));
@@ -1485,8 +1522,40 @@ if ((location.state?.isFromHistory || location.state?.isFromTestPage) && locatio
           (header) => header !== targetFeature
         )
       : [];
-  const availableColumns = getColumnsNeedingNormalization();
-  const categoricalColumns = identifyCategoricalColumns(filteredData); // ✅
+  const availableColumns =
+    filteredData.length > 0
+      ? Object.keys(filteredData[0]).filter((col) => col !== targetFeature)
+      : [];
+  const categoricalColumns =
+    filteredData.length > 0
+      ? Object.keys(filteredData[0]).filter((col) => col !== targetFeature)
+      : [];
+
+  // Colonnes filtrées
+  const filteredColumnsImp = (
+    showOnlyNeedingImp
+      ? getColumnsNeedingImputation()
+      : Object.keys(filteredData[0] || {}).filter(
+          (col) => col !== targetFeature
+        )
+  ).filter((col) => col.toLowerCase().includes(searchImp.toLowerCase()));
+
+  const filteredColumnsNorm = (
+    showOnlyNeedingNorm
+      ? getColumnsNeedingNormalization()
+      : Object.keys(filteredData[0] || {}).filter(
+          (col) => col !== targetFeature
+        )
+  ).filter((col) => col.toLowerCase().includes(searchNorm.toLowerCase()));
+
+  const filteredColumnsCat = (
+    showOnlyCat
+      ? getCategoricalColumns()
+      : Object.keys(filteredData[0] || {}).filter(
+          (col) => col !== targetFeature
+        )
+  ).filter((col) => col.toLowerCase().includes(searchCat.toLowerCase()));
+
   const rows = Array.isArray(filteredData) ? filteredData.slice(0, 15) : [];
 
   const ReportModal = ({ report, onClose }) => {
@@ -1840,7 +1909,8 @@ if ((location.state?.isFromHistory || location.state?.isFromTestPage) && locatio
         >
           <h1>Data Processing Center</h1>
           <p className="subtitle-modern">
-            Nettoyez, transformez et préparez vos données médicales pour l'analyse
+            Nettoyez, transformez et préparez vos données médicales pour
+            l'analyse
           </p>
           <div className="target-feature-display">
             <span className="target-label">Target Feature:</span>
@@ -1946,6 +2016,7 @@ if ((location.state?.isFromHistory || location.state?.isFromTestPage) && locatio
                   className="dropdown-modern dropdown-columns"
                   ref={dropdownRef3}
                 >
+                  {/* Imputation Dropdown */}
                   <button
                     className="dropdown-toggle-modern"
                     onClick={() => setIsOpen3(!isOpen3)}
@@ -1960,17 +2031,39 @@ if ((location.state?.isFromHistory || location.state?.isFromTestPage) && locatio
                   {isOpen3 && (
                     <div className="dropdown-menu-modern">
                       <div className="dropdown-header">
-                        <span>colonnes valides</span>
+                        <span>Colonnes disponibles</span>
                         <button
-                          onClick={() => {
-                            setSelectedColumnsImp(availableColumns);
-                          }}
+                          onClick={() =>
+                            setSelectedColumnsImp(filteredColumnsImp)
+                          }
                           className="select-all-btn"
                         >
-                          Selectionner tout
+                          Sélectionner tout
                         </button>
                       </div>
-                      {availableColumns.map((header) => (
+
+                      {/* Case à cocher */}
+                      <label className="checkbox-modern filter-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={showOnlyNeedingImp}
+                          onChange={() =>
+                            setShowOnlyNeedingImp(!showOnlyNeedingImp)
+                          }
+                        />
+                        <span>Afficher uniquement les colonnes à imputer</span>
+                      </label>
+
+                      {/* Recherche */}
+                      <input
+                        type="text"
+                        placeholder="Rechercher une colonne..."
+                        value={searchImp}
+                        onChange={(e) => setSearchImp(e.target.value)}
+                        className="search-input-modern"
+                      />
+
+                      {filteredColumnsImp.map((header) => (
                         <label key={header} className="checkbox-modern">
                           <input
                             type="checkbox"
@@ -2056,30 +2149,60 @@ if ((location.state?.isFromHistory || location.state?.isFromTestPage) && locatio
                   className="dropdown-modern dropdown-columns"
                   ref={dropdownRef2}
                 >
+                  {/* Normalisation Dropdown */}
                   <button
                     className="dropdown-toggle-modern"
                     onClick={toggleDropdown2}
                   >
-                    <span>Selectionner les Colonnes</span>
+                    <span>Sélectionner les colonnes</span>
                     <FontAwesomeIcon
                       icon={isOpen2 ? faChevronUp : faChevronDown}
                       className="dropdown-arrow"
                     />
                   </button>
+
                   {isOpen2 && (
                     <div className="dropdown-menu-modern">
                       <div className="dropdown-header">
-                        <span>colonnes valides</span>
+                        <span>Colonnes disponibles</span>
                         <button
                           onClick={() => {
-                            setSelectedColumnsNr(availableColumns);
+                            setSelectedColumnsNr(filteredColumnsNorm); // sélectionne seulement celles visibles après recherche
                           }}
                           className="select-all-btn"
                         >
-                          Selectionner tout
+                          Sélectionner tout
                         </button>
                       </div>
-                      {availableColumns.map((header) => (
+
+                      {/* Case à cocher */}
+                      <label
+                        className="checkbox-modern filter-checkbox"
+                        style={{ marginBottom: "6px" }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={showOnlyNeedingNorm}
+                          onChange={() =>
+                            setShowOnlyNeedingNorm(!showOnlyNeedingNorm)
+                          }
+                        />
+                        <span>
+                          Afficher uniquement les colonnes nécessitant une
+                          normalisation
+                        </span>
+                      </label>
+
+                      {/* Barre de recherche */}
+                      <input
+                        type="text"
+                        placeholder="Rechercher une colonne..."
+                        value={searchNorm}
+                        onChange={(e) => setSearchNorm(e.target.value)}
+                        className="search-input-modern"
+                      />
+
+                      {filteredColumnsNorm.map((header) => (
                         <label key={header} className="checkbox-modern">
                           <input
                             type="checkbox"
@@ -2176,20 +2299,13 @@ if ((location.state?.isFromHistory || location.state?.isFromTestPage) && locatio
                   className="dropdown-modern dropdown-columns"
                   ref={dropdownRef4}
                 >
+                  {/* Categorical Data Dropdown */}
                   <button
                     className="dropdown-toggle-modern"
-                    onClick={() => {
-                      const catCols = identifyCategoricalColumns(filteredData); // ✅ ici
-                      setIsOpen4(!isOpen4);
-                      if (catCols.length === 0 && filteredData.length > 0) {
-                        alert(
-                          "No categorical columns identified in the first 100 rows"
-                        );
-                      }
-                    }}
+                    onClick={() => setIsOpen4(!isOpen4)}
                     disabled={isProcessingCat}
                   >
-                    <span>Selectionner les Colonnes</span>
+                    <span>Sélectionner les colonnes</span>
                     <FontAwesomeIcon
                       icon={isOpen4 ? faChevronUp : faChevronDown}
                       className="dropdown-arrow"
@@ -2198,17 +2314,39 @@ if ((location.state?.isFromHistory || location.state?.isFromTestPage) && locatio
                   {isOpen4 && (
                     <div className="dropdown-menu-modern">
                       <div className="dropdown-header">
-                        <span>Colonnes catégorielles</span>
+                        <span>Colonnes disponibles</span>
                         <button
-                          onClick={() => {
-                            setSelectedColumnsCat(identifyCategoricalColumns());
-                          }}
+                          onClick={() =>
+                            setSelectedColumnsCat(filteredColumnsCat)
+                          }
                           className="select-all-btn"
                         >
-                          Selectionner tout
+                          Sélectionner tout
                         </button>
                       </div>
-                      {categoricalColumns.map((header) => (
+
+                      {/* Case à cocher */}
+                      <label className="checkbox-modern filter-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={showOnlyCat}
+                          onChange={() => setShowOnlyCat(!showOnlyCat)}
+                        />
+                        <span>
+                          Afficher uniquement les colonnes catégorielles
+                        </span>
+                      </label>
+
+                      {/* Recherche */}
+                      <input
+                        type="text"
+                        placeholder="Rechercher une colonne..."
+                        value={searchCat}
+                        onChange={(e) => setSearchCat(e.target.value)}
+                        className="search-input-modern"
+                      />
+
+                      {filteredColumnsCat.map((header) => (
                         <label key={header} className="checkbox-modern">
                           <input
                             type="checkbox"

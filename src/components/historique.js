@@ -403,7 +403,7 @@ const Historique = () => {
               onChange={(e) => setFilterType(e.target.value)}
             >
               <option value="all">Tous les fichiers</option>
-              <option value="classic">Fichiers modifiés</option>
+              <option value="classic">Fichiers d'entraînement</option>
               <option value="prediction">Fichiers de prédiction</option>
             </select>
           </div>
