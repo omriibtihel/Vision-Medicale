@@ -1,162 +1,640 @@
-/* Structure principale */
+/* Structure principale moderne */
 .user-card-modern {
-  background: #ffffff;
-  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-radius: 28px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.03);
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
-  max-width: 500px;
+  max-width: 450px;
+  margin: 0 auto;
+  animation: slideInUp 0.6s ease-out 0.2s both;
+}
+
+/* Effet de brillance au survol */
+.user-card-modern::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.6s ease;
+  z-index: 1;
+}
+
+.user-card-modern:hover::before {
+  left: 100%;
 }
 
 .user-card-modern:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 
+    0 30px 80px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(102, 126, 234, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-/* En-tête */
+/* Animation d'entrée */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* En-tête avec gradient */
 .user-card-header-modern {
-  padding: 2rem 2rem 1.5rem;
-  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  padding: 2.5rem 2.5rem 2rem;
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.08) 0%,
+    rgba(118, 75, 162, 0.05) 50%,
+    rgba(240, 147, 251, 0.08) 100%
+  );
   display: flex;
   align-items: center;
   position: relative;
+  z-index: 2;
 }
 
+/* Decoration arrière-plan */
+.user-card-header-modern::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    #667eea 0%,
+    #764ba2 25%,
+    #f093fb 50%,
+    #f5576c 75%,
+    #4facfe 100%
+  );
+  background-size: 300% 100%;
+  animation: gradientShift 8s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  25% { background-position: 25% 50%; }
+  50% { background-position: 50% 50%; }
+  75% { background-position: 75% 50%; }
+}
+
+/* Container image de profil */
 .profile-img-container-modern {
   position: relative;
-  margin-right: 1.5rem;
-}
-
-.profile-img-modern {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid white;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-}
-
-.profile-status-modern {
-  position: absolute;
-  bottom: 5px;
-  right: 5px;
-  width: 15px;
-  height: 15px;
-  background: #10b981;
-  border-radius: 50%;
-  border: 2px solid white;
-}
-
-.user-info-modern {
-  flex: 1;
-}
-
-.user-name-modern {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
-  margin: 0 0 0.5rem 0;
-  letter-spacing: -0.5px;
-}
-
-.badge-modern {
-  display: inline-flex;
-  align-items: center;
-  background: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
-  padding: 0.35rem 0.8rem;
-  border-radius: 50px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.badge-icon-modern {
-  margin-right: 0.5rem;
-  font-size: 0.9rem;
-}
-
-/* Corps */
-.user-card-body-modern {
-  padding: 1.5rem 2rem;
-}
-
-.info-grid-modern {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.2rem;
-}
-
-.info-item-modern {
-  display: flex;
-  align-items: flex-start;
-}
-
-.info-icon-modern {
-  color: #6366f1;
-  background: rgba(99, 102, 241, 0.1);
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 1rem;
+  margin-right: 1.8rem;
   flex-shrink: 0;
 }
 
+/* Image de profil avec effets */
+.profile-img-modern {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 
+    0 8px 25px rgba(102, 126, 234, 0.2),
+    0 0 0 1px rgba(102, 126, 234, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  z-index: 2;
+}
+
+.user-card-modern:hover .profile-img-modern {
+  transform: scale(1.05);
+  border-color: rgba(102, 126, 234, 0.3);
+  box-shadow: 
+    0 12px 35px rgba(102, 126, 234, 0.3),
+    0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+/* Effet de ring animé autour de l'image */
+.profile-img-container-modern::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    #667eea,
+    #764ba2,
+    #f093fb,
+    #f5576c,
+    #4facfe,
+    #00f2fe,
+    #667eea
+  );
+  animation: rotateBorder 4s linear infinite;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.user-card-modern:hover .profile-img-container-modern::before {
+  opacity: 1;
+}
+
+@keyframes rotateBorder {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Statut en ligne */
+.profile-status-modern {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #10b981, #34d399);
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  z-index: 3;
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  }
+  50% { 
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.5);
+  }
+}
+
+/* Informations utilisateur */
+.user-info-modern {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name-modern {
+  font-size: 1.6rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 0.8rem 0;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  transition: all 0.3s ease;
+}
+
+.user-card-modern:hover .user-name-modern {
+  transform: translateX(4px);
+}
+
+/* Badge moderne */
+.badge-modern {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  backdrop-filter: blur(10px);
+  color: #667eea;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+}
+
+.badge-modern::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.badge-modern:hover::before {
+  left: 100%;
+}
+
+.badge-modern:hover {
+  transform: translateY(-2px) scale(1.05);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+  border-color: rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+.badge-icon-modern {
+  margin-right: 0.6rem;
+  font-size: 1rem;
+  filter: drop-shadow(0 1px 2px rgba(102, 126, 234, 0.3));
+}
+
+/* Corps de la carte */
+.user-card-body-modern {
+  padding: 2rem 2.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+/* Grille d'informations */
+.info-grid-modern {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+/* Item d'information */
+.info-item-modern {
+  display: flex;
+  align-items: flex-start;
+  padding: 1rem;
+  border-radius: 16px;
+  background: rgba(102, 126, 234, 0.03);
+  border: 1px solid rgba(102, 126, 234, 0.08);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+}
+
+.info-item-modern::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #667eea, #764ba2);
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
+  transform-origin: bottom;
+}
+
+.info-item-modern:hover::before {
+  transform: scaleY(1);
+}
+
+.info-item-modern:hover {
+  transform: translateY(-3px) translateX(4px);
+  background: rgba(102, 126, 234, 0.08);
+  border-color: rgba(102, 126, 234, 0.2);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+}
+
+/* Icône d'information */
+.info-icon-modern {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  color: #667eea;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1.2rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(102, 126, 234, 0.15);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+}
+
+.info-icon-modern::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.3), transparent 70%);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  transform: translate(-50%, -50%);
+}
+
+.info-item-modern:hover .info-icon-modern::before {
+  width: 100%;
+  height: 100%;
+}
+
+.info-item-modern:hover .info-icon-modern {
+  transform: scale(1.1) rotate(5deg);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+  border-color: rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25);
+}
+
+/* Contenu d'information */
 .info-content-modern {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  flex: 1;
 }
 
 .info-label-modern {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #9ca3af;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 0.2rem;
+  letter-spacing: 0.8px;
+  margin-bottom: 0.4rem;
+  font-weight: 700;
+  transition: color 0.3s ease;
+}
+
+.info-item-modern:hover .info-label-modern {
+  color: #667eea;
 }
 
 .info-value-modern {
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: #374151;
-  font-weight: 500;
+  font-weight: 600;
+  line-height: 1.4;
+  transition: all 0.3s ease;
+  word-break: break-word;
+}
+
+.info-item-modern:hover .info-value-modern {
+  color: #1f2937;
+  transform: translateX(2px);
 }
 
 /* Pied de page */
 .user-card-footer-modern {
-  padding: 1rem 2rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.03);
-  background: #f9fafb;
+  padding: 1.5rem 2.5rem;
+  border-top: 1px solid rgba(102, 126, 234, 0.1);
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.02) 0%,
+    rgba(118, 75, 162, 0.02) 100%
+  );
+  position: relative;
+  z-index: 2;
 }
 
 .member-since-modern {
-  font-size: 0.8rem;
-  color: #9ca3af;
-  display: block;
-  text-align: center;
+  font-size: 0.85rem;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+.member-since-modern::before {
+  content: "📅";
+  font-size: 1rem;
+  animation: memberIconFloat 3s ease-in-out infinite;
+}
+
+@keyframes memberIconFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.user-card-modern:hover .member-since-modern {
+  color: #667eea;
+  transform: translateY(-2px);
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
   .info-grid-modern {
     grid-template-columns: 1fr;
+    gap: 1.2rem;
   }
   
   .user-card-header-modern {
     flex-direction: column;
     text-align: center;
-    padding-bottom: 2rem;
+    padding: 2.5rem 2.5rem 2rem;
   }
   
   .profile-img-container-modern {
     margin-right: 0;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .user-info-modern {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   
   .badge-modern {
-    margin: 0 auto;
+    margin-top: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-card-modern {
+    max-width: 100%;
+    border-radius: 24px;
+  }
+  
+  .user-card-header-modern,
+  .user-card-body-modern,
+  .user-card-footer-modern {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+  
+  .user-card-header-modern {
+    padding-top: 2rem;
+    padding-bottom: 1.5rem;
+  }
+  
+  .profile-img-modern {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .user-name-modern {
+    font-size: 1.4rem;
+  }
+  
+  .info-item-modern {
+    padding: 0.8rem;
+  }
+  
+  .info-icon-modern {
+    width: 36px;
+    height: 36px;
+    margin-right: 1rem;
+  }
+  
+  .info-value-modern {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-card-modern {
+    border-radius: 20px;
+    margin: 0 0.5rem;
+  }
+  
+  .user-card-header-modern,
+  .user-card-body-modern,
+  .user-card-footer-modern {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+  
+  .user-card-header-modern {
+    padding-top: 1.5rem;
+    padding-bottom: 1.2rem;
+  }
+  
+  .user-card-body-modern {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+  
+  .profile-img-modern {
+    width: 70px;
+    height: 70px;
+    border-width: 3px;
+  }
+  
+  .user-name-modern {
+    font-size: 1.2rem;
+    margin-bottom: 0.6rem;
+  }
+  
+  .badge-modern {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  
+  .info-grid-modern {
+    gap: 1rem;
+  }
+  
+  .info-item-modern {
+    padding: 0.7rem;
+    border-radius: 12px;
+  }
+  
+  .info-icon-modern {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    margin-right: 0.8rem;
+  }
+  
+  .info-label-modern {
+    font-size: 0.7rem;
+    margin-bottom: 0.2rem;
+  }
+  
+  .info-value-modern {
+    font-size: 0.9rem;
+  }
+  
+  .member-since-modern {
+    font-size: 0.8rem;
+  }
+  
+  .user-card-footer-modern {
+    padding-top: 1.2rem;
+    padding-bottom: 1.2rem;
+  }
+}
+
+/* États de chargement et erreur */
+.user-card-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  animation: loadingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loadingPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.user-card-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  background: rgba(239, 68, 68, 0.05);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  .user-card-modern,
+  .profile-img-modern,
+  .info-item-modern,
+  .info-icon-modern,
+  .badge-modern {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  .user-card-modern:hover {
+    transform: none !important;
+  }
+}
+
+/* Styles pour l'impression */
+@media print {
+  .user-card-modern {
+    background: white !important;
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    page-break-inside: avoid;
+  }
+  
+  .user-card-header-modern::before,
+  .profile-img-container-modern::before,
+  .info-icon-modern::before,
+  .badge-modern::before {
+    display: none !important;
   }
 }
