@@ -242,6 +242,54 @@ tbody tr:nth-child(even) {
   background: rgba(248, 250, 252, 0.5);
 }
 
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+}
+
+.pagination button {
+  background: white;
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  box-shadow: var(--shadow);
+}
+
+.pagination button:hover:not(:disabled) {
+  background: var(--primary-light);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination button.active {
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+}
+
+.pagination select {
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--border);
+  background: white;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+
 /* ========== DESCRIPTION SECTION ========== */
 .description {
   margin: 2rem;

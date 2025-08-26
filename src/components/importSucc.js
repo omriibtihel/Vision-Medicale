@@ -72,6 +72,9 @@ const ImportSuccess = () => {
   const [targetFeatureError, setTargetFeatureError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [availableFeatures, setAvailableFeatures] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+const [rowsPerPage, setRowsPerPage] = useState(10);
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
@@ -468,6 +471,20 @@ const ImportSuccess = () => {
     return suggestions;
   };
 
+  // Pagination logic
+const indexOfLastRow = currentPage * rowsPerPage;
+const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+const currentRows = data.slice(indexOfFirstRow, indexOfLastRow);
+
+const totalPages = Math.ceil(data.length / rowsPerPage);
+
+const handlePageChange = (page) => {
+  if (page >= 1 && page <= totalPages) {
+    setCurrentPage(page);
+  }
+};
+
+
   const featureValues = data.map((row) => row[selectedFeature]);
   const featureType = columnTypes[selectedFeature];
   const suggestions = getMedicalSuggestionsForFeature(
@@ -539,16 +556,56 @@ const ImportSuccess = () => {
                   ))}
               </tr>
             </thead>
-            <tbody>
-              {data.slice(0, 10).map((row, index) => (
-                <tr key={index}>
-                  {Object.values(row).map((value, i) => (
-                    <td key={i}>{value}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
+<tbody>
+  {currentRows.map((row, index) => (
+    <tr key={index}>
+      {Object.values(row).map((value, i) => (
+        <td key={i}>{value}</td>
+      ))}
+    </tr>
+  ))}
+</tbody>
+
           </table>
+          <div className="pagination">
+  <button
+    onClick={() => handlePageChange(currentPage - 1)}
+    disabled={currentPage === 1}
+  >
+    ⬅ Précédent
+  </button>
+
+  {Array.from({ length: totalPages }, (_, i) => (
+    <button
+      key={i}
+      className={currentPage === i + 1 ? "active" : ""}
+      onClick={() => handlePageChange(i + 1)}
+    >
+      {i + 1}
+    </button>
+  ))}
+
+  <button
+    onClick={() => handlePageChange(currentPage + 1)}
+    disabled={currentPage === totalPages}
+  >
+    Suivant ➡
+  </button>
+
+  <select
+    value={rowsPerPage}
+    onChange={(e) => {
+      setRowsPerPage(Number(e.target.value));
+      setCurrentPage(1);
+    }}
+  >
+    <option value={10}>10 / page</option>
+    <option value={20}>20 / page</option>
+    <option value={50}>50 / page</option>
+    <option value={100}>100 / page</option>
+  </select>
+</div>
+
         </div>
 
         <div className="description">

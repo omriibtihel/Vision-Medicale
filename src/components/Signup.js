@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -30,6 +30,14 @@ function SignupPage() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // Charger une image par défaut si aucun fichier n'est choisi
+  useEffect(() => {
+    if (!profileImage) {
+      setPreviewUrl("http://localhost:5000/static/uploads/user.jpg");
+ // chemin vers ton image par défaut côté backend/static
+    }
+  }, [profileImage]);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -49,7 +57,9 @@ function SignupPage() {
       for (const key in formData) {
         data.append(key, formData[key]);
       }
-      if (profileImage) data.append("profileImage", profileImage);
+      if (profileImage) {
+        data.append("profileImage", profileImage);
+      }
 
       await axios.post("http://localhost:5000/signup", data, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -178,8 +188,10 @@ function SignupPage() {
                   accept="image/*"
                   onChange={(e) => {
                     const file = e.target.files[0];
-                    setProfileImage(file);
-                    setPreviewUrl(URL.createObjectURL(file));
+                    if (file) {
+                      setProfileImage(file);
+                      setPreviewUrl(URL.createObjectURL(file));
+                    }
                   }}
                   style={{ display: "none" }}
                 />
@@ -198,7 +210,7 @@ function SignupPage() {
                   checked={formData.rememberMe}
                   onChange={handleChange}
                 />
-                Se souvenir de moi
+                Se souvenir de moi ({formData.rememberMe ? "Oui" : "Non"})
               </label>
             </div>
           </div>
