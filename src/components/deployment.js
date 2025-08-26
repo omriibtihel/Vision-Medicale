@@ -15,7 +15,7 @@ import {
 import { faChartBar } from "@fortawesome/free-solid-svg-icons";
 import "./deployment.css";
 import Sidebar from "./Sidebar";
-
+import Layout from "./Layout.js";
 import { Chart } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -106,32 +106,8 @@ const Deployment = () => {
   };
 
   return (
-    <div
-      className={`app-container ${
-        isSidebarOpen ? "sidebar-open" : "sidebar-closed"
-      }`}
-    >
-      {isMobile && !isSidebarOpen && (
-        <button
-          className="sidebar-toggle-mobile"
-          onClick={() => setIsSidebarOpen(true)}
-        >
-          ☰
-        </button>
-      )}
+    <Layout projectId={id} targetFeature={targetFeature}>
 
-      <Sidebar
-        isOpen={isSidebarOpen}
-        toggleSidebar={toggleSidebar}
-        projectId={id}
-        targetFeature={targetFeature}
-      />
-
-      <div
-        className={`content1 ${
-          isSidebarOpen ? "sidebar-open" : "sidebar-closed"
-        }`}
-      >
         <h2>Model Deployment</h2>
         <p className="header-subtitle">Deploy and test your trained models</p>
 
@@ -325,8 +301,7 @@ const Deployment = () => {
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </Layout>
   );
 };
 

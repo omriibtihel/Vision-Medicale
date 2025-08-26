@@ -23,7 +23,8 @@ import KNN from "ml-knn";
 import pako from "pako";
 import "../useOutsideClick.js";
 import "./Processing.css";
-import Sidebar from "./Sidebar"; // Importer le Sidebar
+import Sidebar from "./Sidebar";
+import Layout from "./Layout.js";
 
 const Processing = () => {
   const location = useLocation();
@@ -1881,26 +1882,8 @@ const Processing = () => {
   const isMobile = windowWidth <= 768;
 
   return (
-    <div
-      className={`app-container ${
-        isSidebarOpen ? "sidebar-open" : "sidebar-closed"
-      }`}
-    >
-      {isMobile && !isSidebarOpen && (
-        <button
-          className="sidebar-toggle-mobile"
-          onClick={() => setIsSidebarOpen(true)}
-        >
-          ☰
-        </button>
-      )}
+    <Layout projectId={id} targetFeature={targetFeature}>
 
-      <Sidebar
-        isOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        projectId={id}
-        targetFeature={targetFeature}
-      />
       <main className="content-modern">
         <div
           className={`content-modern ${
@@ -2684,7 +2667,7 @@ const Processing = () => {
           </div>
         </div>
       )}
-    </div>
+    </Layout>
   );
 };
 

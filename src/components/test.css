@@ -18,14 +18,59 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 24px;
-  padding: 2.5rem;
   width: 100%;
   max-width: 1400px;
   margin: 2rem auto;
   box-shadow: 0 12px 32px rgba(0, 48, 135, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
+/* Décalage du contenu en fonction du sidebar */
+.container1 {
+  transition: margin-left 0.3s ease;
+  min-height: 100vh;
+  padding: 2rem;
+}
+/* Bouton ☰ flottant pour mobile */
+.sidebar-toggle-mobile {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  background: white;
+  border: 2px solid #e2e8f0;
+  color: #2563eb;
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 1100;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.sidebar-toggle-mobile:hover {
+  background: #2563eb;
+  color: white;
+  transform: scale(1.05);
+}
+
+.sidebar-open {
+  margin-left: 260px; /* largeur sidebar ouvert */
+}
+
+.sidebar-closed {
+  margin-left: 80px; /* largeur sidebar fermé */
+}
+
+@media (max-width: 768px) {
+  .sidebar-open,
+  .sidebar-closed {
+    margin-left: 0 !important; /* en mobile, le sidebar recouvre */
+  }
+}
+
 
 .container1:hover {
   box-shadow: 0 16px 40px rgba(0, 48, 135, 0.12);

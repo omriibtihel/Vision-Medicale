@@ -43,6 +43,7 @@ import {
   faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
 import "./graphs.css";
+import Layout from "./Layout.js";
 
 ChartJS.register(
   CategoryScale,
@@ -236,26 +237,8 @@ const Graphs = () => {
   const isMobile = windowWidth <= 768;
 
   return (
-    <div
-      className={`app-container ${
-        isSidebarOpen ? "sidebar-open" : "sidebar-closed"
-      }`}
-    >
-      {isMobile && !isSidebarOpen && (
-        <button
-          className="sidebar-toggle-mobile"
-          onClick={() => setIsSidebarOpen(true)}
-        >
-          ☰
-        </button>
-      )}
+    <Layout projectId={id} targetFeature={targetFeature}>
 
-      <Sidebar
-        isOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        projectId={id}
-        targetFeature={targetFeature}
-      />
 
       {/* Main Content */}
       <main className="graphs-content">
@@ -385,7 +368,7 @@ const Graphs = () => {
           </>
         )}
       </main>
-    </div>
+</Layout>
   );
 };
 

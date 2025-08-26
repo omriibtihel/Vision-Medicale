@@ -1,18 +1,19 @@
 /* MEDICAL SIDEBAR - PROFESSIONAL STYLES */
 :root {
-  /* Medical Color Palette */
-  --medical-primary: #0066cc;
-  --medical-primary-light: #4d9aff;
-  --medical-primary-dark: #004d99;
-  --medical-secondary: #00a86b;
-  --medical-accent: #ff6b35;
-  --medical-success: #28a745;
-  --medical-warning: #ffc107;
-  --medical-error: #dc3545;
+  /* Medical Color Palette - Light & Professional */
+  --medical-primary: #2563eb;
+  --medical-primary-light: #60a5fa;
+  --medical-primary-dark: #1d4ed8;
+  --medical-secondary: #059669;
+  --medical-accent: #f59e0b;
+  --medical-success: #10b981;
+  --medical-warning: #f59e0b;
+  --medical-error: #ef4444;
   
-  /* Neutral Colors */
+  /* Light Professional Colors */
   --white: #ffffff;
-  --gray-50: #f8fafb;
+  --gray-25: #fcfcfd;
+  --gray-50: #f8fafc;
   --gray-100: #f1f5f9;
   --gray-200: #e2e8f0;
   --gray-300: #cbd5e1;
@@ -23,14 +24,16 @@
   --gray-800: #1e293b;
   --gray-900: #0f172a;
   
-  /* Sidebar Colors */
-  --sidebar-bg: linear-gradient(135deg, var(--medical-primary-dark) 0%, var(--medical-primary) 50%, #1a5490 100%);
-  --sidebar-header-bg: rgba(255, 255, 255, 0.1);
-  --sidebar-item-hover: rgba(255, 255, 255, 0.15);
-  --sidebar-item-active: rgba(255, 255, 255, 0.25);
-  --sidebar-text: rgba(255, 255, 255, 0.9);
-  --sidebar-text-hover: #ffffff;
-  --sidebar-border: rgba(255, 255, 255, 0.1);
+  /* Light Sidebar Colors */
+  --sidebar-bg: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
+  --sidebar-header-bg: rgba(37, 99, 235, 0.05);
+  --sidebar-item-hover: rgba(37, 99, 235, 0.08);
+  --sidebar-item-active: rgba(37, 99, 235, 0.12);
+  --sidebar-text: #475569;
+  --sidebar-text-hover: #1e293b;
+  --sidebar-text-active: #2563eb;
+  --sidebar-border: rgba(226, 232, 240, 0.8);
+  --sidebar-shadow: rgba(15, 23, 42, 0.08);
   
   /* Typography */
   --font-primary: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -51,9 +54,12 @@
   z-index: 1000;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: var(--font-primary);
-  border-right: 1px solid var(--sidebar-border);
-  backdrop-filter: blur(10px);
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+  border-right: 2px solid var(--sidebar-border);
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 10px 25px -5px var(--sidebar-shadow),
+    0 25px 50px -12px rgba(15, 23, 42, 0.04);
 }
 
 /* Enhanced scrollbar */
@@ -62,16 +68,16 @@
 }
 
 .app-sidebar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--gray-100);
 }
 
 .app-sidebar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--gray-300);
   border-radius: 3px;
 }
 
 .app-sidebar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--gray-400);
 }
 
 /* Desktop States */
@@ -80,19 +86,20 @@
 }
 
 .app-sidebar.closed {
-  width: 70px;
+  width: 80px; /* Augmenté de 70px à 80px pour plus d'espace */
 }
 
 /* ========== SIDEBAR HEADER ========== */
 .sidebar-header {
   padding: 1.5rem 1rem;
-  border-bottom: 1px solid var(--sidebar-border);
+  border-bottom: 2px solid var(--sidebar-border);
   background: var(--sidebar-header-bg);
   display: flex;
   align-items: center;
   gap: 0.75rem;
   position: relative;
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(10px);
+  min-height: 80px; /* Hauteur minimale constante */
 }
 
 .sidebar-header::after {
@@ -102,63 +109,72 @@
   left: 1rem;
   right: 1rem;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  background: linear-gradient(90deg, transparent, var(--medical-primary-light), transparent);
+  opacity: 0.6;
 }
 
 .sidebar-toggle {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: var(--sidebar-text);
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  background: var(--white);
+  border: 2px solid var(--gray-200);
+  color: var(--medical-primary);
+  width: 36px; /* Augmenté de 32px à 36px */
+  height: 36px; /* Augmenté de 32px à 36px */
+  border-radius: 12px; /* Plus arrondi pour un look moderne */
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.875rem;
-  backdrop-filter: blur(5px);
+  font-size: 1rem; /* Augmenté de 0.875rem à 1rem */
+  backdrop-filter: blur(10px);
+  flex-shrink: 0; /* Empêche le rétrécissement */
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .sidebar-toggle:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.4);
-  color: var(--sidebar-text-hover);
+  background: var(--medical-primary);
+  border-color: var(--medical-primary);
+  color: var(--white);
   transform: scale(1.05);
+  box-shadow: 
+    0 4px 6px -1px rgba(37, 99, 235, 0.1),
+    0 2px 4px -1px rgba(37, 99, 235, 0.06);
 }
 
 .sidebar-logo {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 36px; /* Augmenté de 32px à 36px */
+  height: 36px; /* Augmenté de 32px à 36px */
+  border-radius: 12px; /* Plus arrondi */
   transition: all 0.3s ease;
-  filter: brightness(1.1) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.2));
+  flex-shrink: 0; /* Empêche le rétrécissement */
 }
 
 .sidebar-header h2 {
-  font-size: 1.125rem;
+  font-size: 1.25rem; /* Augmenté pour plus d'impact */
   font-weight: var(--font-weight-bold);
   margin: 0;
-  color: var(--sidebar-text-hover);
+  color: var(--medical-primary);
   letter-spacing: -0.025em;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  text-shadow: none; /* Retiré pour un look plus propre */
 }
 
 /* ========== SIDEBAR NAVIGATION ========== */
 .sidebar-nav {
-  padding: 1rem 0.5rem;
+  padding: 1.5rem 0.75rem; /* Augmenté le padding horizontal */
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem; /* Augmenté de 0.25rem à 0.5rem */
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.875rem 1rem;
-  border-radius: 8px;
+  padding: 1rem; /* Padding uniforme pour ouvert et fermé */
+  border-radius: 10px; /* Augmenté de 8px à 10px */
   background: none;
   border: none;
   color: var(--sidebar-text);
@@ -172,6 +188,7 @@
   font-family: var(--font-primary);
   text-decoration: none;
   overflow: hidden;
+  min-height: 48px; /* Hauteur minimale pour une meilleure zone de clic */
 }
 
 .nav-item::before {
@@ -180,18 +197,20 @@
   left: 0;
   top: 0;
   bottom: 0;
-  width: 3px;
-  background: var(--sidebar-text-hover);
+  width: 4px; /* Augmenté de 3px à 4px */
+  background: var(--medical-primary);
   transform: scaleY(0);
   transition: transform 0.2s ease;
-  border-radius: 0 2px 2px 0;
+  border-radius: 0 4px 4px 0; /* Plus arrondi */
 }
 
 .nav-item:hover {
   background: var(--sidebar-item-hover);
   color: var(--sidebar-text-hover);
   transform: translateX(2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .nav-item:hover::before {
@@ -200,45 +219,51 @@
 
 .nav-item.active {
   background: var(--sidebar-item-active);
-  color: var(--sidebar-text-hover);
+  color: var(--sidebar-text-active);
   font-weight: var(--font-weight-semibold);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 
+    0 1px 3px rgba(37, 99, 235, 0.1),
+    0 1px 2px rgba(37, 99, 235, 0.06);
 }
 
 .nav-item.active::before {
   transform: scaleY(1);
-  background: var(--white);
+  background: var(--medical-primary);
 }
 
 .nav-icon {
-  font-size: 1.125rem;
-  width: 20px;
-  height: 20px;
+  font-size: 1.25rem; /* Augmenté de 1.125rem à 1.25rem */
+  width: 24px; /* Augmenté de 20px à 24px */
+  height: 24px; /* Augmenté de 20px à 24px */
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   transition: all 0.2s ease;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  filter: none; /* Retiré le drop-shadow pour un look plus propre */
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
 .nav-item:hover .nav-icon {
-  transform: scale(1.1);
+  transform: scale(1.15); /* Augmenté de 1.1 à 1.15 */
+  color: var(--medical-primary);
 }
 
 .nav-item.active .nav-icon {
-  transform: scale(1.1);
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transform: scale(1.15); /* Augmenté de 1.1 à 1.15 */
+  color: var(--medical-primary);
+  filter: none;
 }
 
 .nav-label {
   opacity: 1;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.3s ease; /* Transition plus fluide */
   white-space: nowrap;
   letter-spacing: 0.025em;
 }
 
-/* Closed sidebar states */
+/* Closed sidebar states - AMÉLIORÉ */
 .app-sidebar.closed .nav-label,
 .app-sidebar.closed .sidebar-header h2 {
   opacity: 0;
@@ -247,16 +272,53 @@
 
 .app-sidebar.closed .sidebar-header {
   justify-content: center;
-  padding: 1.5rem 0.5rem;
+  padding: 1.5rem 1rem; /* Padding optimisé */
 }
 
 .app-sidebar.closed .nav-item {
   justify-content: center;
-  padding: 0.875rem 0.5rem;
+  padding: 1rem 0.5rem; /* Padding optimisé pour centrer les icônes */
 }
 
 .app-sidebar.closed .nav-item::before {
   display: none;
+}
+
+/* Tooltip pour les icônes fermées */
+.app-sidebar.closed .nav-item {
+  position: relative;
+}
+
+.app-sidebar.closed .nav-item:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--gray-800);
+  color: var(--white);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px; /* Plus arrondi */
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 1001;
+  margin-left: 0.5rem;
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  opacity: 0;
+  animation: fadeInTooltip 0.2s ease forwards;
+}
+
+@keyframes fadeInTooltip {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
 }
 
 /* ========== MOBILE STYLES ========== */
@@ -290,32 +352,41 @@
     color: var(--sidebar-text);
     z-index: 1001;
     overflow-y: auto;
-    border-radius: 0 12px 12px 0;
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+    border-radius: 0 16px 16px 0; /* Plus arrondi */
+    box-shadow: 
+      0 20px 25px -5px rgba(0, 0, 0, 0.1),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
 
   .mobile-close-btn {
     position: absolute;
     right: 1rem;
     top: 1rem;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: var(--sidebar-text-hover);
+    background: var(--white);
+    border: 2px solid var(--gray-200);
+    color: var(--medical-primary);
     font-size: 1.25rem;
     cursor: pointer;
     width: 36px;
     height: 36px;
-    border-radius: 6px;
+    border-radius: 12px; /* Plus arrondi */
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(10px);
+    box-shadow: 
+      0 1px 3px rgba(0, 0, 0, 0.1),
+      0 1px 2px rgba(0, 0, 0, 0.06);
   }
 
   .mobile-close-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--medical-primary);
+    color: var(--white);
     transform: scale(1.05);
+    box-shadow: 
+      0 4px 6px -1px rgba(37, 99, 235, 0.1),
+      0 2px 4px -1px rgba(37, 99, 235, 0.06);
   }
 
   .sidebar-header {
@@ -341,9 +412,9 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(15, 23, 42, 0.4); /* Couleur plus douce */
   z-index: 1000;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px); /* Plus de blur pour un effet moderne */
   animation: fadeIn 0.3s ease;
 }
 
@@ -376,14 +447,15 @@
   bottom: 1rem;
   left: 1rem;
   right: 1rem;
-  background: rgba(40, 167, 69, 0.1);
-  border: 1px solid rgba(40, 167, 69, 0.3);
-  color: rgba(255, 255, 255, 0.9);
-  padding: 0.5rem;
-  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 2px solid rgba(16, 185, 129, 0.2);
+  color: var(--medical-success);
+  padding: 0.75rem;
+  border-radius: 12px; /* Plus arrondi */
   font-size: 0.75rem;
+  font-weight: var(--font-weight-medium);
   text-align: center;
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(10px);
 }
 
 /* ========== ACCESSIBILITY ========== */
@@ -400,11 +472,11 @@
 /* High contrast mode */
 @media (prefers-contrast: high) {
   .app-sidebar {
-    border-right: 2px solid #ffffff;
+    border-right: 3px solid var(--medical-primary);
   }
   
   .nav-item:focus {
-    outline: 2px solid #ffffff;
+    outline: 3px solid var(--medical-primary);
     outline-offset: 2px;
   }
 }
@@ -413,7 +485,7 @@
 .nav-item:focus,
 .sidebar-toggle:focus,
 .mobile-close-btn:focus {
-  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline: 2px solid var(--medical-primary);
   outline-offset: 2px;
 }
 
@@ -469,6 +541,8 @@
     padding: 1rem 1.25rem;
   }
 }
+
+
 
 /* ========== PRINT STYLES ========== */
 @media print {

@@ -2,6 +2,7 @@ import { faCheckCircle, faListOl, faFileAlt, faChartLine } from "@fortawesome/fr
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import Layout from "./Layout.js";
 
 import {
   faBrain,
@@ -421,25 +422,8 @@ const Historique = () => {
   const isMobile = windowWidth <= 768;
 
   return (
-    <div className={`app-container ${isSidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
-      {/* Toggle mobile */}
-      {isMobile && !isSidebarOpen && (
-        <button
-          className="mobile-menu-toggle"
-          onClick={() => setIsSidebarOpen(true)}
-          aria-label="Ouvrir le menu"
-        >
-          ☰
-        </button>
-      )}
+        <Layout projectId={id} targetFeature={targetFeature}>
 
-      {/* Sidebar */}
-      <Sidebar
-        isOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        projectId={id}
-        targetFeature={targetFeature}
-      />
 
       {/* Contenu principal */}
       <div className="historique-content">
@@ -1002,8 +986,7 @@ const Historique = () => {
           }
         }
       `}</style>
-    </div>
-  );
+</Layout>  );
 };
 
 export default Historique;

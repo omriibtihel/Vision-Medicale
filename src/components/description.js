@@ -7,7 +7,8 @@ import Sidebar from './Sidebar';
 import { faUser, faChartLine, faCog, faBrain, faDatabase,  faFileAlt,faHistory ,faRocket} from '@fortawesome/free-solid-svg-icons';
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { mean, std, min, max } from 'mathjs';
-import './Description.css'; // Assurez-vous d'avoir un fichier CSS pour le style
+import './Description.css';
+import Layout from "./Layout.js";  
 
 const Description = () => {
     const navigate = useNavigate();
@@ -144,22 +145,8 @@ useEffect(() => {
 const isMobile = windowWidth <= 768;
 
 return (
-  <div className={`app-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-    {isMobile && !isSidebarOpen && (
-      <button 
-        className="sidebar-toggle-mobile"
-        onClick={() => setIsSidebarOpen(true)}
-      >
-        ☰
-      </button>
-    )}
-    
-    <Sidebar
-      isOpen={isSidebarOpen}
-      toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-      projectId={id}
-      targetFeature={targetFeature}
-    />
+    <Layout projectId={id} targetFeature={targetFeature}>
+
 
             <div className="content1">
                 <h2>Data Description</h2>
@@ -220,7 +207,8 @@ return (
                     </table>
                 </div>
             </div>
-        </div>
+        </Layout>
+        
     );
 };
 

@@ -39,12 +39,57 @@
 
 /* ========== MAIN CONTENT LAYOUT ========== */
 .content1 {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: linear-gradient(135deg, var(--medical-bg) 0%, #f0f7ff 100%);
   min-height: 100vh;
   font-family: var(--font-primary);
   color: var(--medical-text-primary);
   position: relative;
+}
+
+.content1 {
+  transition: margin-left 0.3s ease;
+  padding: 2rem;
+}
+
+.sidebar-open {
+  margin-left: 260px; /* largeur sidebar ouvert */
+}
+
+.sidebar-closed {
+  margin-left: 80px; /* largeur sidebar fermé */
+}
+/* Bouton ☰ flottant pour mobile */
+.sidebar-toggle-mobile {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  background: white;
+  border: 2px solid #e2e8f0;
+  color: #2563eb;
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 1100;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.sidebar-toggle-mobile:hover {
+  background: #2563eb;
+  color: white;
+  transform: scale(1.05);
+}
+
+
+@media (max-width: 768px) {
+  .sidebar-open,
+  .sidebar-closed {
+    margin-left: 0 !important; /* en mobile, le sidebar recouvre */
+  }
 }
 
 .content1::before {
@@ -61,46 +106,7 @@
   z-index: -1;
 }
 
-/* Sidebar responsive margins */
-.sidebar-open {
-  margin-left: 260px;
-}
 
-.sidebar-closed {
-  margin-left: 70px;
-}
-
-@media (max-width: 768px) {
-  .sidebar-open,
-  .sidebar-closed {
-    margin-left: 0;
-  }
-  
-  .sidebar-toggle-mobile {
-    position: fixed;
-    left: 1rem;
-    top: 1rem;
-    z-index: 900;
-    background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-dark) 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: var(--medical-shadow);
-    transition: all 0.2s ease;
-    font-size: 1.125rem;
-  }
-  
-  .sidebar-toggle-mobile:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--medical-shadow-lg);
-  }
-}
 
 /* ========== HEADER STYLES ========== */
 .content1 h2 {

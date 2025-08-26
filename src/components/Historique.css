@@ -77,43 +77,7 @@
   line-height: 1.6;
 }
 
-/* Sidebar médicale moderne - Light mode */
-.app-sidebar {
-  width: var(--sidebar-mobile-width);
-  min-height: 100vh;
-  background: var(--sidebar-bg);
-  color: var(--sidebar-text);
-  position: fixed;
-  top: 0;
-  left: -100%;
-  display: flex;
-  flex-direction: column;
-  padding: 2rem 1.5rem;
-  box-shadow: var(--sidebar-shadow);
-  z-index: 1000;
-  transition: transform var(--transition-normal);
-  overflow-y: auto;
-  backdrop-filter: blur(20px);
-  border-right: 1px solid var(--sidebar-border);
-}
 
-.app-sidebar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, 
-    rgba(37, 99, 235, 0.02) 0%, 
-    transparent 50%, 
-    rgba(37, 99, 235, 0.01) 100%);
-  pointer-events: none;
-}
-
-.app-sidebar.open {
-  transform: translateX(100%);
-}
 
 /* Bouton toggle mobile - Style médical light */
 .mobile-menu-toggle {
@@ -143,62 +107,6 @@
   box-shadow: var(--shadow-lg);
 }
 
-/* Header de la sidebar */
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 0;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid var(--sidebar-border);
-  min-height: 60px;
-  position: relative;
-}
-
-.sidebar-toggle {
-  background: rgba(37, 99, 235, 0.1);
-  border: 1px solid rgba(37, 99, 235, 0.2);
-  color: var(--medical-primary);
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: var(--transition-normal);
-}
-
-.sidebar-toggle:hover {
-  background: rgba(37, 99, 235, 0.15);
-  transform: scale(1.05);
-}
-
-.sidebar-logo {
-  height: 36px;
-  width: auto;
-  transition: opacity var(--transition-normal);
-}
-
-.sidebar-header h2 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin: 0;
-  white-space: nowrap;
-  transition: opacity var(--transition-normal);
-  letter-spacing: -0.2px;
-  color: var(--text-primary);
-}
-
-/* Navigation médicale moderne light */
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem 0;
-  height: calc(100vh - 120px);
-  overflow-y: auto;
-}
 
 .nav-item {
   display: flex;
@@ -282,49 +190,61 @@
 .historique-content {
   width: 100%;
   min-height: 100vh;
-  padding: var(--container-padding);
   padding-top: 80px;
   background: transparnt;
   flex: 1;
   box-sizing: border-box;
   position: relative;
-  transition: all var(--transition-normal) ease;
-  /* Suppression des contraintes de largeur */
   max-width: none;
   margin: 0;
 }
 
-/* Styles tablette et desktop - Full width */
-@media (min-width: 768px) {
-  .mobile-menu-toggle {
-    display: none;
-  }
-  
-  .app-sidebar {
-    position: fixed;
-    left: 0;
-    transform: translateX(0);
-    width: var(--sidebar-width-closed);
-  }
-  
-  .app-sidebar.open {
-    width: var(--sidebar-width-open);
-    transform: translateX(0);
-  }
-  
-  .historique-content {
-    margin-left: var(--sidebar-width-closed);
-    padding: var(--container-padding);
-    padding-top: var(--container-padding);
-    /* Utilisation de tout l'espace disponible */
-    width: calc(100% - var(--sidebar-width-closed));
-  }
-  
-  .app-sidebar.open ~ .historique-content {
-    margin-left: var(--sidebar-width-open);
-    width: calc(100% - var(--sidebar-width-open));
+/* Décalage du contenu en fonction du sidebar */
+.historique-content {
+  transition: margin-left 0.3s ease;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.sidebar-open {
+  margin-left: 260px; /* largeur sidebar ouvert */
+}
+
+.sidebar-closed {
+  margin-left: 80px; /* largeur sidebar fermé */
+}
+.sidebar-toggle-mobile {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  background: white;
+  border: 2px solid #e2e8f0;
+  color: #2563eb;
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 1100;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.sidebar-toggle-mobile:hover {
+  background: #2563eb;
+  color: white;
+  transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+  .sidebar-open,
+  .sidebar-closed {
+    margin-left: 0 !important; /* en mobile, le sidebar recouvre */
   }
 }
+
 
 /* Header du contenu - Style médical light */
 .content-header {

@@ -22,6 +22,8 @@ import axios from "axios";
 import { Pie, Bar, Line } from "react-chartjs-2";
 import Sidebar from "./Sidebar";
 import GaugeChart from "react-gauge-chart";
+import Layout from "./Layout.js";
+
 import {
   Chart as ChartJS,
   ArcElement,
@@ -40,6 +42,9 @@ ChartJS.register(
   BarElement
 );
 
+
+
+
 const Modal = ({ isOpen, onClose, children }) => {
   if (!isOpen) return null;
   return (
@@ -55,6 +60,7 @@ const Modal = ({ isOpen, onClose, children }) => {
 };
 
 const ImportSuccess = () => {
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState([]);
@@ -504,34 +510,8 @@ const handlePageChange = (page) => {
   const isMobile = windowWidth <= 768;
 
   return (
-    <div
-      className={`app-container ${
-        isSidebarOpen ? "sidebar-open" : "sidebar-closed"
-      }`}
-    >
-      {isMobile && !isSidebarOpen && (
-        <button
-          className="sidebar-toggle-mobile"
-          onClick={() => {
-            setIsSidebarOpen(true);
-          }}
-        >
-          ☰
-        </button>
-      )}
+    <Layout projectId={id} targetFeature={targetFeature}>
 
-      <Sidebar
-        isOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        projectId={id}
-        targetFeature={targetFeature}
-      />
-
-      <div
-        className={`content1 ${
-          isSidebarOpen ? "sidebar-open" : "sidebar-closed"
-        }`}
-      >
         <h2>Imported Data Overview</h2>
         <p className="header-subtitle">Understand your dataset at a glance</p>
 
@@ -954,8 +934,7 @@ const handlePageChange = (page) => {
             <p>No numeric data available for this column.</p>
           )}
         </Modal>
-      </div>
-    </div>
+    </Layout>
   );
 };
 

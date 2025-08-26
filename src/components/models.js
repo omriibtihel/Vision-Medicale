@@ -17,7 +17,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import "./models.css";
-import Sidebar from "./Sidebar";
+import Layout from "./Layout.js";
 import {
   faChevronLeft,
   faChevronRight,
@@ -428,26 +428,8 @@ const Models = () => {
   const isMobile = windowWidth <= 768;
 
   return (
-    <div
-      className={`app-container ${
-        isSidebarOpen ? "sidebar-open" : "sidebar-closed"
-      }`}
-    >
-      {isMobile && !isSidebarOpen && (
-        <button
-          className="sidebar-toggle-mobile"
-          onClick={() => setIsSidebarOpen(true)}
-        >
-          ☰
-        </button>
-      )}
+    <Layout projectId={id} targetFeature={targetFeature}>
 
-      <Sidebar
-        isOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        projectId={id}
-        targetFeature={targetFeature}
-      />
       {/* Contenu principal */}
       <div className="content-wrapper">
         {loading && (
@@ -906,7 +888,7 @@ const Models = () => {
           </section>
         )}
       </div>
-    </div>
+    </Layout>
   );
 };
 

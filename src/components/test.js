@@ -17,7 +17,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import "./test.css";
-import Sidebar from "./Sidebar";
+import Layout from "./Layout.js";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import Plot from "react-plotly.js";
@@ -485,33 +485,8 @@ const Test = () => {
   };
 
   return (
-    <div
-      className={`app-container ${
-        isSidebarOpen ? "sidebar-open" : "sidebar-closed"
-      }`}
-    >
-      {isMobile && !isSidebarOpen && (
-        <button
-          className="sidebar-toggle-mobile"
-          onClick={() => setIsSidebarOpen(true)}
-          aria-label="Toggle sidebar"
-        >
-          ☰
-        </button>
-      )}
+    <Layout projectId={id} targetFeature={targetFeature}>
 
-      <Sidebar
-        isOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        projectId={id}
-        targetFeature={targetFeature}
-      />
-
-      <div
-        className={`content1 ${
-          isSidebarOpen ? "sidebar-open" : "sidebar-closed"
-        }`}
-      >
         <h1>
           <FontAwesomeIcon icon={faStethoscope} className="header-icon" />
           Medical Model Testing
@@ -908,8 +883,7 @@ const Test = () => {
             </div>
           )}
         </div>
-      </div>
-    </div>
+</Layout>
   );
 };
 

@@ -1,7 +1,5 @@
-// Sidebar.js
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom"; 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -23,6 +21,7 @@ import "./sidebar.css";
 const Sidebar = ({ isOpen, toggleSidebar, projectId, targetFeature }) => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -31,79 +30,55 @@ const Sidebar = ({ isOpen, toggleSidebar, projectId, targetFeature }) => {
   }, []);
 
   const isMobile = windowWidth <= 768;
-  const sidebarWidth = isMobile ? "80vw" : "250px";
-  const closedWidth = isMobile ? "0" : "70px";
-
-  console.log("Sidebar → isOpen:", isOpen, "| isMobile:", isMobile);
-
-  const sidebarStyle = {
-    width: isOpen ? sidebarWidth : closedWidth,
-    transform: isMobile && !isOpen ? "translateX(-100%)" : "none",
-  };
-
-  const handleProfileClick = () => navigate("/profile");
-  const handleGraphsClick = () =>
-    navigate(`/graphs/${projectId}/${targetFeature}`);
-  const handleProcessingClick = () =>
-    navigate(`/processing/${projectId}/${targetFeature}`);
-  const handleModelsClick = () =>
-    navigate(`/models/${projectId}/${targetFeature}`);
-  const handleDBClick = () => navigate(`/importSucc/${projectId}`);
-  const handleDescription = () =>
-    navigate(`/description/${projectId}/${targetFeature}`);
-  const handleHistorique = () =>
-    navigate(`/historique/${projectId}/${targetFeature}`);
-  const handleDepClick = () =>
-    navigate(`/deployment/${projectId}/${targetFeature}`);
 
   const navItems = [
     {
       icon: faUser,
       label: "Profile",
-      action: handleProfileClick,
-      active: false,
+      path: "/profile",
+      action: () => navigate("/profile"),
     },
     {
       icon: faDatabase,
       label: "Database",
-      action: handleDBClick,
-      active: true,
+      path: `/importSucc/${projectId}`,
+      action: () => navigate(`/importSucc/${projectId}`),
     },
     {
       icon: faHistory,
       label: "History",
-      action: handleHistorique,
-      active: false,
+      path: `/historique/${projectId}/${targetFeature}`,
+      action: () => navigate(`/historique/${projectId}/${targetFeature}`),
     },
     {
       icon: faFileAlt,
       label: "Description",
-      action: handleDescription,
-      active: false,
+      path: `/description/${projectId}/${targetFeature}`,
+      action: () => navigate(`/description/${projectId}/${targetFeature}`),
     },
     {
       icon: faChartLine,
       label: "Graphs",
-      action: handleGraphsClick,
-      active: false,
+      path: `/graphs/${projectId}/${targetFeature}`,
+      action: () => navigate(`/graphs/${projectId}/${targetFeature}`),
     },
     {
       icon: faCog,
       label: "Processing",
-      action: handleProcessingClick,
-      active: false,
+      path: `/processing/${projectId}/${targetFeature}`,
+      action: () => navigate(`/processing/${projectId}/${targetFeature}`),
     },
     {
       icon: faBrain,
       label: "Models",
-      action: handleModelsClick,
-      active: false,
+      path: `/models/${projectId}/${targetFeature}`,
+      action: () => navigate(`/models/${projectId}/${targetFeature}`),
     },
     {
       icon: faRocket,
       label: "Deployment",
-      action: handleDepClick,
-      active: false,
+      path: `/deployment/${projectId}/${targetFeature}`,
+      action: () => navigate(`/deployment/${projectId}/${targetFeature}`),
     },
   ];
 
@@ -124,19 +99,18 @@ const Sidebar = ({ isOpen, toggleSidebar, projectId, targetFeature }) => {
                 <FontAwesomeIcon icon={faTimes} />
               </button>
               <div className="sidebar-header">
-                <img
-                  src="/lg.png"
-                  alt="MedicalVision"
-                  className="sidebar-logo"
-                />
+                <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
                 <h2>MedicalVision</h2>
               </div>
               <nav className="sidebar-nav">
                 {navItems.map((item, index) => (
                   <button
                     key={index}
-                    className={`nav-item ${item.active ? "active" : ""}`}
+                    className={`nav-item ${
+                      location.pathname.startsWith(item.path) ? "active" : ""
+                    }`}
                     onClick={item.action}
+                    data-tooltip={item.label}
                   >
                     <FontAwesomeIcon icon={item.icon} className="nav-icon" />
                     <span className="nav-label">{item.label}</span>
@@ -161,17 +135,11 @@ const Sidebar = ({ isOpen, toggleSidebar, projectId, targetFeature }) => {
           <aside className={`app-sidebar ${isOpen ? "open" : "closed"}`}>
             <div className="sidebar-header">
               <button className="sidebar-toggle" onClick={toggleSidebar}>
-                <FontAwesomeIcon
-                  icon={isOpen ? faChevronLeft : faChevronRight}
-                />
+                <FontAwesomeIcon icon={isOpen ? faChevronLeft : faChevronRight} />
               </button>
               {isOpen && (
                 <>
-                  <img
-                    src="/lg.png"
-                    alt="MedicalVision"
-                    className="sidebar-logo"
-                  />
+                  <img src="/lg.png" alt="MedicalVision" className="sidebar-logo" />
                   <h2>MedicalVision</h2>
                 </>
               )}
@@ -180,8 +148,12 @@ const Sidebar = ({ isOpen, toggleSidebar, projectId, targetFeature }) => {
               {navItems.map((item, index) => (
                 <button
                   key={index}
-                  className={`nav-item ${item.active ? "active" : ""}`}
+                  className={`nav-item ${
+                    location.pathname.startsWith(item.path) ? "active" : ""
+                  }`}
                   onClick={item.action}
+                  data-tooltip={item.label}
+                  title={!isOpen ? item.label : ""}
                 >
                   <FontAwesomeIcon icon={item.icon} className="nav-icon" />
                   {isOpen && <span className="nav-label">{item.label}</span>}

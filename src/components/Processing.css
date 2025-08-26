@@ -20,98 +20,62 @@
 /* BASE LAYOUT */
 .processing-modern {
   display: flex;
-  min-height: 100vh;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   background-color: var(--bg-color);
   color: var(--text-color);
-   margin: 0;
-  padding: 0;
+  margin: 0;
   position: relative;
   width: 100%;
 }
 
-/* SIDEBAR STYLES */
-.app-sidebar {
+/* Décalage du contenu en fonction du sidebar */
+.processing-modern {
+  transition: margin-left 0.3s ease;
+  min-height: 100vh;
+  padding: 2rem;
+}
+/* Bouton ☰ flottant pour mobile */
+.sidebar-toggle-mobile {
   position: fixed;
-  height: 100vh;
-  width: var(--sidebar-width-open);
-  background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
-  color: white;
-  transition: width var(--transition-speed) ease;
-  z-index: 1000;
-  overflow: hidden;
-  box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
- left: 0;
-  top: 0;
-}
-
-.app-sidebar.closed {
-  width: var(--sidebar-width-closed);
-}
-
-.app-sidebar.open {
-  width: var(--sidebar-width-open);
-}
-
-/* SIDEBAR HEADER */
-.sidebar-header {
-  height: 70px;
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.sidebar-toggle {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: white;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  top: 1rem;
+  left: 1rem;
+  background: white;
+  border: 2px solid #e2e8f0;
+  color: #2563eb;
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 1100;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all var(--transition-speed) ease;
-  margin-right: 15px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.sidebar-toggle:hover {
-  background: rgba(255, 255, 255, 0.2);
+.sidebar-toggle-mobile:hover {
+  background: #2563eb;
+  color: white;
   transform: scale(1.05);
 }
 
-.toggle-icon {
-  font-size: 1rem;
+
+.sidebar-open {
+  margin-left: 260px; /* largeur sidebar ouvert */
 }
 
-.sidebar-logo {
-  width: 40px;
-  margin-right: 10px;
-  transition: opacity var(--transition-speed);
+.sidebar-closed {
+  margin-left: 80px; /* largeur sidebar fermé */
 }
 
-.sidebar-header h2 {
-  font-size: 1.4rem;
-  margin: 0;
-  transition: opacity var(--transition-speed);
-  white-space: nowrap;
+@media (max-width: 768px) {
+  .sidebar-open,
+  .sidebar-closed {
+    margin-left: 0 !important; /* en mobile, le sidebar recouvre */
+  }
 }
 
-.app-sidebar.closed .sidebar-logo,
-.app-sidebar.closed .sidebar-header h2 {
-  opacity: 0;
-  width: 0;
-  margin: 0;
-}
-
-/* NAVIGATION */
-.sidebar-nav {
-  padding: 15px 0;
-  height: calc(100vh - 70px);
-  overflow-y: auto;
-}
 
 .nav-item {
   display: flex;
